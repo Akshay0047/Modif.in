@@ -11,7 +11,7 @@ function App() {
           colorNum={6.2}
           waveAmplitude={0.28}
           waveFrequency={4.6}
-          waveSpeed={0.05}
+          waveSpeed={0.04}
           backgroundColor={[0,0,0]}
       />
     </main>
