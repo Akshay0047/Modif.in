@@ -1,9 +1,25 @@
+import DepthText from "../components/DepthText";
 import "./Hero.css";
 
 function Hero() {
   return (
     <section className="hero">
-      <h1 className="hero-title">MODIF.in</h1>
+      <DepthText
+        text="MODIF.in"
+        layers={28}
+        depth={1.9}
+        faceColor="#f8fafc"
+        depthColor="#ff002c"
+        tilt={0}
+        pointerTracking
+        smoothing={0.22}
+        perspective={875}
+        autoOrbit
+        orbitSpeed={0.35}
+        fontSize="clamp(3rem, 12vw, 7rem)"
+        fontWeight={800}
+        shadow
+      />
 
       <p className="hero-subtitle">
         Simple tools for images, text, and typing.
