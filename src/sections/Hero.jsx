@@ -22,7 +22,7 @@ function Hero() {
       />
 
       <p className="hero-subtitle">
-        Simple tools for images, text, and typing.
+        Simple tools for your digital world.
       </p>
     </section>
   );
