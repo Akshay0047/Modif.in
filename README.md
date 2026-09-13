@@ -3,6 +3,7 @@
 ## GLOBAL
 - CURSOR: https://reactbits.dev/animations/target-cursor
 - TECH STACK : https://reactbits.dev/animations/logo-loop
+- FONT: IBM Plex Sans
 
 ## BACKGROUND
 - https://reactbits.dev/backgrounds/dither?waveColor=0.21568627450980393,0.7254901960784313,0.6509803921568628&backgroundColor=0,0,0&mouseRadius=0.1&waveFrequency=6.6&colorNum=8.1&waveSpeed=0.03&waveAmplitude=0.29  
