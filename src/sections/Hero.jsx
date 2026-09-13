@@ -9,11 +9,11 @@ function Hero() {
         layers={28}
         depth={1.9}
         faceColor="#f8fafc"
-        depthColor="#ff002c"
+        depthColor="#13008f"
         tilt={0}
         pointerTracking
         smoothing={0.22}
-        perspective={875}
+        perspective={475}
         autoOrbit
         orbitSpeed={0.35}
         fontSize="clamp(3rem, 12vw, 7rem)"
