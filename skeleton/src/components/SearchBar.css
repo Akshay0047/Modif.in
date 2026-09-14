@@ -50,7 +50,7 @@
   background-color: #050914 !important;
   border: 1px solid #1a233a;
   border-radius: 8px;
-  max-height: 300px !important;
+  max-height: 200px !important;
   overflow-y: auto !important;
   overflow-x: hidden;
   overscroll-behavior: contain;
