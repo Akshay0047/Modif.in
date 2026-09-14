@@ -1,6 +1,7 @@
 import DitherBackground from "./components/Dither";
 import TargetCursor from "./components/TargetCursor";
 import Hero from "./sections/Hero";
+import Footer from "./sections/Footer";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       />
 
       <Hero />
+      <Footer />
     </main>
   );
 }
