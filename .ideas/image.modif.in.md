@@ -1,9 +1,9 @@
 # Image.modif.in
 ---
-
+ 
 # 1. Format Conversion
-Tools for changing image file types and converting between raster and vector formats. 
-
+Tools for changing image file types and converting between raster and vector formats.
+ 
 1. **Raster Converter**
     * PNG ↔ JPG
     * WEBP ↔ PNG/JPG
@@ -20,12 +20,11 @@ Tools for changing image file types and converting between raster and vector for
     * GIF ↔ MP4
     * GIF ↔ APNG/WEBP
     * Extract frames from GIF
-
 ---
-
+ 
 # 2. Resizing & Layout
 Tools for changing the physical dimensions, aspect ratio, and composition of images.
-
+ 
 1. **Image Resizer**
     * By exact pixels
     * By percentage
@@ -34,36 +33,44 @@ Tools for changing the physical dimensions, aspect ratio, and composition of ima
     * Freeform crop
     * Aspect ratio presets (16:9, 4:3, 1:1, Social Media sizes)
     * Shape crop (Circle, rounded rectangle, polygon)
-3. **Image Splitter**
+3. **ID / Passport Photo Maker**
+    * Country-specific size presets (passport, visa, ID card)
+    * Auto background replacement to plain white/color
+4. **Image Splitter**
     * Grid slice (e.g., 3x3 for Instagram grids)
     * Horizontal/Vertical slice
-4. **Image Combiner (Stitcher)**
+5. **Image Combiner (Stitcher)**
     * Merge vertically (Long screenshots)
     * Merge horizontally
     * Create sprite sheets
-5. **Border & Padding**
+6. **Collage Maker**
+    * Preset multi-photo layouts and grids
+    * Adjustable spacing, borders, and background color
+7. **AI Image Upscaler**
+    * Increase resolution (2x, 4x) while preserving detail
+    * Photo vs. illustration/anime-optimized modes
+8. **Border & Padding**
     * Add solid color padding
     * Add blurred background padding
     * Round image corners
-
 ---
-
+ 
 # 3. Optimization & Compression
 Utilities to reduce file size for web performance and storage constraints.
-
+ 
 1. **Smart Compressor**
     * Lossy compression (Adjustable quality slider)
     * Lossless optimization
 2. **Target Size Compressor**
     * Compress to exact KB/MB target (e.g., "Compress to exactly 200KB")
-3. **WebP / AVIF Generator**
-    * Bulk convert and compress legacy formats for modern web delivery
-
+3. **Batch Processor**
+    * Chain resize + compress + convert + rename in one bulk action
+    * Apply the same preset across an entire folder of images
 ---
-
+ 
 # 4. Adjustments & Editing
 Tools for altering the visual appearance and color profile of an image.
-
+ 
 1. **Color Adjustments**
     * Brightness & Contrast
     * Hue & Saturation
@@ -83,12 +90,17 @@ Tools for altering the visual appearance and color profile of an image.
     * AI Background Removal
     * Replace background (Solid color, transparent, or image)
     * Blur background
-
+5. **Meme & Caption Generator**
+    * Top/bottom caption text with classic meme fonts
+    * Sticker, frame, and emoji overlays
+6. **Screenshot Enhancer**
+    * Add device frames, drop shadows, and background padding to screenshots
+    * Quick browser-chrome / mobile-frame mockup wrap
 ---
-
+ 
 # 5. Metadata & Watermarking
 Tools for handling image privacy, copyright, and embedded data.
-
+ 
 1. **EXIF Metadata Tools**
     * View EXIF data (Camera model, GPS location, aperture)
     * Strip/Remove metadata (Privacy cleaner)
@@ -97,15 +109,13 @@ Tools for handling image privacy, copyright, and embedded data.
     * Add text watermark (Custom font, opacity, rotation)
     * Add image watermark (Logo overlay)
     * Tiled/Repeated watermark pattern
-
 ---
-
-# 6. Developer, Web & Text Tools
+ 
+# 6. Developer & Web Tools
 Dedicated utilities matching the technical utility focus of the site.
-
-1. **Markdown Tools**
-    * MD Reader (View and preview Markdown files)
-    * MD Writer (Edit and generate Markdown formatting)
+ 
+1. **HTML/Webpage to Image**
+    * Convert a URL or raw HTML snippet into a JPG/PNG screenshot
 2. **Base64 Tools**
     * Image to Base64 String
     * Base64 String to Image Preview & Download
@@ -118,11 +128,10 @@ Dedicated utilities matching the technical utility focus of the site.
 5. **Dummy Image Generator**
     * Generate placeholder images via URL parameters
     * Custom dimensions, background colors, and placeholder text
-
 ---
-
+ 
 # Final Site Structure
-
+ 
 ```text
 IMAGE TOOLBOX
 │
@@ -135,30 +144,35 @@ IMAGE TOOLBOX
 ├── Resizing & Layout
 │   ├── Image Resizer
 │   ├── Crop Tool
+│   ├── ID / Passport Photo Maker
 │   ├── Image Splitter
 │   ├── Image Combiner
+│   ├── Collage Maker
+│   ├── AI Image Upscaler
 │   └── Border & Padding
 │
 ├── Optimization & Compression
 │   ├── Smart Compressor
 │   ├── Target Size Compressor
-│   └── WebP / AVIF Generator
+│   └── Batch Processor
 │
 ├── Adjustments & Editing
 │   ├── Color Adjustments
 │   ├── Filters & Effects
 │   ├── Transform
-│   └── Background Tools
+│   ├── Background Tools
+│   ├── Meme & Caption Generator
+│   └── Screenshot Enhancer
 │
 ├── Metadata & Watermarking
-│   ├── EXIF Viewer
-│   ├── EXIF Stripper
+│   ├── EXIF Metadata Tools
 │   └── Watermark Generator
 │
-└── Developer, Web & Text Tools
-    ├── Markdown Reader
-    ├── Markdown Writer
+└── Developer & Web Tools
+    ├── HTML/Webpage to Image
     ├── Base64 Tools
     ├── Color Extraction
     ├── Favicon Generator
     └── Dummy Image Generator
+```
+ 
