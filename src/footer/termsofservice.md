@@ -2,6 +2,8 @@
 
 **Last updated: September 14, 2026**
 
+## REDO after subdomains are made
+
 Welcome to Modif.in ("Modif", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of Modif.in and its related services and subdomains, including `image.modif.in`, `text.modif.in`, and `docs.modif.in` (collectively, the "Services").
 
 By accessing or using the Services, you agree to these Terms. If you do not agree with these Terms, please do not use the Services.
