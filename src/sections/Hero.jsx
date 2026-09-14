@@ -11,7 +11,7 @@ function Hero() {
                 depth={1.9}
                 faceColor="#f8fafc"
                 depthColor="#13008f"
-                tilt={0}
+                tilt={7.5}
                 pointerTracking
                 smoothing={0.22}
                 perspective={475}
