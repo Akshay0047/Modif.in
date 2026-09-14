@@ -2,6 +2,7 @@ import DitherBackground from "./components/Dither";
 import TargetCursor from "./components/TargetCursor";
 import Hero from "./sections/Hero";
 import Footer from "./sections/Footer";
+import IntroScreen from "./components/IntroScreen";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
 
       <Hero />
       <Footer />
+      <IntroScreen />
     </main>
   );
 }
