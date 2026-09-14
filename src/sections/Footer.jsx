@@ -66,6 +66,7 @@ function Footer() {
             <a
               href="https://github.com/JunaidAhamed-7777"
               className="cursor-target footer-link"
+              target = "_blank"
             >
               Junaid
             </a>
@@ -75,6 +76,7 @@ function Footer() {
             <a
               href="https://github.com/Akshay0047"
               className="cursor-target footer-link"
+              target = "_blank"
             >
               Akshay
             </a>
