@@ -2,7 +2,7 @@
 
 **Last updated: September 14, 2026**
 
-## Redo this after making subdomains
+## Redo this after subdomains are made
 
 Modif.in ("Modif", "we", "us", or "our") operates the Modif.in website and its related services, including subdomains such as `image.modif.in`, `text.modif.in`, and `docs.modif.in` (collectively, the "Services").
 
