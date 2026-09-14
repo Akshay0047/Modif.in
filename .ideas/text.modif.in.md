@@ -372,7 +372,7 @@ This is where Ascii Toolbox becomes genuinely useful to developers rather than j
         
     - Proper indentation
         
-    - Pretty-printing
+    - Pretty-printing (including react jsx and tsx)
         
 3. **Code Minifier**
     
