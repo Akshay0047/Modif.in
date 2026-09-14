@@ -5,6 +5,7 @@ function Hero() {
   return (
     <section className="hero">
       <DepthText
+        className="cursor-target"
         text="MODIF.in"
         layers={28}
         depth={1.9}
