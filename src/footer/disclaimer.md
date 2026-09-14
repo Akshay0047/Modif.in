@@ -2,86 +2,71 @@
 
 **Last updated: September 14, 2026**
 
-Modif.in ("Modif", "we", "us", or "our") provides online tools for working with images, text, documents, typing, and related digital content. The Services are provided for general informational, educational, and convenience purposes.
+Modif.in ("Modif", "we", "our", or "us") offers a collection of online tools for working with images, text, documents, typing, and other digital content. These services are provided for general-purpose use and convenience.
 
-By using Modif.in or any of its related services, including `image.modif.in`, `text.modif.in`, and `docs.modif.in`, you acknowledge and agree to this Disclaimer.
+By accessing or using Modif.in, including services available through `image.modif.in`, `text.modif.in`, and `docs.modif.in`, you agree to the terms of this Disclaimer.
 
-## 1. Tool Output Accuracy
+## 1. About Tool Results
 
-All tools provided by Modif.in are intended for **general use and convenience only**.
+The tools available on Modif.in are intended to assist with common digital tasks and should not be treated as a guarantee of a particular result.
 
-While we make reasonable efforts to ensure that our tools function correctly, we do not guarantee that any tool output will be accurate, complete, error-free, or suitable for a particular purpose.
+Although we make reasonable efforts to keep our tools functional and reliable, results may vary depending on the input, file type, browser, device, or other circumstances. We cannot guarantee that every output will be completely accurate, complete, error-free, or appropriate for a particular use.
 
-Depending on the tool, outputs may include transformed images, formatted text, converted documents, extracted information, generated content, typing statistics, or other results.
+Any result that is important to you should be **checked and verified independently** before you rely on it, publish it, submit it, or use it for a consequential purpose.
 
-You should **independently review and verify important outputs** before relying on them, particularly in legal, medical, financial, academic, professional, technical, or other situations where errors could have significant consequences.
+This is particularly important for legal, medical, financial, academic, professional, or other high-stakes applications.
 
-## 2. No Professional Advice
+## 2. General Information Only
 
-Nothing provided through Modif.in—including tool outputs, explanations, guides, descriptions, examples, or other website content—constitutes professional legal, medical, financial, technical, or other professional advice.
+The information, tools, examples, explanations, and other material available through Modif.in are provided for general purposes and should not be considered professional advice.
 
-Modif.in is intended to provide general-purpose digital tools and information. Where professional guidance is required, you should consult a suitably qualified professional.
+Nothing on the website should be interpreted as legal, medical, financial, technical, or other specialized advice.
 
-Any reliance you place on information or outputs provided through Modif.in is at your own discretion and risk.
+When a matter requires qualified professional judgment, you should consult an appropriate professional rather than relying solely on information or results obtained through Modif.in.
 
-## 3. Third-Party Links and Services
+## 3. External Websites and Services
 
-Modif.in may contain links to third-party websites, services, software, APIs, tools, or other external resources.
+Modif.in may reference or connect to websites, applications, APIs, services, or resources operated by other parties.
 
-These links and integrations are provided for convenience or functionality. Modif.in does not necessarily control or endorse third-party services and is not responsible for their content, accuracy, availability, security, privacy practices, or policies.
+We do not control these third-party services and cannot guarantee their availability, security, accuracy, content, or privacy practices. Their use may also be governed by separate terms, policies, or conditions established by their respective operators.
 
-Your use of a third-party website or service may be subject to that provider's own terms and privacy policy.
+A link, integration, or reference appearing on Modif.in does not necessarily mean that we recommend, sponsor, or are affiliated with the third party involved.
 
-The inclusion of a third-party link, service, advertisement, or integration does not by itself constitute an endorsement, sponsorship, partnership, or affiliation.
+## 4. Advertising
 
-## 4. Advertising Disclosure
+Modif.in may display advertisements through **Google AdSense** and may use other advertising or monetization partners in the future.
 
-Modif.in may display advertisements provided by **Google AdSense** and may use other advertising or monetization services in the future.
+Advertising providers may use cookies and related technologies to deliver, personalize, analyze, or measure advertisements, subject to their own policies and applicable legal requirements.
 
-Advertisements may be selected, personalized, delivered, or measured by third-party advertising providers using cookies and similar technologies, subject to their own policies and applicable requirements.
+The advertisements displayed on Modif.in are provided by third parties. We do not control the products, services, statements, or claims presented in those advertisements, and the appearance of an advertisement does not constitute our endorsement or recommendation.
 
-Modif.in does not control the content of third-party advertisements and does not necessarily endorse products, services, or claims appearing in advertisements.
+## 5. Intellectual Property and Submitted Content
 
-The presence of an advertisement should not be interpreted as a recommendation or guarantee by Modif.in.
+The branding, visual design, original website content, software, graphics, and other materials created for Modif.in belong to Modif.in or are used under applicable licenses and protections.
 
-## 5. Intellectual Property and User Content
+These materials may not be reproduced, republished, modified, distributed, or commercially exploited without appropriate authorization, where such authorization is required.
 
-The original design, branding, interface, software, graphics, text, and other materials created for Modif.in are owned by or licensed to Modif.in and may be protected by applicable intellectual property laws.
+### Content You Provide
 
-Unauthorized reproduction, redistribution, modification, or commercial exploitation of Modif.in's original materials may be prohibited.
+When you enter text or upload files, images, documents, or other material to a Modif.in tool, you remain responsible for that material and for having the necessary rights or permissions to use it.
 
-### Your Content
+Using a Modif.in tool does not transfer ownership of your submitted content to us.
 
-You retain ownership of content that you upload, enter, or process through Modif.in, subject to any rights that may be necessary for us or our service providers to operate the relevant tool.
+Depending on how a particular tool operates, submitted material may be processed within your browser, through our systems, or by third-party technology providers. The handling of such content can differ between Services and is addressed further in our Privacy Policy where applicable.
 
-You are responsible for ensuring that you have the necessary rights and permissions to upload, process, modify, or otherwise use any content submitted to our Services.
+## 6. Service Availability and Limitations
 
-We do not claim ownership of your content merely because you use our tools.
+Modif.in is provided on an **"as available"** basis. While we aim to keep the website and its tools functioning properly, we cannot promise uninterrupted access or that every feature will work without errors at all times.
 
-Some Services may process uploaded or submitted content locally in your browser, on our infrastructure, or through third-party providers. The specific handling of content may vary by tool and is described, where relevant, in our Privacy Policy or the applicable Service.
+Features, supported formats, processing methods, limits, and other aspects of the Services may be changed, temporarily unavailable, or discontinued without notice.
 
-## 6. "As Is" and "As Available" Service
-
-Modif.in and its tools are provided on an **"as is"** and **"as available"** basis to the maximum extent permitted by applicable law.
-
-We do not guarantee that:
-
-* The website or any particular tool will always be available.
-* The Services will be uninterrupted or error-free.
-* Processing will always succeed.
-* Outputs will always meet your requirements.
-* Supported features or file formats will remain unchanged.
-* Errors or defects will always be corrected within a particular period.
-
-We may modify, suspend, restrict, replace, or discontinue any part of the Services at any time for operational, technical, legal, security, or other reasons.
-
-To the maximum extent permitted by applicable law, Modif.in is not responsible for losses, damages, or inconvenience resulting from your reliance on a tool, an output, an interruption of service, or a change to a feature.
+We are not responsible for losses or inconvenience arising from service interruptions, technical problems, inaccurate results, unsupported inputs, changes to features, or reliance on the Services, to the fullest extent permitted by applicable law.
 
 ## Questions?
 
-For questions regarding this Disclaimer, please contact us through the contact information provided on Modif.in.
+For questions concerning this Disclaimer or the operation of Modif.in, please use the contact information provided on the website.
 
 ---
 
 **Modif.in**
-A collection of tools for images, text, documents, and typing.
+Tools for images, text, documents, and typing.
