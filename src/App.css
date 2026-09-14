@@ -1,8 +1,15 @@
 .app {
   position: relative;
+
   width: 100%;
+  height: 100vh;
   min-height: 100vh;
-  overflow-x: hidden;
+
+  overflow: hidden;
+
   background: #000;
   isolation: isolate;
+
+  display: flex;
+  flex-direction: column;
 }
