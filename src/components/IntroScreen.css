@@ -20,11 +20,6 @@
   transition: opacity 250ms ease;
 }
 
-.intro-screen--fading {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .intro-logo {
   display: block;
 
@@ -32,4 +27,17 @@
   height: auto;
 
   object-fit: contain;
+
+  opacity: 0;
+
+  transition: opacity 150ms ease-out;
+}
+
+.intro-logo--visible {
+  opacity: 1;
+}
+
+.intro-screen--fading {
+  opacity: 0;
+  pointer-events: none;
 }

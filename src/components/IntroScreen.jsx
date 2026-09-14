@@ -3,24 +3,34 @@ import logo from "../logo.png";
 import "./IntroScreen.css";
 
 function IntroScreen() {
+  const [started, setStarted] = useState(false);
   const [fading, setFading] = useState(false);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    // Hide both the native cursor and the custom TargetCursor
-    // while the intro screen is visible.
     document.body.classList.add("intro-active");
 
+    // Wait for the browser to paint the initial hidden state,
+    // then start the 150ms logo fade-in.
+    const startFrame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setStarted(true);
+      });
+    });
+
+    // 150ms fade-in + 350ms hold = 500ms
     const fadeTimer = window.setTimeout(() => {
       setFading(true);
-    }, 750);
+    }, 500);
 
+    // 500ms + 250ms fade-out = 750ms total
     const removeTimer = window.setTimeout(() => {
       setVisible(false);
       document.body.classList.remove("intro-active");
-    }, 1000);
+    }, 750);
 
     return () => {
+      cancelAnimationFrame(startFrame);
       window.clearTimeout(fadeTimer);
       window.clearTimeout(removeTimer);
       document.body.classList.remove("intro-active");
@@ -36,7 +46,7 @@ function IntroScreen() {
       <img
         src={logo}
         alt="Modif.in"
-        className="intro-logo"
+        className={`intro-logo ${started ? "intro-logo--visible" : ""}`}
       />
     </div>
   );
