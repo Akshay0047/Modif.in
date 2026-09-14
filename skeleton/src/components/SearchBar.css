@@ -1,7 +1,10 @@
 .search-bar {
   position: relative;
+  z-index: 40;
   width: min(100%, 520px);
   margin: 0 auto;
+  background-color: #050914;
+  border-radius: 10px;
 }
 
 .search-bar__label {
@@ -22,14 +25,12 @@
   padding: 0.85rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.45);
+  background-color: #050914;
   color: #f8fafc;
   font-family: "IBM Plex Sans", sans-serif;
   font-size: 0.9375rem;
   line-height: 1.4;
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
 .search-bar__input::placeholder {
@@ -39,7 +40,30 @@
 .search-bar__input:focus {
   outline: none;
   border-color: rgba(82, 92, 198, 0.55);
-  background: rgba(0, 0, 0, 0.62);
+  background-color: #050914;
+}
+
+.search-bar .scroll-list-container {
+  z-index: 50;
+}
+
+.search-bar .scroll-list {
+  max-height: 300px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: #050914;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+}
+
+.search-bar .scroll-list::-webkit-scrollbar-thumb {
+  border-color: #050914;
+}
+
+.search-bar .item {
+  background-color: #0a0f1a;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .search-bar__empty {
@@ -47,11 +71,12 @@
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  z-index: 20;
+  z-index: 50;
   padding: 0.85rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.88);
+  background-color: #050914;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
   color: rgba(248, 250, 252, 0.62);
   font-family: "IBM Plex Sans", sans-serif;
   font-size: 0.875rem;

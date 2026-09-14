@@ -3,32 +3,42 @@
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  z-index: 20;
+  z-index: 30;
   width: 100%;
 }
 
 .scroll-list {
   max-height: 240px;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: #050914;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(255, 255, 255, 0.06);
 }
 
 .scroll-list::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .scroll-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
+  margin: 6px 0;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
 }
 
 .scroll-list::-webkit-scrollbar-thumb {
-  background: rgba(82, 92, 198, 0.45);
+  background: rgba(148, 163, 184, 0.45);
   border-radius: 4px;
+  border: 2px solid #050914;
+}
+
+.scroll-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.65);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -71,7 +81,7 @@
   left: 0;
   right: 0;
   height: 32px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.88), transparent);
+  background: linear-gradient(to bottom, #050914, transparent);
   pointer-events: none;
   transition: opacity 0.3s ease;
   border-radius: 10px 10px 0 0;
@@ -83,7 +93,7 @@
   left: 0;
   right: 0;
   height: 48px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88), transparent);
+  background: linear-gradient(to top, #050914, transparent);
   pointer-events: none;
   transition: opacity 0.3s ease;
   border-radius: 0 0 10px 10px;

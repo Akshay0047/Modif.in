@@ -39,7 +39,7 @@
   transform: translate(-50%, -50%);
   background: radial-gradient(
     circle at center,
-    var(--pixel-card-active-color, rgba(255, 255, 255, 0.05)) 0%,
+    var(--glow-color, var(--pixel-card-active-color, rgba(255, 255, 255, 0.05))) 0%,
     transparent 52%
   );
   opacity: 0;
@@ -54,7 +54,7 @@
 
 .pixel-card:hover,
 .pixel-card:focus-within {
-  border-color: rgba(248, 250, 252, 0.22);
+  border-color: var(--pixel-card-border-hover, rgba(248, 250, 252, 0.22));
 }
 
 .pixel-card__content {

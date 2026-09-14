@@ -60,10 +60,12 @@ function SearchBar({ categories, onSelect }) {
             {showResults ? (
                 resultLabels.length > 0 ? (
                     <AnimatedList
+                        className="search-bar__suggestions"
                         items={resultLabels}
                         onItemSelect={handleSelect}
                         enableArrowNavigation
-                        showGradients
+                        showGradients={false}
+                        displayScrollbar
                     />
                 ) : (
                     <div className="search-bar__empty" role="status">

@@ -3,11 +3,10 @@
   width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
-  background: #000;
   isolation: isolate;
 }
 
-.app-content {
+.app > :not(.silk-container) {
   position: relative;
   z-index: 1;
 }

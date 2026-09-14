@@ -96,6 +96,37 @@ function getEffectiveSpeed(value, reducedMotion) {
     return parsed * throttle;
 }
 
+const PIXEL_COLOR_PRESETS = {
+    red: {
+        colors: "#ffe4e4,#ff8888,#ff4444",
+        glowColor: "rgba(255, 68, 68, 0.35)",
+        borderHover: "rgba(255, 68, 68, 0.38)",
+    },
+    green: {
+        colors: "#e4ffe4,#88ff88,#44ff44",
+        glowColor: "rgba(68, 255, 68, 0.35)",
+        borderHover: "rgba(68, 255, 68, 0.38)",
+    },
+    yellow: {
+        colors: "#ffffe4,#ffff88,#ffff44",
+        glowColor: "rgba(255, 255, 68, 0.35)",
+        borderHover: "rgba(255, 255, 68, 0.38)",
+    },
+};
+
+function resolvePixelColor(pixelColor) {
+    if (!pixelColor) return null;
+
+    const preset = PIXEL_COLOR_PRESETS[String(pixelColor).toLowerCase()];
+    if (preset) return preset;
+
+    return {
+        colors: `${pixelColor},${pixelColor},${pixelColor}`,
+        glowColor: pixelColor,
+        borderHover: pixelColor,
+    };
+}
+
 const VARIANTS = {
     default: {
         activeColor: null,
@@ -137,6 +168,7 @@ function PixelCard({
     title,
     description,
     icon,
+    pixelColor,
     children,
 }) {
     const containerRef = useRef(null);
@@ -150,10 +182,13 @@ function PixelCard({
     ).current;
 
     const variantCfg = VARIANTS[variant] || VARIANTS.default;
+    const colorCfg = resolvePixelColor(pixelColor);
     const finalGap = gap ?? variantCfg.gap;
     const finalSpeed = speed ?? variantCfg.speed;
-    const finalColors = colors ?? variantCfg.colors;
+    const finalColors = colors ?? colorCfg?.colors ?? variantCfg.colors;
     const finalNoFocus = noFocus ?? variantCfg.noFocus;
+    const glowColor = colorCfg?.glowColor ?? variantCfg.activeColor;
+    const borderHover = colorCfg?.borderHover;
 
     const initPixels = () => {
         if (!containerRef.current || !canvasRef.current) return;
@@ -257,20 +292,25 @@ function PixelCard({
             cancelAnimationFrame(animationRef.current);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [finalGap, finalSpeed, finalColors, finalNoFocus]);
+    }, [finalGap, finalSpeed, finalColors, finalNoFocus, pixelColor]);
+
+    const cardStyle = {
+        ...(glowColor
+            ? {
+                  "--pixel-card-active-color": glowColor,
+                  "--glow-color": glowColor,
+              }
+            : {}),
+        ...(borderHover
+            ? { "--pixel-card-border-hover": borderHover }
+            : {}),
+    };
 
     return (
         <div
             ref={containerRef}
             className={`pixel-card ${className}`.trim()}
-            style={
-                variantCfg.activeColor
-                    ? {
-                          "--pixel-card-active-color":
-                              variantCfg.activeColor,
-                      }
-                    : undefined
-            }
+            style={Object.keys(cardStyle).length ? cardStyle : undefined}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onFocus={finalNoFocus ? undefined : onFocus}

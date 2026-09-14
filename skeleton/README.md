@@ -26,8 +26,14 @@ Runs on **http://localhost:5174** by default.
 - **Hero** — WarpText heading, subheading, live search (`Category : Component`), badges
 - **Body** — category grid with featured tool buttons
 - **Footer** — same legal footer as the main site
-- **Background** — Dither wave theme shared with the main app
+- **Background** — Silk animated background (React Bits)
 
 ## Stack
 
-React 19, Vite 8, Three.js (Dither background), OGL (WarpText), Motion (AnimatedList search results).
+React 19, Vite 8, Three.js (Silk background), OGL (WarpText), Motion (AnimatedList search results).
+
+## Credits
+
+- **Silk background** — adapted from [React Bits](https://reactbits.dev/backgrounds/silk) by David Haz
+- **WarpText** — adapted from [React Bits](https://reactbits.dev/text-animations/warp-text)
+- **AnimatedList** — adapted from [React Bits](https://reactbits.dev/components/animated-list)

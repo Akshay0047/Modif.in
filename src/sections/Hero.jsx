@@ -9,12 +9,14 @@ const EDITOR_CARDS = [
         description:
             "Comprehensive utilities for text analysis, formatting, encoding, and developer tools",
         icon: "/logos/text.png",
+        pixelColor: "red",
     },
     {
         id: "image",
         title: "Image Tools",
         description: "A dedicated suite for image manipulation and processing",
         icon: "/logos/image.png",
+        pixelColor: "green",
     },
     {
         id: "pdf",
@@ -22,6 +24,7 @@ const EDITOR_CARDS = [
         description:
             "Powerful utilities for modifying PDF, DOCX, and CSV documents.",
         icon: "/logos/doc.png",
+        pixelColor: "yellow",
     },
 ];
 
@@ -53,13 +56,14 @@ function Hero() {
             </p>
 
             <div className="hero-editor-cards">
-                {EDITOR_CARDS.map(({ id, title, description, icon }) => (
+                {EDITOR_CARDS.map(({ id, title, description, icon, pixelColor }) => (
                     <PixelCard
                         key={id}
                         variant="blue"
                         title={title}
                         description={description}
                         icon={icon}
+                        pixelColor={pixelColor}
                         className="hero-editor-card cursor-target"
                     />
                 ))}
