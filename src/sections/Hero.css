@@ -34,7 +34,8 @@
   --pixel-card-active-color: rgba(255, 255, 255, 0.06);
 
   width: min(260px, 100%);
-  height: 300px;
+  height: auto;
+  min-height: 420px;
 }
 
 .hero-subtitle {
@@ -55,22 +56,25 @@
   }
 
   .hero-editor-cards {
+    display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1.5rem;
+    width: 100%;
     margin-top: 1.25rem;
-    padding: 0 1.25rem;
+    padding: 0 1rem;
+    box-sizing: border-box;
   }
 
   .hero-editor-card {
     width: 100%;
-    max-width: 320px;
+    max-width: 340px;
     height: auto;
-    min-height: 140px;
+    min-height: fit-content;
   }
 
   .hero-subtitle {
     margin-top: 1.25rem;
-    padding: 0 1.25rem;
+    padding: 0 1rem;
   }
 }

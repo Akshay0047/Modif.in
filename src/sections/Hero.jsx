@@ -6,17 +6,22 @@ const EDITOR_CARDS = [
     {
         id: "text",
         title: "Text Tools",
-        description: "Comprehensive utilities for text analysis, formatting, encoding, and developer tools",
+        description:
+            "Comprehensive utilities for text analysis, formatting, encoding, and developer tools",
+        icon: "/logos/text.png",
     },
     {
         id: "image",
         title: "Image Tools",
         description: "A dedicated suite for image manipulation and processing",
+        icon: "/logos/image.png",
     },
     {
         id: "pdf",
         title: "Document Tools",
-        description: "Powerful utilities for modifying PDF, DOCX, and CSV documents.",
+        description:
+            "Powerful utilities for modifying PDF, DOCX, and CSV documents.",
+        icon: "/logos/doc.png",
     },
 ];
 
@@ -48,12 +53,13 @@ function Hero() {
             </p>
 
             <div className="hero-editor-cards">
-                {EDITOR_CARDS.map(({ id, title, description }) => (
+                {EDITOR_CARDS.map(({ id, title, description, icon }) => (
                     <PixelCard
                         key={id}
                         variant="blue"
                         title={title}
                         description={description}
+                        icon={icon}
                         className="hero-editor-card cursor-target"
                     />
                 ))}

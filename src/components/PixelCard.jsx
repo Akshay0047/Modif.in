@@ -136,6 +136,7 @@ function PixelCard({
     className = "",
     title,
     description,
+    icon,
     children,
 }) {
     const containerRef = useRef(null);
@@ -277,8 +278,18 @@ function PixelCard({
             tabIndex={finalNoFocus ? -1 : 0}
         >
             <canvas className="pixel-canvas" ref={canvasRef} />
-            {(title || description || children) && (
+            {(icon || title || description || children) && (
                 <div className="pixel-card__content">
+                    {icon ? (
+                        <div className="pixel-card__icon-wrap">
+                            <img
+                                className="pixel-card__icon"
+                                src={icon}
+                                alt=""
+                                aria-hidden="true"
+                            />
+                        </div>
+                    ) : null}
                     {title ? (
                         <h3 className="pixel-card__title">{title}</h3>
                     ) : null}
