@@ -48,3 +48,29 @@
 
   color: rgb(255, 255, 255);
 }
+
+@media (max-width: 768px) {
+  .hero {
+    padding-top: 3vh;
+  }
+
+  .hero-editor-cards {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+    padding: 0 1.25rem;
+  }
+
+  .hero-editor-card {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    min-height: 140px;
+  }
+
+  .hero-subtitle {
+    margin-top: 1.25rem;
+    padding: 0 1.25rem;
+  }
+}

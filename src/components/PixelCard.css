@@ -103,3 +103,27 @@
     transition: none;
   }
 }
+
+@media (max-width: 768px) {
+  .pixel-card {
+    width: 100%;
+    height: auto;
+    min-height: 140px;
+    aspect-ratio: auto;
+  }
+
+  .pixel-card__content {
+    gap: 0.375rem;
+    padding: 0.875rem 1.125rem;
+  }
+
+  .pixel-card__title {
+    font-size: 1.0625rem;
+  }
+
+  .pixel-card__description {
+    max-width: none;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+}
