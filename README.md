@@ -33,3 +33,6 @@ backgroundColor={[0,0,0]}
 - Disclaimer
 - Built by Junaid and Akshay 
 - Copyright (if possible)
+
+## Icons
+- Gemini generated icons

@@ -8,8 +8,20 @@ body,
   margin: 0;
   padding: 0;
   font-family: "IBM Plex Sans", sans-serif;
+  overflow: hidden;
 }
 
 body {
   background: #000;
+}
+
+@media (max-width: 700px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 }
