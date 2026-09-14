@@ -55,3 +55,8 @@
   border-right: none;
   border-top: none;
 }
+
+body.target-cursor-active,
+body.target-cursor-active * {
+  cursor: none !important;
+}
