@@ -18,16 +18,16 @@ function IntroScreen() {
       });
     });
 
-    // 150ms fade-in + 350ms hold = 500ms
+    // 150ms fade-in + 950ms hold = 1100ms
     const fadeTimer = window.setTimeout(() => {
-      setFading(true);
-    }, 500);
+    setFading(true);
+    }, 1100);
 
-    // 500ms + 250ms fade-out = 750ms total
+    // 1100ms + 250ms fade-out = 1350ms total
     const removeTimer = window.setTimeout(() => {
-      setVisible(false);
-      document.body.classList.remove("intro-active");
-    }, 750);
+    setVisible(false);
+    document.body.classList.remove("intro-active");
+    }, 1350);
 
     return () => {
       cancelAnimationFrame(startFrame);
