@@ -64,7 +64,7 @@ function Footer() {
                         <span>Built by </span>
                         <a
                             href="https://github.com/JunaidAhamed-7777"
-                            className="footer-link"
+                            className="footer-link cursor-target"
                             target="_blank"
                             rel="noreferrer"
                         >
@@ -73,7 +73,7 @@ function Footer() {
                         <span> and </span>
                         <a
                             href="https://github.com/Akshay0047"
-                            className="footer-link"
+                            className="footer-link cursor-target"
                             target="_blank"
                             rel="noreferrer"
                         >
@@ -84,7 +84,7 @@ function Footer() {
                     <nav className="footer-nav" aria-label="Legal">
                         <button
                             type="button"
-                            className="footer-button"
+                            className="footer-button cursor-target"
                             onClick={() => openDocument("privacy")}
                         >
                             Privacy Policy
@@ -92,7 +92,7 @@ function Footer() {
                         <span className="footer-separator">.</span>
                         <button
                             type="button"
-                            className="footer-button"
+                            className="footer-button cursor-target"
                             onClick={() => openDocument("terms")}
                         >
                             Terms of Service
@@ -100,7 +100,7 @@ function Footer() {
                         <span className="footer-separator">.</span>
                         <button
                             type="button"
-                            className="footer-button"
+                            className="footer-button cursor-target"
                             onClick={() => openDocument("disclaimer")}
                         >
                             Disclaimer
@@ -127,7 +127,7 @@ function Footer() {
                             </h2>
                             <button
                                 type="button"
-                                className="document-close"
+                                className="document-close cursor-target"
                                 onClick={closeDocument}
                                 aria-label="Close document"
                             >

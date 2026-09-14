@@ -48,7 +48,7 @@ function SearchBar({ categories, onSelect }) {
             </label>
             <input
                 id="tool-search"
-                className="search-bar__input"
+                className="search-bar__input cursor-target"
                 type="search"
                 value={query}
                 placeholder="Search category or component…"
@@ -59,16 +59,21 @@ function SearchBar({ categories, onSelect }) {
             />
             {showResults ? (
                 resultLabels.length > 0 ? (
-                    <AnimatedList
-                        className="search-bar__suggestions"
-                        items={resultLabels}
-                        onItemSelect={handleSelect}
-                        enableArrowNavigation
-                        showGradients={false}
-                        displayScrollbar
-                    />
+                    <div className="search-dropdown-menu">
+                        <AnimatedList
+                            itemClassName="search-bar__suggestion-item cursor-target"
+                            items={resultLabels}
+                            onItemSelect={handleSelect}
+                            enableArrowNavigation
+                            showGradients={false}
+                            displayScrollbar={false}
+                        />
+                    </div>
                 ) : (
-                    <div className="search-bar__empty" role="status">
+                    <div
+                        className="search-dropdown-menu search-dropdown-menu--empty"
+                        role="status"
+                    >
                         No matching tools found.
                     </div>
                 )

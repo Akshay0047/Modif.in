@@ -6,7 +6,59 @@
   isolation: isolate;
 }
 
-.app > :not(.silk-container) {
+.app-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 48px !important;
+  background-color: #000000;
+  z-index: 1000;
+  border-bottom: 1px solid #1a233a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 !important;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.app-header__brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tooltip-container {
   position: relative;
-  z-index: 1;
+  display: inline-flex;
+  cursor: help;
+}
+
+.tooltip-box {
+  position: absolute;
+  top: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1a233a;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 50;
+  border: 1px solid #3b4252;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.tooltip-container:hover .tooltip-box {
+  opacity: 1;
+  visibility: visible;
+  top: 140%;
 }

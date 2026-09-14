@@ -9,12 +9,6 @@ function ToolHub() {
 
     return (
         <>
-            <header className="site-header">
-                <a className="site-header__brand" href={siteConfig.homeUrl}>
-                    MODIF.in
-                </a>
-            </header>
-
             <section className="tool-hub__intro" aria-labelledby="tool-hub-heading">
                 <div className="tool-hub__heading-wrap">
                     <WarpText
@@ -33,20 +27,37 @@ function ToolHub() {
 
                 <p className="tool-hub__subheading">{siteConfig.subheading}</p>
 
-                <SearchBar
-                    categories={toolCategories}
-                    onSelect={(tool) => {
-                        console.info("Selected tool:", tool);
-                    }}
-                />
+                <div className="tool-hub__search-wrap">
+                    <SearchBar
+                        categories={toolCategories}
+                        onSelect={(tool) => {
+                            console.info("Selected tool:", tool);
+                        }}
+                    />
+                </div>
 
                 <div className="tool-hub__badges">
-                    <span>100% Private</span>
-                    <span>Zero Latency</span>
+                    <div className="tooltip-container">
+                        <span>100% Private</span>
+                        <div className="tooltip-box">
+                            All processing happens locally in your browser. No
+                            files are ever uploaded.
+                        </div>
+                    </div>
+                    <div className="tooltip-container">
+                        <span>Zero Latency</span>
+                        <div className="tooltip-box">
+                            Tools execute instantly on your device without
+                            waiting for server queues.
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <section className="tool-hub__body" aria-label="Tool categories">
+            <section
+                className="tool-hub__body tool-hub__grid"
+                aria-label="Tool categories"
+            >
                 {toolCategories.map((category) => (
                     <div key={category.id} className="tool-category">
                         <h2 className="tool-category__title">{category.name}</h2>

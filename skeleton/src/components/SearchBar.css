@@ -1,10 +1,8 @@
 .search-bar {
   position: relative;
-  z-index: 40;
+  z-index: 50;
   width: min(100%, 520px);
   margin: 0 auto;
-  background-color: #050914;
-  border-radius: 10px;
 }
 
 .search-bar__label {
@@ -23,10 +21,11 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.85rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid #2a3347;
   border-radius: 10px;
-  background-color: #050914;
+  background-color: #0a0f1c !important;
   color: #f8fafc;
+  opacity: 1;
   font-family: "IBM Plex Sans", sans-serif;
   font-size: 0.9375rem;
   line-height: 1.4;
@@ -34,51 +33,117 @@
 }
 
 .search-bar__input::placeholder {
-  color: rgba(248, 250, 252, 0.45);
+  color: #8b95a8;
 }
 
 .search-bar__input:focus {
   outline: none;
-  border-color: rgba(82, 92, 198, 0.55);
-  background-color: #050914;
+  border-color: #525c96;
+  background-color: #0a0f1c !important;
 }
 
-.search-bar .scroll-list-container {
-  z-index: 50;
-}
-
-.search-bar .scroll-list {
-  max-height: 300px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  background-color: #050914;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
-}
-
-.search-bar .scroll-list::-webkit-scrollbar-thumb {
-  border-color: #050914;
-}
-
-.search-bar .item {
-  background-color: #0a0f1a;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.search-bar__empty {
+.search-dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  right: 0;
+  width: 100%;
+  background-color: #050914 !important;
+  border: 1px solid #1a233a;
+  border-radius: 8px;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
   z-index: 50;
-  padding: 0.85rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  background-color: #050914;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
-  color: rgba(248, 250, 252, 0.62);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
+  padding: 8px;
+  box-sizing: border-box;
+  pointer-events: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+  scrollbar-color: #3d4a66 #141b2b;
+}
+
+.search-dropdown-menu .search-bar__suggestion-item {
+  pointer-events: auto;
+}
+
+.search-dropdown-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-dropdown-menu::-webkit-scrollbar-track {
+  background: #141b2b;
+  border-radius: 4px;
+}
+
+.search-dropdown-menu::-webkit-scrollbar-thumb {
+  background: #3d4a66;
+  border-radius: 4px;
+  border: 2px solid #050914;
+}
+
+.search-dropdown-menu > div {
+  height: auto !important;
+  overflow: visible !important;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-dropdown-menu .scroll-list-container {
+  position: static;
+  top: auto;
+  left: auto;
+  right: auto;
+  width: 100%;
+}
+
+.search-dropdown-menu .scroll-list {
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.search-dropdown-menu [data-index] {
+  opacity: 1 !important;
+  margin-bottom: 0 !important;
+}
+
+.search-bar__suggestion-item {
+  padding: 10px 12px;
+  background-color: #0a0f1c !important;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  margin: 0;
+  opacity: 1;
+  transition: background-color 0.15s ease;
+}
+
+.search-bar__suggestion-item:hover,
+.search-bar__suggestion-item.selected {
+  background-color: #1a233a !important;
+  border-color: #525c96;
+}
+
+.search-dropdown-menu .item-text {
+  margin: 0;
+  color: #e8edf5;
   font-family: "IBM Plex Sans", sans-serif;
   font-size: 0.875rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.search-dropdown-menu--empty {
+  color: #8b95a8;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
   text-align: left;
 }

@@ -21,6 +21,7 @@ body {
   font-family: "IBM Plex Sans", sans-serif;
   overflow-x: hidden;
   overflow-y: auto;
+  cursor: none;
 }
 
 button,

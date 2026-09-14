@@ -1,35 +1,18 @@
-.site-header {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  padding: 1.25rem 1.5rem 0;
-  box-sizing: border-box;
-  text-align: center;
-}
-
-.site-header__brand {
-  color: rgba(248, 250, 252, 0.92);
-  font-family: "IBM Plex Sans", sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-decoration: none;
-  text-transform: uppercase;
-  transition: color 0.2s ease;
-}
-
-.site-header__brand:hover {
-  color: #fff;
-}
-
 .tool-hub__intro {
   position: relative;
-  z-index: 2;
+  z-index: 100;
   width: min(920px, 100%);
   margin: 0 auto;
   padding: 1.5rem 1.5rem 2.5rem;
   box-sizing: border-box;
   text-align: center;
+}
+
+.tool-hub__search-wrap {
+  position: relative !important;
+  z-index: 100 !important;
+  transform: translateZ(1px);
+  width: 100%;
 }
 
 .tool-hub__heading-wrap {
@@ -62,9 +45,11 @@
   text-transform: uppercase;
 }
 
-.tool-hub__body {
-  position: relative;
-  z-index: 2;
+.tool-hub__body,
+.tool-hub__grid {
+  position: relative !important;
+  z-index: 1 !important;
+  isolation: isolate;
   width: min(920px, 100%);
   margin: 0 auto;
   padding: 0 1.5rem 5.5rem;
@@ -86,6 +71,9 @@
 }
 
 .tool-category__grid {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
