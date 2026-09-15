@@ -169,6 +169,7 @@ function PixelCard({
     description,
     icon,
     pixelColor,
+    onClick,
     children,
 }) {
     const containerRef = useRef(null);
@@ -315,7 +316,19 @@ function PixelCard({
             onMouseLeave={onMouseLeave}
             onFocus={finalNoFocus ? undefined : onFocus}
             onBlur={finalNoFocus ? undefined : onBlur}
-            tabIndex={finalNoFocus ? -1 : 0}
+            onClick={onClick}
+            onKeyDown={
+                onClick
+                    ? (event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              onClick(event);
+                          }
+                      }
+                    : undefined
+            }
+            role={onClick ? "button" : undefined}
+            tabIndex={onClick ? 0 : finalNoFocus ? -1 : 0}
         >
             <canvas className="pixel-canvas" ref={canvasRef} />
             {(icon || title || description || children) && (

@@ -1,38 +1,18 @@
-import DitherBackground from "./components/Dither";
-import TargetCursor from "./components/TargetCursor";
-import Hero from "./sections/Hero";
-import Footer from "./sections/Footer";
-import IntroScreen from "./components/IntroScreen";
+import { Routes, Route } from "react-router-dom";
+import LandingPage from "./pages/LandingPage";
+import ImageTools from "./pages/ImageTools";
+import TextTools from "./pages/TextTools";
+import DocTools from "./pages/DocTools";
 
 function App() {
-  return (
-    <main className="app">
-      <DitherBackground
-        waveColor={[0.3215686274509804, 0.3607843137254902, 0.7764705882352941]}
-        disableAnimation={false}
-        enableMouseInteraction
-        mouseRadius={0.1}
-        colorNum={6.2}
-        waveAmplitude={0.28}
-        waveFrequency={4.6}
-        waveSpeed={0.04}
-        backgroundColor={[0, 0, 0]}
-      />
-
-      <TargetCursor
-        spinDuration={4}
-        hideDefaultCursor
-        parallaxOn
-        hoverDuration={0.25}
-        cursorColor="#ffffff"
-        cursorColorOnTarget="#bf1c1c"
-      />
-
-      <Hero />
-      <Footer />
-      <IntroScreen />
-    </main>
-  );
+    return (
+        <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/image" element={<ImageTools />} />
+            <Route path="/text" element={<TextTools />} />
+            <Route path="/doc" element={<DocTools />} />
+        </Routes>
+    );
 }
 
 export default App;

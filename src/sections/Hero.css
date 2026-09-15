@@ -42,6 +42,10 @@
   min-height: 420px;
 }
 
+.hero-editor-card--clickable {
+  cursor: pointer;
+}
+
 .hero-subtitle {
   margin: 2rem 0 0;
 

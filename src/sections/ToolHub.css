@@ -1,0 +1,105 @@
+.tool-hub__intro {
+  position: relative;
+  z-index: 100;
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 2.5rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.tool-hub__search-wrap {
+  position: relative !important;
+  z-index: 100 !important;
+  transform: translateZ(1px);
+  width: 100%;
+}
+
+.tool-hub__heading-wrap {
+  width: 100%;
+  min-height: 120px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-hub__subheading {
+  max-width: 640px;
+  margin: 0 auto 1.75rem;
+  color: rgba(248, 250, 252, 0.68);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: clamp(0.95rem, 2vw, 1.05rem);
+  line-height: 1.6;
+}
+
+.tool-hub__badges {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 520px);
+  margin: 1.5rem auto 0;
+  color: rgba(248, 250, 252, 0.55);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.tool-hub__body,
+.tool-hub__grid {
+  position: relative !important;
+  z-index: 1 !important;
+  isolation: isolate;
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 0 1.5rem 5.5rem;
+  box-sizing: border-box;
+}
+
+.tool-category + .tool-category {
+  margin-top: 2.5rem;
+}
+
+.tool-category__title {
+  margin: 0 0 1rem;
+  color: rgba(248, 250, 252, 0.88);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tool-category__grid {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .tool-hub__intro,
+  .tool-hub__body {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .tool-hub__badges {
+    font-size: 0.75rem;
+  }
+
+  .tool-category__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .tool-hub__body {
+    padding-bottom: 1.5rem;
+  }
+}

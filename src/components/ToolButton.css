@@ -1,0 +1,62 @@
+.tool-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* 1. REDUCE SIZE AND PADDING */
+  padding: 1rem; 
+  min-height: 70px; /* Shorter buttons */
+  box-sizing: border-box;
+  
+  /* 2. MAKE REGULAR BUTTONS MORE TRANSPARENT (LESS DARK) */
+  background: rgba(15, 20, 35, 0.4) !important; 
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  color: #94a3b8 !important;
+  transition: all 0.2s ease-out;
+  border-radius: 8px !important;
+  cursor: pointer;
+  width: 100%;
+}
+
+.tool-button:hover {
+  background: rgba(20, 28, 48, 0.6) !important; /* Slightly more visible on hover */
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px); /* Subtler lift */
+}
+
+.tool-button.highlighted {
+  /* KEEP POPULAR BUTTONS DARKER/MORE SOLID SO THEY STAND OUT */
+  background: rgba(10, 14, 26, 0.85) !important; 
+  border: 1px solid rgba(99, 102, 241, 0.6) !important;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2), inset 0 0 8px rgba(99, 102, 241, 0.1) !important;
+  color: #ffffff !important; 
+  font-weight: 500;
+}
+
+.tool-button.highlighted:hover {
+  background: rgba(15, 22, 40, 0.95) !important;
+  border: 1px solid rgba(99, 102, 241, 0.9) !important; 
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4), inset 0 0 12px rgba(99, 102, 241, 0.2) !important;
+  transform: translateY(-2px);
+}
+
+.tool-button__badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.5);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 10;
+}

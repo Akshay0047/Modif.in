@@ -1,0 +1,89 @@
+.tool-hub-layout {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  isolation: isolate;
+}
+
+.tool-hub-layout__background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.tool-hub-layout__background .silk-container {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0;
+}
+
+.tool-hub-layout .app-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 48px !important;
+  background-color: #000000;
+  z-index: 1000;
+  border-bottom: 1px solid #1a233a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 !important;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.tool-hub-layout .app-header__brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tool-hub-layout .tooltip-container {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+}
+
+.tool-hub-layout .tooltip-box {
+  position: absolute;
+  top: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1a233a;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 50;
+  border: 1px solid #3b4252;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.tool-hub-layout .tooltip-container:hover .tooltip-box {
+  opacity: 1;
+  visibility: visible;
+  top: 140%;
+}
+
+@media (max-width: 700px) {
+  .tool-hub-layout .site-footer {
+    position: relative;
+  }
+}
