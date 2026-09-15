@@ -1,9 +1,20 @@
+import { useNavigate } from "react-router-dom";
 import WarpText from "../components/WarpText";
 import SearchBar from "../components/SearchBar";
 import ToolButton from "../components/ToolButton";
 import "./ToolHub.css";
 
 function ToolHub({ title, subheading, toolsData = [] }) {
+    const navigate = useNavigate();
+
+    const handleToolSelect = (tool) => {
+        if (tool?.path) {
+            navigate(tool.path);
+            return;
+        }
+        console.info("Open tool:", tool);
+    };
+
     return (
         <>
             <section className="tool-hub__intro" aria-labelledby="tool-hub-heading">
@@ -27,9 +38,7 @@ function ToolHub({ title, subheading, toolsData = [] }) {
                 <div className="tool-hub__search-wrap">
                     <SearchBar
                         categories={toolsData}
-                        onSelect={(tool) => {
-                            console.info("Selected tool:", tool);
-                        }}
+                        onSelect={handleToolSelect}
                     />
                 </div>
 
@@ -63,12 +72,8 @@ function ToolHub({ title, subheading, toolsData = [] }) {
                                 <ToolButton
                                     key={tool.id}
                                     name={tool.name}
-                                    featured={Boolean(tool.featured)}
-                                    highlighted={Boolean(tool.highlighted)}
                                     isPopular={Boolean(tool.isPopular)}
-                                    onClick={() => {
-                                        console.info("Open tool:", tool);
-                                    }}
+                                    onClick={() => handleToolSelect(tool)}
                                 />
                             ))}
                         </div>
