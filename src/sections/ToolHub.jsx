@@ -18,7 +18,7 @@ function ToolHub({ title, subheading, toolsData = [] }) {
     return (
         <>
             <section className="tool-hub__intro" aria-labelledby="tool-hub-heading">
-                <div className="tool-hub__heading-wrap">
+                <div className="tool-hub__heading-wrap" id="tool-hub-heading">
                     <WarpText
                         text={title}
                         color="#f8fafc"

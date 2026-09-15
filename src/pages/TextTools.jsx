@@ -1,5 +1,5 @@
 import ToolHubLayout from "../layouts/ToolHubLayout";
-import { textToolsData } from "../data/tools";
+import { textToolsData } from "../data/textTools";
 
 function TextTools() {
     return (

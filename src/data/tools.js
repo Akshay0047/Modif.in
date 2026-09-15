@@ -1,7 +1,3 @@
-export { imageToolsData } from "./imageTools.js";
-export { textToolsData } from "./textTools.js";
-export { docToolsData } from "./docTools.js";
-
 export function flattenTools(categories = []) {
     return categories.flatMap((category) =>
         category.tools.map((tool) => ({

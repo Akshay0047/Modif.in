@@ -17,14 +17,6 @@
   pointer-events: none;
 }
 
-.tool-hub-layout__background .silk-container {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  z-index: 0;
-}
-
 .tool-hub-layout .app-header {
   position: sticky;
   top: 0;

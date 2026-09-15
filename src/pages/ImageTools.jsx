@@ -1,5 +1,5 @@
 import ToolHubLayout from "../layouts/ToolHubLayout";
-import { imageToolsData } from "../data/tools";
+import { imageToolsData } from "../data/imageTools";
 
 function ImageTools() {
     return (

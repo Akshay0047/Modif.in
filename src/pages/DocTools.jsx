@@ -1,5 +1,5 @@
 import ToolHubLayout from "../layouts/ToolHubLayout";
-import { docToolsData } from "../data/tools";
+import { docToolsData } from "../data/docTools";
 
 function DocTools() {
     return (

@@ -7,7 +7,13 @@ import ToolHub from "../sections/ToolHub";
 import Footer from "../sections/Footer";
 import "./ToolHubLayout.css";
 
-function ToolHubLayout({ title, subheading, color1, color2, toolsData }) {
+function ToolHubLayout({
+    title,
+    subheading,
+    color1,
+    color2,
+    toolsData = [],
+}) {
     useEffect(() => {
         const html = document.documentElement;
         const body = document.body;

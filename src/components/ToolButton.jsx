@@ -1,23 +1,13 @@
 import "./ToolButton.css";
 
-function ToolButton({
-    name,
-    featured = false,
-    highlighted = false,
-    isPopular = false,
-    onClick,
-}) {
-    const isHighlighted = Boolean(featured || highlighted || isPopular);
-
+function ToolButton({ name, isPopular = false, onClick }) {
     return (
         <button
             type="button"
-            className={`tool-button cursor-target${isHighlighted ? " highlighted" : ""}`}
+            className={`tool-button cursor-target${isPopular ? " highlighted" : ""}`}
             onClick={onClick}
         >
-            {isHighlighted && (
-                <div className="tool-button__badge">Popular</div>
-            )}
+            {isPopular ? <div className="tool-button__badge">Popular</div> : null}
             {name}
         </button>
     );

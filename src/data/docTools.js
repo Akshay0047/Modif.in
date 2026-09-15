@@ -1,14 +1,8 @@
-const PREFIX = "doc";
+import { createTool } from "./createTool.js";
 
-function tool(id, name, category, isPopular = false) {
-    return {
-        id,
-        name,
-        category,
-        isPopular,
-        path: `/${PREFIX}/${id}`,
-    };
-}
+const PREFIX = "doc";
+const tool = (id, name, category, isPopular = false) =>
+    createTool(PREFIX, id, name, category, isPopular);
 
 export const docToolsData = [
     {
