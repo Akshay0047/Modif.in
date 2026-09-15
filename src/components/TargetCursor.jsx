@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useMemo } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { gsap } from "gsap";
 import "./TargetCursor.css";
@@ -71,19 +71,6 @@ const TargetCursor = ({
         [],
     );
 
-    const moveCursor = useCallback((x, y) => {
-        if (!cursorRef.current) return;
-        const { x: offsetX, y: offsetY } = getContainingBlockOffset(
-            containingBlockRef.current,
-        );
-        gsap.to(cursorRef.current, {
-            x: x - offsetX,
-            y: y - offsetY,
-            duration: 0.1,
-            ease: "power3.out",
-        });
-    }, []);
-
     useEffect(() => {
         if (isMobile || !cursorRef.current) return;
 
@@ -103,6 +90,10 @@ const TargetCursor = ({
         let activeTarget = null;
         let currentLeaveHandler = null;
         let resumeTimeout = null;
+        let lastPointer = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+        };
 
         const cleanupTarget = (target) => {
             if (currentLeaveHandler) {
@@ -134,14 +125,21 @@ const TargetCursor = ({
 
         createSpinTimeline();
 
-        const syncCornerPositions = (target, { animate = false } = {}) => {
+        const syncCornerPositions = (
+            target,
+            { animate = false, useTargetCenter = false } = {},
+        ) => {
             if (!target || !cursorRef.current || !cornersRef.current) return;
 
             const rect = target.getBoundingClientRect();
             const { borderWidth, cornerSize } = constants;
             const { x: offsetX, y: offsetY } = getOffset();
-            const cursorX = gsap.getProperty(cursorRef.current, "x");
-            const cursorY = gsap.getProperty(cursorRef.current, "y");
+            const cursorX = useTargetCenter
+                ? rect.left + rect.width / 2 - offsetX
+                : gsap.getProperty(cursorRef.current, "x");
+            const cursorY = useTargetCenter
+                ? rect.top + rect.height / 2 - offsetY
+                : gsap.getProperty(cursorRef.current, "y");
 
             const positions = [
                 {
@@ -183,12 +181,96 @@ const TargetCursor = ({
             });
         };
 
+        const lockCursorToTarget = (target, { animate = false } = {}) => {
+            if (!target || !cursorRef.current) return;
+
+            const rect = target.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const { x: offsetX, y: offsetY } = getOffset();
+            const lockProps = {
+                x: centerX - offsetX,
+                y: centerY - offsetY,
+                width: rect.width,
+                height: rect.height,
+            };
+
+            gsap.killTweensOf(cursorRef.current, "x,y,width,height");
+
+            if (animate) {
+                gsap.to(cursorRef.current, {
+                    ...lockProps,
+                    duration: hoverDuration,
+                    ease: "power2.out",
+                });
+                return;
+            }
+
+            gsap.set(cursorRef.current, lockProps);
+        };
+
+        const moveCursorTo = (x, y, { animate = true } = {}) => {
+            if (!cursorRef.current) return;
+            const { x: offsetX, y: offsetY } = getOffset();
+            const props = {
+                x: x - offsetX,
+                y: y - offsetY,
+            };
+
+            if (animate) {
+                gsap.to(cursorRef.current, {
+                    ...props,
+                    duration: 0.1,
+                    ease: "power3.out",
+                });
+                return;
+            }
+
+            gsap.killTweensOf(cursorRef.current, "x,y");
+            gsap.set(cursorRef.current, props);
+        };
+
+        const moveDotTo = (x, y, { animate = true } = {}) => {
+            if (!dotRef.current || !cursorRef.current) return;
+
+            const { x: offsetX, y: offsetY } = getOffset();
+            const cursorX = gsap.getProperty(cursorRef.current, "x");
+            const cursorY = gsap.getProperty(cursorRef.current, "y");
+            const props = {
+                x: x - offsetX - cursorX,
+                y: y - offsetY - cursorY,
+            };
+
+            if (animate) {
+                gsap.to(dotRef.current, {
+                    ...props,
+                    duration: 0.1,
+                    ease: "power3.out",
+                });
+                return;
+            }
+
+            gsap.killTweensOf(dotRef.current, "x,y");
+            gsap.set(dotRef.current, props);
+        };
+
+        const resetDotPosition = () => {
+            if (!dotRef.current) return;
+            gsap.killTweensOf(dotRef.current, "x,y");
+            gsap.set(dotRef.current, { x: 0, y: 0 });
+        };
+
         const resetActiveTarget = () => {
             if (!activeTarget) return;
 
             const target = activeTarget;
             isActiveRef.current = false;
             activeTarget = null;
+
+            gsap.killTweensOf(cursorRef.current, "x,y,width,height");
+            gsap.set(cursorRef.current, { width: 0, height: 0 });
+            resetDotPosition();
+            moveCursorTo(lastPointer.x, lastPointer.y, { animate: false });
 
             if (cursorColorOnTarget && cornersRef.current) {
                 gsap.to(Array.from(cornersRef.current), {
@@ -263,25 +345,39 @@ const TargetCursor = ({
         };
 
         const moveHandler = (e) => {
-            moveCursor(e.clientX, e.clientY);
+            lastPointer.x = e.clientX;
+            lastPointer.y = e.clientY;
 
-            if (!activeTarget) return;
+            if (activeTarget) {
+                if (!document.body.contains(activeTarget)) {
+                    resetActiveTarget();
+                    return;
+                }
+
+                moveDotTo(e.clientX, e.clientY);
+                return;
+            }
+
+            moveCursorTo(e.clientX, e.clientY);
+        };
+        window.addEventListener("mousemove", moveHandler);
+
+        const scrollHandler = () => {
+            if (!activeTarget || !cursorRef.current) return;
 
             if (!document.body.contains(activeTarget)) {
                 resetActiveTarget();
                 return;
             }
 
-            syncCornerPositions(activeTarget);
-        };
-        window.addEventListener("mousemove", moveHandler);
+            lockCursorToTarget(activeTarget);
+            syncCornerPositions(activeTarget, { useTargetCenter: true });
+            moveDotTo(lastPointer.x, lastPointer.y, { animate: false });
 
-        const scrollHandler = () => {
-            if (!activeTarget || !cursorRef.current) return;
-            const { x: offsetX, y: offsetY } = getOffset();
-            const mouseX = gsap.getProperty(cursorRef.current, "x") + offsetX;
-            const mouseY = gsap.getProperty(cursorRef.current, "y") + offsetY;
-            const elementUnderMouse = document.elementFromPoint(mouseX, mouseY);
+            const elementUnderMouse = document.elementFromPoint(
+                lastPointer.x,
+                lastPointer.y,
+            );
             const isStillOverTarget =
                 elementUnderMouse &&
                 (elementUnderMouse === activeTarget ||
@@ -371,7 +467,12 @@ const TargetCursor = ({
             }
 
             isActiveRef.current = true;
-            syncCornerPositions(target, { animate: true });
+            lockCursorToTarget(target, { animate: true });
+            syncCornerPositions(target, {
+                animate: true,
+                useTargetCenter: true,
+            });
+            moveDotTo(lastPointer.x, lastPointer.y, { animate: false });
 
             const leaveHandler = () => {
                 resetActiveTarget();
@@ -385,6 +486,11 @@ const TargetCursor = ({
 
         const resizeHandler = () => {
             containingBlockRef.current = getContainingBlock(cursor);
+            if (activeTarget && document.body.contains(activeTarget)) {
+                lockCursorToTarget(activeTarget);
+                syncCornerPositions(activeTarget, { useTargetCenter: true });
+                moveDotTo(lastPointer.x, lastPointer.y, { animate: false });
+            }
         };
         window.addEventListener("resize", resizeHandler);
 
@@ -419,7 +525,6 @@ const TargetCursor = ({
     }, [
         targetSelector,
         spinDuration,
-        moveCursor,
         constants,
         hideDefaultCursor,
         isMobile,

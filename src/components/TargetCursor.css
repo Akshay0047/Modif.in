@@ -14,8 +14,8 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 4px;
-  height: 4px;
+  width: 12px;
+  height: 12px;
   background: #fff;
   border-radius: 50%;
   transform: translate(-50%, -50%);
