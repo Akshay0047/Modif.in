@@ -49,9 +49,6 @@ const TargetCursor = ({
     const containingBlockRef = useRef(null);
 
     const isActiveRef = useRef(false);
-    const targetCornerPositionsRef = useRef(null);
-    const tickerFnRef = useRef(null);
-    const activeStrengthRef = useRef(0);
 
     const isMobile = useMemo(() => {
         if (typeof window === "undefined") return false;
@@ -137,48 +134,146 @@ const TargetCursor = ({
 
         createSpinTimeline();
 
-        const tickerFn = () => {
-            if (
-                !targetCornerPositionsRef.current ||
-                !cursorRef.current ||
-                !cornersRef.current
-            ) {
-                return;
-            }
+        const syncCornerPositions = (target, { animate = false } = {}) => {
+            if (!target || !cursorRef.current || !cornersRef.current) return;
 
-            const strength = activeStrengthRef.current;
-            if (strength === 0) return;
-
+            const rect = target.getBoundingClientRect();
+            const { borderWidth, cornerSize } = constants;
+            const { x: offsetX, y: offsetY } = getOffset();
             const cursorX = gsap.getProperty(cursorRef.current, "x");
             const cursorY = gsap.getProperty(cursorRef.current, "y");
 
+            const positions = [
+                {
+                    x: rect.left - borderWidth - offsetX - cursorX,
+                    y: rect.top - borderWidth - offsetY - cursorY,
+                },
+                {
+                    x: rect.right + borderWidth - cornerSize - offsetX - cursorX,
+                    y: rect.top - borderWidth - offsetY - cursorY,
+                },
+                {
+                    x: rect.right + borderWidth - cornerSize - offsetX - cursorX,
+                    y: rect.bottom + borderWidth - cornerSize - offsetY - cursorY,
+                },
+                {
+                    x: rect.left - borderWidth - offsetX - cursorX,
+                    y: rect.bottom + borderWidth - cornerSize - offsetY - cursorY,
+                },
+            ];
+
             const corners = Array.from(cornersRef.current);
-            corners.forEach((corner, i) => {
-                const currentX = gsap.getProperty(corner, "x");
-                const currentY = gsap.getProperty(corner, "y");
+            corners.forEach((corner, index) => {
+                if (animate) {
+                    gsap.to(corner, {
+                        x: positions[index].x,
+                        y: positions[index].y,
+                        duration: hoverDuration,
+                        ease: "power2.out",
+                        overwrite: "auto",
+                    });
+                    return;
+                }
 
-                const targetX = targetCornerPositionsRef.current[i].x - cursorX;
-                const targetY = targetCornerPositionsRef.current[i].y - cursorY;
-
-                const finalX = currentX + (targetX - currentX) * strength;
-                const finalY = currentY + (targetY - currentY) * strength;
-
-                const duration =
-                    strength >= 0.99 ? (parallaxOn ? 0.2 : 0) : 0.05;
-
-                gsap.to(corner, {
-                    x: finalX,
-                    y: finalY,
-                    duration: duration,
-                    ease: duration === 0 ? "none" : "power1.out",
-                    overwrite: "auto",
+                gsap.killTweensOf(corner, "x,y");
+                gsap.set(corner, {
+                    x: positions[index].x,
+                    y: positions[index].y,
                 });
             });
         };
 
-        tickerFnRef.current = tickerFn;
+        const resetActiveTarget = () => {
+            if (!activeTarget) return;
 
-        const moveHandler = (e) => moveCursor(e.clientX, e.clientY);
+            const target = activeTarget;
+            isActiveRef.current = false;
+            activeTarget = null;
+
+            if (cursorColorOnTarget && cornersRef.current) {
+                gsap.to(Array.from(cornersRef.current), {
+                    borderColor: cursorColor,
+                    duration: 0.15,
+                    ease: "power2.out",
+                });
+                if (dotRef.current) {
+                    gsap.to(dotRef.current, {
+                        backgroundColor: cursorColor,
+                        duration: 0.15,
+                        ease: "power2.out",
+                    });
+                }
+            }
+
+            if (cornersRef.current) {
+                const corners = Array.from(cornersRef.current);
+                gsap.killTweensOf(corners, "x,y");
+                const { cornerSize } = constants;
+                const positions = [
+                    { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
+                    { x: cornerSize * 0.5, y: cornerSize * 0.5 },
+                    { x: -cornerSize * 1.5, y: cornerSize * 0.5 },
+                ];
+                const tl = gsap.timeline();
+                corners.forEach((corner, index) => {
+                    tl.to(
+                        corner,
+                        {
+                            x: positions[index].x,
+                            y: positions[index].y,
+                            duration: 0.3,
+                            ease: "power3.out",
+                        },
+                        0,
+                    );
+                });
+            }
+
+            resumeTimeout = setTimeout(() => {
+                if (!activeTarget && cursorRef.current && spinTl.current) {
+                    const currentRotation = gsap.getProperty(
+                        cursorRef.current,
+                        "rotation",
+                    );
+                    const normalizedRotation = currentRotation % 360;
+                    spinTl.current.kill();
+                    spinTl.current = gsap
+                        .timeline({ repeat: -1 })
+                        .to(cursorRef.current, {
+                            rotation: "+=360",
+                            duration: spinDuration,
+                            ease: "none",
+                        });
+                    gsap.to(cursorRef.current, {
+                        rotation: normalizedRotation + 360,
+                        duration:
+                            spinDuration * (1 - normalizedRotation / 360),
+                        ease: "none",
+                        onComplete: () => {
+                            spinTl.current?.restart();
+                        },
+                    });
+                }
+                resumeTimeout = null;
+            }, 50);
+
+            cleanupTarget(target);
+            currentLeaveHandler = null;
+        };
+
+        const moveHandler = (e) => {
+            moveCursor(e.clientX, e.clientY);
+
+            if (!activeTarget) return;
+
+            if (!document.body.contains(activeTarget)) {
+                resetActiveTarget();
+                return;
+            }
+
+            syncCornerPositions(activeTarget);
+        };
         window.addEventListener("mousemove", moveHandler);
 
         const scrollHandler = () => {
@@ -192,12 +287,29 @@ const TargetCursor = ({
                 (elementUnderMouse === activeTarget ||
                     elementUnderMouse.closest(targetSelector) === activeTarget);
             if (!isStillOverTarget) {
-                if (currentLeaveHandler) {
-                    currentLeaveHandler();
-                }
+                resetActiveTarget();
             }
         };
         window.addEventListener("scroll", scrollHandler, { passive: true });
+
+        const clickHandler = () => {
+            requestAnimationFrame(() => {
+                if (activeTarget && !document.body.contains(activeTarget)) {
+                    resetActiveTarget();
+                }
+            });
+        };
+        window.addEventListener("click", clickHandler, true);
+
+        const mutationObserver = new MutationObserver(() => {
+            if (activeTarget && !document.body.contains(activeTarget)) {
+                resetActiveTarget();
+            }
+        });
+        mutationObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
 
         const mouseDownHandler = () => {
             if (!dotRef.current) return;
@@ -258,126 +370,11 @@ const TargetCursor = ({
                 }
             }
 
-            const rect = target.getBoundingClientRect();
-            const { borderWidth, cornerSize } = constants;
-            const { x: offsetX, y: offsetY } = getOffset();
-            const cursorX = gsap.getProperty(cursorRef.current, "x");
-            const cursorY = gsap.getProperty(cursorRef.current, "y");
-
-            targetCornerPositionsRef.current = [
-                {
-                    x: rect.left - borderWidth - offsetX,
-                    y: rect.top - borderWidth - offsetY,
-                },
-                {
-                    x: rect.right + borderWidth - cornerSize - offsetX,
-                    y: rect.top - borderWidth - offsetY,
-                },
-                {
-                    x: rect.right + borderWidth - cornerSize - offsetX,
-                    y: rect.bottom + borderWidth - cornerSize - offsetY,
-                },
-                {
-                    x: rect.left - borderWidth - offsetX,
-                    y: rect.bottom + borderWidth - cornerSize - offsetY,
-                },
-            ];
-
             isActiveRef.current = true;
-            gsap.ticker.add(tickerFnRef.current);
-
-            gsap.to(activeStrengthRef, {
-                current: 1,
-                duration: hoverDuration,
-                ease: "power2.out",
-            });
-
-            corners.forEach((corner, i) => {
-                gsap.to(corner, {
-                    x: targetCornerPositionsRef.current[i].x - cursorX,
-                    y: targetCornerPositionsRef.current[i].y - cursorY,
-                    duration: 0.2,
-                    ease: "power2.out",
-                });
-            });
+            syncCornerPositions(target, { animate: true });
 
             const leaveHandler = () => {
-                gsap.ticker.remove(tickerFnRef.current);
-
-                isActiveRef.current = false;
-                targetCornerPositionsRef.current = null;
-                gsap.set(activeStrengthRef, { current: 0, overwrite: true });
-                activeTarget = null;
-
-                if (cursorColorOnTarget && cornersRef.current) {
-                    gsap.to(Array.from(cornersRef.current), {
-                        borderColor: cursorColor,
-                        duration: 0.15,
-                        ease: "power2.out",
-                    });
-                    if (dotRef.current) {
-                        gsap.to(dotRef.current, {
-                            backgroundColor: cursorColor,
-                            duration: 0.15,
-                            ease: "power2.out",
-                        });
-                    }
-                }
-
-                if (cornersRef.current) {
-                    const corners = Array.from(cornersRef.current);
-                    gsap.killTweensOf(corners, "x,y");
-                    const { cornerSize } = constants;
-                    const positions = [
-                        { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
-                        { x: cornerSize * 0.5, y: -cornerSize * 1.5 },
-                        { x: cornerSize * 0.5, y: cornerSize * 0.5 },
-                        { x: -cornerSize * 1.5, y: cornerSize * 0.5 },
-                    ];
-                    const tl = gsap.timeline();
-                    corners.forEach((corner, index) => {
-                        tl.to(
-                            corner,
-                            {
-                                x: positions[index].x,
-                                y: positions[index].y,
-                                duration: 0.3,
-                                ease: "power3.out",
-                            },
-                            0,
-                        );
-                    });
-                }
-
-                resumeTimeout = setTimeout(() => {
-                    if (!activeTarget && cursorRef.current && spinTl.current) {
-                        const currentRotation = gsap.getProperty(
-                            cursorRef.current,
-                            "rotation",
-                        );
-                        const normalizedRotation = currentRotation % 360;
-                        spinTl.current.kill();
-                        spinTl.current = gsap
-                            .timeline({ repeat: -1 })
-                            .to(cursorRef.current, {
-                                rotation: "+=360",
-                                duration: spinDuration,
-                                ease: "none",
-                            });
-                        gsap.to(cursorRef.current, {
-                            rotation: normalizedRotation + 360,
-                            duration:
-                                spinDuration * (1 - normalizedRotation / 360),
-                            ease: "none",
-                            onComplete: () => {
-                                spinTl.current?.restart();
-                            },
-                        });
-                    }
-                    resumeTimeout = null;
-                }, 50);
-
-                cleanupTarget(target);
+                resetActiveTarget();
             };
 
             currentLeaveHandler = leaveHandler;
@@ -392,33 +389,32 @@ const TargetCursor = ({
         window.addEventListener("resize", resizeHandler);
 
         return () => {
-            if (tickerFnRef.current) {
-                gsap.ticker.remove(tickerFnRef.current);
-            }
-
+            mutationObserver.disconnect();
             window.removeEventListener("mousemove", moveHandler);
             window.removeEventListener("mouseover", enterHandler);
             window.removeEventListener("scroll", scrollHandler);
+            window.removeEventListener("click", clickHandler, true);
             window.removeEventListener("resize", resizeHandler);
             window.removeEventListener("mousedown", mouseDownHandler);
             window.removeEventListener("mouseup", mouseUpHandler);
 
+            if (resumeTimeout) {
+                clearTimeout(resumeTimeout);
+            }
+
             if (activeTarget) {
                 cleanupTarget(activeTarget);
+                activeTarget = null;
             }
 
             spinTl.current?.kill();
 
-            const originalCursor = document.body.style.cursor;
-
             if (hideDefaultCursor) {
-                document.body.style.cursor = "none";
-                document.body.classList.add("target-cursor-active");
+                document.body.style.cursor = originalCursor;
+                document.body.classList.remove("target-cursor-active");
             }
 
             isActiveRef.current = false;
-            targetCornerPositionsRef.current = null;
-            activeStrengthRef.current = 0;
         };
     }, [
         targetSelector,
@@ -428,7 +424,6 @@ const TargetCursor = ({
         hideDefaultCursor,
         isMobile,
         hoverDuration,
-        parallaxOn,
         cursorColor,
         cursorColorOnTarget,
     ]);
