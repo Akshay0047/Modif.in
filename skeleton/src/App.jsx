@@ -9,7 +9,12 @@ import "./App.css";
 function App() {
     return (
         <main className="app">
-            <Silk speed={5} scale={1} noiseIntensity={1.5} />
+            <Silk
+                speed={5}
+                scale={1}
+                noiseIntensity={1.5}
+                color="#7B7481"
+            />
 
             <TargetCursor
                 spinDuration={4}

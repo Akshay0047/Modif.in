@@ -67,6 +67,8 @@ function ToolHub() {
                                     key={tool.id}
                                     name={tool.name}
                                     featured={Boolean(tool.featured)}
+                                    highlighted={Boolean(tool.highlighted)}
+                                    isPopular={Boolean(tool.isPopular)}
                                     onClick={() => {
                                         console.info("Open tool:", tool);
                                     }}

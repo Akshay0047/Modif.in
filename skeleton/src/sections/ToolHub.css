@@ -76,7 +76,7 @@
   isolation: isolate;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.85rem;
+  gap: 1.5rem;
 }
 
 @media (max-width: 768px) {
