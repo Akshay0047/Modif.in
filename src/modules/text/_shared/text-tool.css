@@ -330,6 +330,118 @@
   line-height: 1.5;
 }
 
+.text-tool-search {
+  margin-bottom: 1rem;
+}
+
+.text-tool-symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 0.5rem;
+}
+
+.text-tool-expression-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.text-tool-symbol-button,
+.text-tool-expression-card {
+  background: rgba(15, 20, 35, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.text-tool-symbol-button {
+  min-height: 56px;
+  padding: 0.5rem;
+  font-size: 1.35rem;
+}
+
+.text-tool-symbol-button:hover,
+.text-tool-expression-card:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.12);
+  transform: translateY(-1px);
+}
+
+.text-tool-symbol-button.is-selected {
+  border-color: rgba(16, 185, 129, 0.65);
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.text-tool-expression-card {
+  padding: 0.875rem 1rem;
+  text-align: left;
+}
+
+.text-tool-expression-card__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.text-tool-expression-card__value {
+  color: #f8fafc;
+  font-size: 1rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.text-tool-info-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.text-tool-info-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.text-tool-info-row:last-child {
+  border-bottom: none;
+}
+
+.text-tool-info-row__label {
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.text-tool-info-row__value {
+  color: #f8fafc;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.text-tool-preview-box {
+  min-height: 120px;
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  background: rgba(15, 20, 35, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (max-width: 768px) {
   .text-tool-page {
     padding-left: 1rem;
