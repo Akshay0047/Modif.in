@@ -34,15 +34,15 @@ function ToolHubLayout({
             rootHeight: root?.style.height ?? "",
         };
 
-        html.style.overflowX = "hidden";
+        html.style.overflowX = "clip";
         html.style.overflowY = "auto";
         html.style.height = "auto";
-        body.style.overflowX = "hidden";
+        body.style.overflowX = "clip";
         body.style.overflowY = "auto";
         body.style.height = "auto";
 
         if (root) {
-            root.style.overflowX = "hidden";
+            root.style.overflowX = "clip";
             root.style.overflowY = "auto";
             root.style.height = "auto";
             root.style.minHeight = "100%";
