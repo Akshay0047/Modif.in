@@ -7,7 +7,7 @@ import Footer from "../../../sections/Footer";
 import "../../../layouts/ToolHubLayout.css";
 import "./text-tool.css";
 
-function TextToolShell({ title, description, children }) {
+function TextToolShell({ title, description, leading, children }) {
     useEffect(() => {
         const html = document.documentElement;
         const body = document.body;
@@ -116,6 +116,7 @@ function TextToolShell({ title, description, children }) {
             </header>
 
             <section className="text-tool-page" aria-label={title}>
+                {leading}
                 <header className="text-tool-page__header">
                     <h1 className="text-tool-page__title">{title}</h1>
                     {description ? (

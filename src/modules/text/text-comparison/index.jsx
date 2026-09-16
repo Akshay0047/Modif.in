@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import BackButton from "../../../components/BackButton";
 import TextToolShell from "../_shared/TextToolShell";
 import { diffTexts } from "../_shared/textMetrics";
 
@@ -16,6 +17,7 @@ function TextComparison() {
         <TextToolShell
             title="Text Comparison"
             description="Compare two texts side by side with word-level or character-level diffs."
+            leading={<BackButton />}
         >
             <div className="text-tool-panel">
                 <div className="text-tool-controls">

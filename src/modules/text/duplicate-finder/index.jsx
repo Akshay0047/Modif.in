@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import BackButton from "../../../components/BackButton";
 import TextToolShell from "../_shared/TextToolShell";
 import {
     findDuplicateLines,
@@ -28,6 +29,7 @@ function DuplicateFinder() {
         <TextToolShell
             title="Duplicate Finder"
             description="Find repeated words, sentences, and lines in your text."
+            leading={<BackButton />}
         >
             <div className="text-tool-panel">
                 <label

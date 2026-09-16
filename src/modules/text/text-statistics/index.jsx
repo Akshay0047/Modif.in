@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import BackButton from "../../../components/BackButton";
 import TextToolShell from "../_shared/TextToolShell";
 import {
     computeReadabilityStats,
@@ -34,6 +35,7 @@ function TextStatistics() {
         <TextToolShell
             title="Text Statistics"
             description="Analyze averages, frequency distributions, and basic readability metrics."
+            leading={<BackButton />}
         >
             <div className="text-tool-panel">
                 <label

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import BackButton from "../../../components/BackButton";
 import TextToolShell from "../_shared/TextToolShell";
 import {
     countCharacters,
@@ -36,6 +37,7 @@ function TextCounter() {
         <TextToolShell
             title="Text Counter"
             description="Measure words, characters, sentences, paragraphs, and lines in real time."
+            leading={<BackButton />}
         >
             <div className="text-tool-panel">
                 <label className="text-tool-label" htmlFor="text-counter-input">

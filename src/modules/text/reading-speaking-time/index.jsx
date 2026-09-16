@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import BackButton from "../../../components/BackButton";
 import TextToolShell from "../_shared/TextToolShell";
 import { countWords } from "../_shared/textMetrics";
 
@@ -30,6 +31,7 @@ function ReadingSpeakingTime() {
         <TextToolShell
             title="Reading or Speaking Time"
             description="Estimate how long it takes to read or speak your text at adjustable speeds."
+            leading={<BackButton />}
         >
             <div className="text-tool-panel">
                 <label

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import BackButton from "../../../components/BackButton";
 import TextToolShell from "../_shared/TextToolShell";
 import { analyzeWhitespace } from "../_shared/textMetrics";
 
@@ -26,6 +27,7 @@ function WhitespaceAnalyzer() {
         <TextToolShell
             title="Whitespace Analyzer"
             description="Inspect leading, trailing, consecutive, and unusual whitespace in your text."
+            leading={<BackButton />}
         >
             <div className="text-tool-panel">
                 <label
