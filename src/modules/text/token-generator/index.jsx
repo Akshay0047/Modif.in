@@ -1,7 +1,90 @@
-import ToolPagePlaceholder from "../../../layouts/ToolPagePlaceholder";
+import { useMemo, useState } from "react";
+import BackButton from "../../../components/BackButton";
+import CopyButton from "../_shared/CopyButton";
+import TextToolShell from "../_shared/TextToolShell";
+import {
+    generateApiToken,
+    generateHexToken,
+    generateRandomString,
+} from "../_shared/generatorUtils";
 
 function TokenGenerator() {
-    return <ToolPagePlaceholder module="text" toolName="Token Generator" />;
+    const [type, setType] = useState("random");
+    const [length, setLength] = useState(32);
+    const [seed, setSeed] = useState(0);
+
+    const output = useMemo(() => {
+        switch (type) {
+            case "api":
+                return generateApiToken(length);
+            case "hex":
+                return generateHexToken(Math.max(8, Math.ceil(length / 2)));
+            default:
+                return generateRandomString(length, "alphanumeric");
+        }
+    }, [type, length, seed]);
+
+    return (
+        <TextToolShell
+            title="Token Generator"
+            description="Generate random strings, API-style tokens, and hex tokens."
+            leading={<BackButton />}
+        >
+            <div className="text-tool-panel">
+                <div className="text-tool-controls">
+                    {[
+                        ["random", "Random strings"],
+                        ["api", "API-style tokens"],
+                        ["hex", "Hex tokens"],
+                    ].map(([id, label]) => (
+                        <button
+                            key={id}
+                            type="button"
+                            className={`text-tool-button cursor-target${
+                                type === id ? " is-active" : ""
+                            }`}
+                            onClick={() => setType(id)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                    <button
+                        type="button"
+                        className="text-tool-button cursor-target"
+                        onClick={() => setSeed((value) => value + 1)}
+                    >
+                        Regenerate
+                    </button>
+                </div>
+
+                <label className="text-tool-label" htmlFor="token-length">
+                    Length: {length}
+                </label>
+                <input
+                    id="token-length"
+                    className="text-tool-range"
+                    type="range"
+                    min={8}
+                    max={128}
+                    value={length}
+                    onChange={(event) => setLength(Number(event.target.value))}
+                />
+            </div>
+
+            <div className="text-tool-panel">
+                <div className="text-tool-output-header">
+                    <h2 className="text-tool-section-title">Generated token</h2>
+                    <CopyButton text={output} />
+                </div>
+                <textarea
+                    className="text-tool-textarea"
+                    value={output}
+                    readOnly
+                    aria-label="Generated token"
+                />
+            </div>
+        </TextToolShell>
+    );
 }
 
 export default TokenGenerator;
