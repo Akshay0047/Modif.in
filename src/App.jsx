@@ -3,6 +3,7 @@ import LandingPage from "./pages/LandingPage";
 import ImageTools from "./pages/ImageTools";
 import TextTools from "./pages/TextTools";
 import DocTools from "./pages/DocTools";
+import { useModuleScrollbarTheme } from "./hooks/useModuleScrollbarTheme";
 
 // Auto-register every tool subpage placed under src/modules/<module>/<slug>/index.jsx.
 // The module directory name maps to the route prefix used by each tool's `path`
@@ -36,6 +37,8 @@ const toolRoutes = Object.entries(toolPageModules)
     .filter(Boolean);
 
 function App() {
+    useModuleScrollbarTheme();
+
     return (
         <Routes>
             <Route path="/" element={<LandingPage />} />
