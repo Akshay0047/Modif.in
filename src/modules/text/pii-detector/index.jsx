@@ -12,7 +12,7 @@ function PiiDetector() {
     const findings = useMemo(() => detectPii(text), [text]);
 
     return (
-        <TextToolShell title="PII Detector" description="Find emails, URLs, phone numbers, and IP addresses in text." leading={<BackButton />}>
+        <TextToolShell title="PII Detector" description="Find emails, URLs, phone numbers, and IP addresses in text." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
                 <textarea className="text-tool-textarea" value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
             </div>

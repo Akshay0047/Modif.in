@@ -23,7 +23,7 @@ function ClassicalCipherTools() {
     }, [input, cipher, shift]);
 
     return (
-        <TextToolShell title="Classical Cipher Tools" description="Apply ROT13, Caesar cipher, and Atbash transformations to text." leading={<BackButton />}>
+        <TextToolShell title="Classical Cipher Tools" description="Apply ROT13, Caesar cipher, and Atbash transformations to text." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     <button type="button" className={`text-tool-button cursor-target${cipher === "rot13" ? " is-active" : ""}`} onClick={() => setCipher("rot13")}>ROT13</button>

@@ -40,6 +40,7 @@ function RandomGenerator() {
             title="Random Generator"
             description="Generate random words, numbers, sentences, and names on demand."
             leading={<BackButton />}
+            privacySensitive
         >
             <div className="text-tool-panel">
                 <div className="text-tool-controls">

@@ -5,10 +5,17 @@ import DepthText from "../../../components/DepthText";
 import TargetCursor from "../../../components/TargetCursor";
 import Footer from "../../../sections/Footer";
 import "../../../layouts/ToolHubLayout.css";
+import LocalSecurityDisclaimer from "./LocalSecurityDisclaimer";
 import { insertTabAtCursor } from "./textInputUtils";
 import "./text-tool.css";
 
-function TextToolShell({ title, description, leading, children }) {
+function TextToolShell({
+    title,
+    description,
+    leading,
+    privacySensitive = false,
+    children,
+}) {
     useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.key !== "Tab" || event.shiftKey) return;
@@ -136,6 +143,7 @@ function TextToolShell({ title, description, leading, children }) {
                         </p>
                     ) : null}
                 </header>
+                {privacySensitive ? <LocalSecurityDisclaimer /> : null}
                 {children}
             </section>
 

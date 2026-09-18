@@ -29,6 +29,22 @@
   line-height: 1.6;
 }
 
+.text-tool-privacy-disclaimer {
+  margin: 0 0 1.25rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.text-tool-privacy-disclaimer__text {
+  margin: 0;
+  color: #d1fae5;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
 .text-tool-panel {
   background: rgba(15, 20, 35, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);

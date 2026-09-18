@@ -30,6 +30,7 @@ function UuidIdGenerator() {
             title="UUID / ID Generator"
             description="Generate UUID, ULID, and NanoID identifiers for apps and databases."
             leading={<BackButton />}
+            privacySensitive
         >
             <div className="text-tool-panel">
                 <div className="text-tool-controls">

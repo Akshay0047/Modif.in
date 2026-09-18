@@ -41,7 +41,7 @@ function HashGenerator() {
     }, [input, algorithm]);
 
     return (
-        <TextToolShell title="Hash Generator" description="Generate MD5, SHA-1, SHA-256, and SHA-512 hashes from text." leading={<BackButton />}>
+        <TextToolShell title="Hash Generator" description="Generate MD5, SHA-1, SHA-256, and SHA-512 hashes from text." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     {ALGORITHMS.map((entry) => (

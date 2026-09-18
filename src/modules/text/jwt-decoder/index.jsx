@@ -19,6 +19,7 @@ function JwtDecoder() {
             title="JWT Decoder"
             description="Decode JSON Web Tokens to inspect the header, payload, expiration, and claims."
             leading={<BackButton />}
+            privacySensitive
         >
             <div className="text-tool-panel">
                 <label className="text-tool-label" htmlFor="jwt-decoder-input">

@@ -29,6 +29,7 @@ function TokenGenerator() {
             title="Token Generator"
             description="Generate random strings, API-style tokens, and hex tokens."
             leading={<BackButton />}
+            privacySensitive
         >
             <div className="text-tool-panel">
                 <div className="text-tool-controls">

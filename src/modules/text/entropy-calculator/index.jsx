@@ -10,7 +10,7 @@ function EntropyCalculator() {
     const result = useMemo(() => calculateEntropy(input), [input]);
 
     return (
-        <TextToolShell title="Entropy Calculator" description="Estimate password entropy based on length and character set size." leading={<BackButton />}>
+        <TextToolShell title="Entropy Calculator" description="Estimate password entropy based on length and character set size." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
                 <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter text or a password…" spellCheck={false} />
             </div>

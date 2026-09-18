@@ -12,7 +12,7 @@ function PasswordStrengthChecker() {
     );
 
     return (
-        <TextToolShell title="Password Strength Checker" description="Analyze password length, character variety, and overall strength." leading={<BackButton />}>
+        <TextToolShell title="Password Strength Checker" description="Analyze password length, character variety, and overall strength." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
                 <input className="text-tool-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a password to analyze" />
             </div>

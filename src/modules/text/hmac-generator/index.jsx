@@ -42,7 +42,7 @@ function HmacGenerator() {
     }, [message, secret, algorithm]);
 
     return (
-        <TextToolShell title="HMAC Generator" description="Generate HMAC signatures from a message and secret key." leading={<BackButton />}>
+        <TextToolShell title="HMAC Generator" description="Generate HMAC signatures from a message and secret key." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     {ALGORITHMS.map((entry) => (

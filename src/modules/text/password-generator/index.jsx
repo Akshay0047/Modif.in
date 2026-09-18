@@ -56,6 +56,7 @@ function PasswordGenerator() {
             title="Password Generator"
             description="Generate secure passwords and passphrases with customizable length and character sets."
             leading={<BackButton />}
+            privacySensitive
         >
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
