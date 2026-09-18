@@ -1,7 +1,3 @@
-import ToolPagePlaceholder from "../../../layouts/ToolPagePlaceholder";
+import { createImagePlaceholder } from "../_shared/createImagePlaceholder";
 
-function ColorAdjustments() {
-    return <ToolPagePlaceholder module="image" toolName="Color Adjustments" />;
-}
-
-export default ColorAdjustments;
+export default createImagePlaceholder("Color Adjustments");

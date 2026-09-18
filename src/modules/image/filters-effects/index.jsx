@@ -1,7 +1,3 @@
-import ToolPagePlaceholder from "../../../layouts/ToolPagePlaceholder";
+import { createImagePlaceholder } from "../_shared/createImagePlaceholder";
 
-function FiltersEffects() {
-    return <ToolPagePlaceholder module="image" toolName="Filters & Effects" />;
-}
-
-export default FiltersEffects;
+export default createImagePlaceholder("Filters & Effects");

@@ -1,7 +1,3 @@
-import ToolPagePlaceholder from "../../../layouts/ToolPagePlaceholder";
+import { createImagePlaceholder } from "../_shared/createImagePlaceholder";
 
-function ImageSplitter() {
-    return <ToolPagePlaceholder module="image" toolName="Image Splitter" />;
-}
-
-export default ImageSplitter;
+export default createImagePlaceholder("Image Splitter");

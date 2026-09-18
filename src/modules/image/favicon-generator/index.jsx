@@ -1,7 +1,3 @@
-import ToolPagePlaceholder from "../../../layouts/ToolPagePlaceholder";
+import { createImagePlaceholder } from "../_shared/createImagePlaceholder";
 
-function FaviconGenerator() {
-    return <ToolPagePlaceholder module="image" toolName="Favicon Generator" />;
-}
-
-export default FaviconGenerator;
+export default createImagePlaceholder("Favicon Generator");

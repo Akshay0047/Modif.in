@@ -1,0 +1,34 @@
+.image-tool-page {
+  position: relative;
+  z-index: 1;
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 6rem;
+  box-sizing: border-box;
+}
+
+.image-tool-placeholder {
+  background: rgba(15, 20, 35, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.image-tool-placeholder__title {
+  margin: 0 0 0.75rem;
+  color: #ffffff;
+  font-family: Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: -0.02em;
+}
+
+.image-tool-placeholder__note {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
