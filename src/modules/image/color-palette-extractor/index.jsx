@@ -17,9 +17,33 @@ import {copyTextToClipboard,
 
 const MAX_BYTES = 30 * MB;
 
+function rgbToHslString(r, g, b) {
+    const rn = r / 255;
+    const gn = g / 255;
+    const bn = b / 255;
+    const max = Math.max(rn, gn, bn);
+    const min = Math.min(rn, gn, bn);
+    const l = (max + min) / 2;
+    if (max === min) return `hsl(0, 0%, ${Math.round(l * 100)}%)`;
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h;
+    if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6;
+    else if (max === gn) h = ((bn - rn) / d + 2) / 6;
+    else h = ((rn - gn) / d + 4) / 6;
+    return `hsl(${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`;
+}
+
+function formatColorValue(color, format) {
+    if (format === "rgb") return color.rgb;
+    if (format === "hsl") return rgbToHslString(color.r, color.g, color.b);
+    return color.hex;
+}
+
 function ColorPaletteExtractor() {
     const [colors, setColors] = useState([]);
     const [colorCount, setColorCount] = useState(5);
+    const [colorFormat, setColorFormat] = useState("hex");
     const [fileMeta, setFileMeta] = useState(null);
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
@@ -261,6 +285,27 @@ function ColorPaletteExtractor() {
                 </div>
             </div>
 
+            <div>
+                <span className="img-tool__label">Color format</span>
+                <div className="img-tool__segmented">
+                    {[
+                        ["hex", "HEX"],
+                        ["rgb", "RGB"],
+                        ["hsl", "HSL"],
+                    ].map(([key, label]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            className={`img-tool__segment${colorFormat === key ? " is-active" : ""}`}
+                            disabled={!hasImage}
+                            onClick={() => setColorFormat(key)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <div className="img-tool__actions">
                 <button
                     type="button"
@@ -323,24 +368,27 @@ function ColorPaletteExtractor() {
 
             {colors.length ? (
                 <div className="img-tool__swatches">
-                    {colors.map((color) => (
-                        <button
-                            key={color.hex}
-                            type="button"
-                            className="img-tool__swatch cursor-target"
-                            onClick={() => copyColor(color.hex)}
-                            title="Click to copy hex"
-                        >
-                            <span
-                                className="img-tool__swatch-color"
-                                style={{ backgroundColor: color.hex }}
-                            />
-                            <span className="img-tool__swatch-meta">
-                                <span>{color.hex}</span>
-                                <span>{color.rgb}</span>
-                            </span>
-                        </button>
-                    ))}
+                    {colors.map((color) => {
+                        const displayValue = formatColorValue(color, colorFormat);
+                        return (
+                            <button
+                                key={color.hex}
+                                type="button"
+                                className="img-tool__swatch cursor-target"
+                                onClick={() => copyColor(displayValue)}
+                                title={`Click to copy ${colorFormat.toUpperCase()}`}
+                            >
+                                <span
+                                    className="img-tool__swatch-color"
+                                    style={{ backgroundColor: color.hex }}
+                                />
+                                <span className="img-tool__swatch-meta">
+                                    <span>{displayValue}</span>
+                                    <span>{colorFormat.toUpperCase()}</span>
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
             ) : null}
         </>

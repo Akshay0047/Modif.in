@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
-import {MB,
+import {
+    MB,
     formatBytes,
     validateFile,
     loadImageFromFileWithProgress,
@@ -9,21 +10,88 @@ import {MB,
     copyBlobToClipboard,
     replaceExtension,
     normalizeHexColor,
-    waitFrame, preventDragDefaults } from "../_shared/imageToolUtils";
-// preventDragDefaults imported below
+    waitFrame,
+    preventDragDefaults,
+} from "../_shared/imageToolUtils";
 
 const MAX_BYTES = 30 * MB;
 const ACCEPT = "image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp";
 
-const PRESETS = {
-    grayscale: { label: "Grayscale", filter: "grayscale(100%)" },
-    sepia: { label: "Sepia", filter: "sepia(100%)" },
-    vintage: { label: "Vintage Warm", filter: "sepia(40%) contrast(110%) brightness(105%) saturate(120%)" },
-    invert: { label: "Invert", filter: "invert(100%)" },
-    duotone: { label: "Duotone", filter: null },
-    technicolor: { label: "Technicolor", filter: "saturate(180%) contrast(115%) hue-rotate(-10deg)" },
-    hcbw: { label: "High Contrast B&W", filter: "grayscale(100%) contrast(160%)" },
+const PRESET_CATEGORIES = {
+    cinematic: {
+        label: "Cinematic / Color",
+        presets: {
+            vintage: {
+                label: "Vintage",
+                type: "css",
+                filter: "sepia(35%) contrast(108%) brightness(102%) saturate(115%) hue-rotate(-8deg)",
+            },
+            tealOrange: { label: "Teal & Orange", type: "pixel", effect: "tealOrange" },
+            cinematic: {
+                label: "Cinematic",
+                type: "css",
+                filter: "contrast(118%) saturate(88%) brightness(96%) sepia(12%)",
+            },
+            warm: {
+                label: "Warm",
+                type: "css",
+                filter: "sepia(28%) saturate(135%) brightness(104%) hue-rotate(-6deg)",
+            },
+            cool: {
+                label: "Cool",
+                type: "css",
+                filter: "saturate(90%) brightness(102%) hue-rotate(18deg) contrast(105%)",
+            },
+            fade: {
+                label: "Fade",
+                type: "css",
+                filter: "contrast(88%) brightness(112%) saturate(78%)",
+            },
+        },
+    },
+    monochrome: {
+        label: "B&W / Monochrome",
+        presets: {
+            grayscale: { label: "Classic B&W", type: "css", filter: "grayscale(100%)" },
+            hcbw: { label: "High Contrast", type: "css", filter: "grayscale(100%) contrast(165%)" },
+            sepia: { label: "Sepia", type: "css", filter: "sepia(100%)" },
+            cyanotype: { label: "Cyanotype", type: "pixel", effect: "cyanotype" },
+        },
+    },
+    artistic: {
+        label: "Artistic / Distortion",
+        presets: {
+            duotone: { label: "Duotone", type: "duotone" },
+            posterize: { label: "Posterize", type: "pixel", effect: "posterize" },
+            pixelate: { label: "Pixelate", type: "pixel", effect: "pixelate" },
+            vignette: { label: "Vignette", type: "pixel", effect: "vignette" },
+            noise: { label: "Noise / Grain", type: "pixel", effect: "noise" },
+            invert: { label: "Invert", type: "css", filter: "invert(100%)" },
+            technicolor: {
+                label: "Technicolor",
+                type: "css",
+                filter: "saturate(185%) contrast(118%) hue-rotate(-12deg) brightness(102%)",
+            },
+        },
+    },
 };
+
+const DEFAULT_CATEGORY = "cinematic";
+const DEFAULT_PRESET = "vintage";
+
+function getPresetDef(presetKey) {
+    for (const category of Object.values(PRESET_CATEGORIES)) {
+        if (category.presets[presetKey]) return category.presets[presetKey];
+    }
+    return null;
+}
+
+function getCategoryForPreset(presetKey) {
+    for (const [catKey, category] of Object.entries(PRESET_CATEGORIES)) {
+        if (category.presets[presetKey]) return catKey;
+    }
+    return DEFAULT_CATEGORY;
+}
 
 function validateFilterFile(file) {
     return validateFile(file, {
@@ -44,6 +112,10 @@ function hexToRgb(hex) {
     };
 }
 
+function blendChannel(source, target, t) {
+    return Math.round(source + (target - source) * t);
+}
+
 function applyDuotone(imageData, colorA, colorB, intensity) {
     const a = hexToRgb(colorA);
     const b = hexToRgb(colorB);
@@ -57,11 +129,109 @@ function applyDuotone(imageData, colorA, colorB, intensity) {
         const nr = a.r + (b.r - a.r) * lum;
         const ng = a.g + (b.g - a.g) * lum;
         const nb = a.b + (b.b - a.b) * lum;
-        data[i] = Math.round(r + (nr - r) * t);
-        data[i + 1] = Math.round(g + (ng - g) * t);
-        data[i + 2] = Math.round(bch + (nb - bch) * t);
+        data[i] = blendChannel(r, nr, t);
+        data[i + 1] = blendChannel(g, ng, t);
+        data[i + 2] = blendChannel(bch, nb, t);
     }
     return imageData;
+}
+
+function applyCyanotype(imageData, intensity) {
+    const t = intensity / 100;
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        const cr = lum * 0.12 + 18;
+        const cg = lum * 0.42 + 55;
+        const cb = Math.min(255, lum * 0.95 + 85);
+        data[i] = blendChannel(r, cr, t);
+        data[i + 1] = blendChannel(g, cg, t);
+        data[i + 2] = blendChannel(b, cb, t);
+    }
+    return imageData;
+}
+
+function applyTealOrange(imageData, intensity) {
+    const t = intensity / 100;
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        const shadow = { r: 8, g: 72, b: 88 };
+        const highlight = { r: 245, g: 148, b: 72 };
+        const nr = shadow.r * (1 - lum) + highlight.r * lum;
+        const ng = shadow.g * (1 - lum) + highlight.g * lum;
+        const nb = shadow.b * (1 - lum) + highlight.b * lum;
+        data[i] = blendChannel(r, nr, t);
+        data[i + 1] = blendChannel(g, ng, t);
+        data[i + 2] = blendChannel(b, nb, t);
+    }
+    return imageData;
+}
+
+function applyPosterize(imageData, intensity) {
+    const levels = Math.max(3, Math.round(3 + (intensity / 100) * 9));
+    const step = 255 / (levels - 1);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.round(data[i] / step) * step;
+        data[i + 1] = Math.round(data[i + 1] / step) * step;
+        data[i + 2] = Math.round(data[i + 2] / step) * step;
+    }
+    return imageData;
+}
+
+function applyVignette(imageData, intensity, width, height) {
+    const t = intensity / 100;
+    const cx = width / 2;
+    const cy = height / 2;
+    const maxDist = Math.sqrt(cx * cx + cy * cy);
+    const data = imageData.data;
+    for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+            const i = (y * width + x) * 4;
+            const dx = x - cx;
+            const dy = y - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy) / maxDist;
+            const darken = 1 - Math.pow(dist, 1.6) * t * 0.85;
+            data[i] = Math.round(data[i] * darken);
+            data[i + 1] = Math.round(data[i + 1] * darken);
+            data[i + 2] = Math.round(data[i + 2] * darken);
+        }
+    }
+    return imageData;
+}
+
+function applyNoise(imageData, intensity) {
+    const amount = (intensity / 100) * 42;
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const grain = (Math.random() - 0.5) * amount;
+        data[i] = Math.max(0, Math.min(255, Math.round(data[i] + grain)));
+        data[i + 1] = Math.max(0, Math.min(255, Math.round(data[i + 1] + grain)));
+        data[i + 2] = Math.max(0, Math.min(255, Math.round(data[i + 2] + grain)));
+    }
+    return imageData;
+}
+
+function drawPixelate(ctx, image, w, h, intensity) {
+    const block = Math.max(3, Math.round(3 + (intensity / 100) * 28));
+    const sw = Math.max(1, Math.ceil(w / block));
+    const sh = Math.max(1, Math.ceil(h / block));
+    const temp = document.createElement("canvas");
+    temp.width = sw;
+    temp.height = sh;
+    const tctx = temp.getContext("2d");
+    tctx.drawImage(image, 0, 0, sw, sh);
+    ctx.clearRect(0, 0, w, h);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(temp, 0, 0, sw, sh, 0, 0, w, h);
+    ctx.imageSmoothingEnabled = true;
 }
 
 function drawWithFilterIntensity(ctx, image, w, h, baseFilter, intensity) {
@@ -87,6 +257,23 @@ function drawWithFilterIntensity(ctx, image, w, h, baseFilter, intensity) {
     ctx.globalAlpha = 1;
 }
 
+function applyPixelEffect(imageData, effect, intensity, width, height) {
+    switch (effect) {
+        case "cyanotype":
+            return applyCyanotype(imageData, intensity);
+        case "tealOrange":
+            return applyTealOrange(imageData, intensity);
+        case "posterize":
+            return applyPosterize(imageData, intensity);
+        case "vignette":
+            return applyVignette(imageData, intensity, width, height);
+        case "noise":
+            return applyNoise(imageData, intensity);
+        default:
+            return imageData;
+    }
+}
+
 export default function FiltersEffectsTool() {
     const fileInputRef = useRef(null);
     const canvasRef = useRef(null);
@@ -95,7 +282,8 @@ export default function FiltersEffectsTool() {
 
     const [file, setFile] = useState(null);
     const [imageSize, setImageSize] = useState(null);
-    const [preset, setPreset] = useState("grayscale");
+    const [activeCategory, setActiveCategory] = useState(DEFAULT_CATEGORY);
+    const [preset, setPreset] = useState(DEFAULT_PRESET);
     const [intensity, setIntensity] = useState(100);
     const [duoA, setDuoA] = useState("#1e3a5f");
     const [duoB, setDuoB] = useState("#f59e0b");
@@ -117,7 +305,8 @@ export default function FiltersEffectsTool() {
         releaseSource();
         setFile(null);
         setImageSize(null);
-        setPreset("grayscale");
+        setActiveCategory(DEFAULT_CATEGORY);
+        setPreset(DEFAULT_PRESET);
         setIntensity(100);
         setDuoA("#1e3a5f");
         setDuoB("#f59e0b");
@@ -165,20 +354,47 @@ export default function FiltersEffectsTool() {
         [releaseSource],
     );
 
+    const handleCategoryChange = (categoryKey) => {
+        setActiveCategory(categoryKey);
+        const firstPreset = Object.keys(PRESET_CATEGORIES[categoryKey].presets)[0];
+        if (!PRESET_CATEGORIES[categoryKey].presets[preset]) {
+            setPreset(firstPreset);
+        }
+    };
+
     const renderToCanvas = useCallback(
         (canvas, ctx) => {
             const src = sourceRef.current;
             if (!src?.image || !imageSize) return;
-            canvas.width = imageSize.width;
-            canvas.height = imageSize.height;
-            if (preset === "duotone") {
-                ctx.filter = "none";
+            const { width, height } = imageSize;
+            canvas.width = width;
+            canvas.height = height;
+            const presetDef = getPresetDef(preset);
+            if (!presetDef) return;
+
+            ctx.filter = "none";
+
+            if (presetDef.type === "css") {
+                drawWithFilterIntensity(ctx, src.image, width, height, presetDef.filter, intensity);
+            } else if (presetDef.type === "duotone") {
                 ctx.drawImage(src.image, 0, 0);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, width, height);
                 ctx.putImageData(applyDuotone(imageData, duoA, duoB, intensity), 0, 0);
+            } else if (presetDef.effect === "pixelate") {
+                ctx.drawImage(src.image, 0, 0);
+                if (intensity > 0) {
+                    drawPixelate(ctx, src.image, width, height, intensity);
+                }
             } else {
-                const base = PRESETS[preset]?.filter || "none";
-                drawWithFilterIntensity(ctx, src.image, canvas.width, canvas.height, base, intensity);
+                ctx.drawImage(src.image, 0, 0);
+                if (intensity > 0) {
+                    const imageData = ctx.getImageData(0, 0, width, height);
+                    ctx.putImageData(
+                        applyPixelEffect(imageData, presetDef.effect, intensity, width, height),
+                        0,
+                        0,
+                    );
+                }
             }
         },
         [imageSize, preset, intensity, duoA, duoB],
@@ -245,6 +461,8 @@ export default function FiltersEffectsTool() {
         }
     };
 
+    const activePresets = PRESET_CATEGORIES[activeCategory].presets;
+
     const left = (
         <>
             <label
@@ -281,22 +499,44 @@ export default function FiltersEffectsTool() {
                     <span className="img-tool__chip">{formatBytes(file.size)}</span>
                 </div>
             ) : null}
+
             <div>
-                <span className="img-tool__label">Preset</span>
-                <div className="img-tool__segmented" style={{ flexWrap: "wrap" }}>
-                    {Object.entries(PRESETS).map(([key, { label }]) => (
+                <span className="img-tool__label">Filter category</span>
+                <div className="img-tool__tabs">
+                    {Object.entries(PRESET_CATEGORIES).map(([key, { label }]) => (
                         <button
                             key={key}
                             type="button"
-                            className={`img-tool__segment${preset === key ? " is-active" : ""}`}
+                            className={`img-tool__tab${activeCategory === key ? " is-active" : ""}`}
                             disabled={!imageSize}
-                            onClick={() => setPreset(key)}
+                            onClick={() => handleCategoryChange(key)}
                         >
                             {label}
                         </button>
                     ))}
                 </div>
             </div>
+
+            <div>
+                <span className="img-tool__label">Preset</span>
+                <div className="img-tool__segmented" style={{ flexWrap: "wrap" }}>
+                    {Object.entries(activePresets).map(([key, { label }]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            className={`img-tool__segment${preset === key ? " is-active" : ""}`}
+                            disabled={!imageSize}
+                            onClick={() => {
+                                setPreset(key);
+                                setActiveCategory(getCategoryForPreset(key));
+                            }}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {preset === "duotone" ? (
                 <>
                     <div>
@@ -337,6 +577,7 @@ export default function FiltersEffectsTool() {
                     </div>
                 </>
             ) : null}
+
             <div>
                 <label className="img-tool__label">Intensity ({intensity}%)</label>
                 <input
@@ -348,7 +589,13 @@ export default function FiltersEffectsTool() {
                     disabled={!imageSize}
                     onChange={(e) => setIntensity(Number(e.target.value))}
                 />
+                <div className="img-tool__range-meta">
+                    <span>0%</span>
+                    <span className="img-tool__range-value">{intensity}%</span>
+                    <span>100%</span>
+                </div>
             </div>
+
             <div>
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
@@ -365,6 +612,7 @@ export default function FiltersEffectsTool() {
                     ))}
                 </div>
             </div>
+
             {exportFormat === "jpg" ? (
                 <div>
                     <label className="img-tool__label">Quality ({quality}%)</label>
@@ -379,6 +627,7 @@ export default function FiltersEffectsTool() {
                     />
                 </div>
             ) : null}
+
             <div className="img-tool__actions">
                 <button type="button" className="img-tool__btn img-tool__btn--primary" disabled={!imageSize || isProcessing} onClick={handleDownload}>
                     Download

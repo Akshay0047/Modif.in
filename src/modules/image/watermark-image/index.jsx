@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
-import {IMAGE_ACCEPT,
+import {
+    IMAGE_ACCEPT,
     canvasToBlob,
     createCanvas,
     formatBytes,
@@ -8,13 +9,31 @@ import {IMAGE_ACCEPT,
     loadImageFromUrl,
     replaceExtension,
     triggerDownload,
-    validateStandardImage, preventDragDefaults } from "../_shared/imageToolUtils";
-// preventDragDefaults imported below
+    validateStandardImage,
+    preventDragDefaults,
+} from "../_shared/imageToolUtils";
 
 const ANCHORS = [
     ["top-left", "TL"], ["top-center", "TC"], ["top-right", "TR"],
     ["center-left", "CL"], ["center", "C"], ["center-right", "CR"],
     ["bottom-left", "BL"], ["bottom-center", "BC"], ["bottom-right", "BR"],
+];
+
+const FONT_FAMILIES = [
+    ["Impact, Arial Black, sans-serif", "Impact"],
+    ["Arial, Helvetica, sans-serif", "Arial"],
+    ["Georgia, Times New Roman, serif", "Georgia"],
+    ["Times New Roman, Times, serif", "Times New Roman"],
+    ["Courier New, Courier, monospace", "Courier New"],
+    ["IBM Plex Sans, sans-serif", "IBM Plex Sans"],
+    ["Verdana, Geneva, sans-serif", "Verdana"],
+    ["Trebuchet MS, sans-serif", "Trebuchet MS"],
+];
+
+const BG_SHAPES = [
+    ["none", "None"],
+    ["rect", "Solid Box"],
+    ["rounded", "Rounded Box"],
 ];
 
 function getAnchorPosition(anchor, w, h, pad) {
@@ -32,6 +51,44 @@ function getAnchorPosition(anchor, w, h, pad) {
     return map[anchor] || [w / 2, h / 2];
 }
 
+function drawTextBackground(ctx, text, bgShape, bgColor, padX, padY) {
+    if (bgShape === "none") return;
+    const metrics = ctx.measureText(text);
+    const ascent = metrics.actualBoundingBoxAscent || ctx.measureText("M").width * 0.8;
+    const descent = metrics.actualBoundingBoxDescent || ctx.measureText("x").width * 0.3;
+    const textW = metrics.width;
+    const textH = ascent + descent;
+    const x = -textW / 2 - padX;
+    const y = -textH / 2 - padY;
+    const w = textW + padX * 2;
+    const h = textH + padY * 2;
+
+    ctx.fillStyle = bgColor;
+    if (bgShape === "rounded") {
+        const radius = Math.min(h / 2, 12);
+        if (typeof ctx.roundRect === "function") {
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, radius);
+            ctx.fill();
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+        }
+    } else {
+        ctx.fillRect(x, y, w, h);
+    }
+}
+
 function applyWatermark(baseImage, options) {
     const {
         mode,
@@ -42,7 +99,15 @@ function applyWatermark(baseImage, options) {
         rotation,
         padding,
         fontSize,
+        fontFamily,
+        textColor,
+        bgShape,
+        bgColor,
+        bgPadding,
         tiled,
+        positionX,
+        positionY,
+        useFreePosition,
     } = options;
 
     const { canvas, ctx } = createCanvas(baseImage.naturalWidth, baseImage.naturalHeight);
@@ -51,10 +116,10 @@ function applyWatermark(baseImage, options) {
     ctx.globalAlpha = opacity / 100;
 
     if (mode === "text" && text.trim()) {
-        ctx.font = `bold ${fontSize}px Impact, "Arial Black", sans-serif`;
-        ctx.fillStyle = "#ffffff";
-        ctx.strokeStyle = "rgba(0,0,0,0.4)";
-        ctx.lineWidth = 2;
+        ctx.font = `bold ${fontSize}px ${fontFamily}`;
+        ctx.fillStyle = textColor;
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = Math.max(1, fontSize * 0.04);
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
 
@@ -62,7 +127,10 @@ function applyWatermark(baseImage, options) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate((rotation * Math.PI) / 180);
-            ctx.strokeText(text, 0, 0);
+            drawTextBackground(ctx, text, bgShape, bgColor, bgPadding, bgPadding * 0.65);
+            if (bgShape === "none") {
+                ctx.strokeText(text, 0, 0);
+            }
             ctx.fillText(text, 0, 0);
             ctx.restore();
         };
@@ -75,6 +143,8 @@ function applyWatermark(baseImage, options) {
                     drawTextAt(x, y);
                 }
             }
+        } else if (useFreePosition) {
+            drawTextAt(positionX, positionY);
         } else {
             const [ax, ay] = getAnchorPosition(anchor, canvas.width, canvas.height, padding);
             drawTextAt(ax, ay);
@@ -102,6 +172,8 @@ function applyWatermark(baseImage, options) {
                     drawLogoAt(x, y);
                 }
             }
+        } else if (useFreePosition) {
+            drawLogoAt(positionX, positionY);
         } else {
             const [ax, ay] = getAnchorPosition(anchor, canvas.width, canvas.height, padding + lw / 2);
             drawLogoAt(ax, ay);
@@ -112,6 +184,16 @@ function applyWatermark(baseImage, options) {
     return canvas;
 }
 
+function getCanvasPoint(canvas, clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY,
+    };
+}
+
 function WatermarkImage() {
     const fileInputRef = useRef(null);
     const logoInputRef = useRef(null);
@@ -119,18 +201,26 @@ function WatermarkImage() {
     const sourceRef = useRef(null);
     const logoRef = useRef(null);
     const operationRef = useRef(0);
+    const dragRef = useRef({ active: false, pointerId: null });
 
     const [file, setFile] = useState(null);
     const [sourceImage, setSourceImage] = useState(null);
     const [mode, setMode] = useState("text");
     const [text, setText] = useState("© Your Brand");
     const [logoImage, setLogoImage] = useState(null);
-    const [placement, setPlacement] = useState("anchor");
+    const [placement, setPlacement] = useState("free");
     const [anchor, setAnchor] = useState("bottom-right");
+    const [positionX, setPositionX] = useState(0);
+    const [positionY, setPositionY] = useState(0);
     const [opacity, setOpacity] = useState(50);
     const [rotation, setRotation] = useState(0);
     const [padding, setPadding] = useState(24);
     const [fontSize, setFontSize] = useState(48);
+    const [fontFamily, setFontFamily] = useState(FONT_FAMILIES[0][0]);
+    const [textColor, setTextColor] = useState("#ffffff");
+    const [bgShape, setBgShape] = useState("none");
+    const [bgColor, setBgColor] = useState("#000000");
+    const [bgPadding, setBgPadding] = useState(10);
     const [exportFormat, setExportFormat] = useState("png");
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
@@ -140,6 +230,7 @@ function WatermarkImage() {
     const [progressLabel, setProgressLabel] = useState("");
 
     const tiled = placement === "tiled";
+    const useFreePosition = placement === "free";
 
     const releaseSource = useCallback(() => {
         if (sourceRef.current?.objectUrl) URL.revokeObjectURL(sourceRef.current.objectUrl);
@@ -160,6 +251,9 @@ function WatermarkImage() {
         setLogoImage(null);
         setError("");
         setStatus("");
+        setPlacement("free");
+        setPositionX(0);
+        setPositionY(0);
         if (fileInputRef.current) fileInputRef.current.value = "";
         if (logoInputRef.current) logoInputRef.current.value = "";
     }, [releaseSource, releaseLogo]);
@@ -186,13 +280,17 @@ function WatermarkImage() {
                 sourceRef.current = loaded;
                 setFile(nextFile);
                 setSourceImage(loaded.image);
+                const w = loaded.image.naturalWidth;
+                const h = loaded.image.naturalHeight;
+                setPositionX(w - padding);
+                setPositionY(h - padding);
                 setShowProgress(false);
             } catch (err) {
                 setError(err.message);
                 setShowProgress(false);
             }
         },
-        [releaseSource],
+        [releaseSource, padding],
     );
 
     const ingestLogo = useCallback(
@@ -215,9 +313,8 @@ function WatermarkImage() {
         [releaseLogo],
     );
 
-    const paint = useCallback(() => {
-        if (!sourceImage || !canvasRef.current) return;
-        const canvas = applyWatermark(sourceImage, {
+    const watermarkOptions = useCallback(
+        () => ({
             mode,
             text,
             logoImage,
@@ -226,14 +323,46 @@ function WatermarkImage() {
             rotation,
             padding,
             fontSize,
+            fontFamily,
+            textColor,
+            bgShape,
+            bgColor,
+            bgPadding,
             tiled,
-        });
+            positionX,
+            positionY,
+            useFreePosition,
+        }),
+        [
+            mode,
+            text,
+            logoImage,
+            anchor,
+            opacity,
+            rotation,
+            padding,
+            fontSize,
+            fontFamily,
+            textColor,
+            bgShape,
+            bgColor,
+            bgPadding,
+            tiled,
+            positionX,
+            positionY,
+            useFreePosition,
+        ],
+    );
+
+    const paint = useCallback(() => {
+        if (!sourceImage || !canvasRef.current) return;
+        const canvas = applyWatermark(sourceImage, watermarkOptions());
         const display = canvasRef.current;
         display.width = canvas.width;
         display.height = canvas.height;
         const ctx = display.getContext("2d");
         ctx.drawImage(canvas, 0, 0);
-    }, [sourceImage, mode, text, logoImage, placement, anchor, opacity, rotation, padding, fontSize, tiled]);
+    }, [sourceImage, watermarkOptions]);
 
     useEffect(() => {
         paint();
@@ -248,22 +377,54 @@ function WatermarkImage() {
         [releaseSource, releaseLogo],
     );
 
+    const handleAnchorSelect = (nextAnchor) => {
+        if (!sourceImage) return;
+        setAnchor(nextAnchor);
+        setPlacement("anchor");
+        const [ax, ay] = getAnchorPosition(
+            nextAnchor,
+            sourceImage.naturalWidth,
+            sourceImage.naturalHeight,
+            padding,
+        );
+        setPositionX(ax);
+        setPositionY(ay);
+    };
+
+    const handlePointerDown = (e) => {
+        if (!sourceImage || tiled || !canvasRef.current) return;
+        e.preventDefault();
+        dragRef.current = { active: true, pointerId: e.pointerId };
+        canvasRef.current.setPointerCapture(e.pointerId);
+        setPlacement("free");
+        const point = getCanvasPoint(canvasRef.current, e.clientX, e.clientY);
+        setPositionX(Math.round(point.x));
+        setPositionY(Math.round(point.y));
+    };
+
+    const handlePointerMove = (e) => {
+        if (!dragRef.current.active || dragRef.current.pointerId !== e.pointerId || !canvasRef.current) {
+            return;
+        }
+        const point = getCanvasPoint(canvasRef.current, e.clientX, e.clientY);
+        setPositionX(Math.round(Math.max(0, Math.min(canvasRef.current.width, point.x))));
+        setPositionY(Math.round(Math.max(0, Math.min(canvasRef.current.height, point.y))));
+    };
+
+    const handlePointerUp = (e) => {
+        if (!dragRef.current.active || dragRef.current.pointerId !== e.pointerId) return;
+        dragRef.current = { active: false, pointerId: null };
+        if (canvasRef.current?.hasPointerCapture(e.pointerId)) {
+            canvasRef.current.releasePointerCapture(e.pointerId);
+        }
+    };
+
     const handleDownload = async () => {
         if (!sourceImage) return;
         setShowProgress(true);
         setProgressLabel("Exporting...");
         try {
-            const canvas = applyWatermark(sourceImage, {
-                mode,
-                text,
-                logoImage,
-                anchor,
-                opacity,
-                rotation,
-                padding,
-                fontSize,
-                tiled,
-            });
+            const canvas = applyWatermark(sourceImage, watermarkOptions());
             const mime = exportFormat === "jpg" ? "image/jpeg" : "image/png";
             const blob = await canvasToBlob(canvas, mime, exportFormat === "jpg" ? 0.92 : undefined);
             const ext = exportFormat === "jpg" ? "jpg" : "png";
@@ -301,17 +462,117 @@ function WatermarkImage() {
             </div>
 
             {mode === "text" ? (
-                <div>
-                    <label className="img-tool__label" htmlFor="wm-text">Text</label>
-                    <input
-                        id="wm-text"
-                        className="img-tool__input"
-                        type="text"
-                        value={text}
-                        disabled={!hasImage}
-                        onChange={(e) => setText(e.target.value)}
-                    />
-                </div>
+                <>
+                    <div>
+                        <label className="img-tool__label" htmlFor="wm-text">Text</label>
+                        <input
+                            id="wm-text"
+                            className="img-tool__input"
+                            type="text"
+                            value={text}
+                            disabled={!hasImage}
+                            onChange={(e) => setText(e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="img-tool__label" htmlFor="wm-font-family">Font family</label>
+                        <select
+                            id="wm-font-family"
+                            className="img-tool__select"
+                            value={fontFamily}
+                            disabled={!hasImage}
+                            onChange={(e) => setFontFamily(e.target.value)}
+                        >
+                            {FONT_FAMILIES.map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="img-tool__label" htmlFor="wm-text-color">Text color</label>
+                        <div className="img-tool__color-row">
+                            <input
+                                id="wm-text-color"
+                                className="img-tool__color-input"
+                                type="color"
+                                value={textColor}
+                                disabled={!hasImage}
+                                onChange={(e) => setTextColor(e.target.value)}
+                            />
+                            <input
+                                className="img-tool__input"
+                                type="text"
+                                value={textColor}
+                                disabled={!hasImage}
+                                onChange={(e) => setTextColor(e.target.value)}
+                                aria-label="Text color hex"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <span className="img-tool__label">Background shape</span>
+                        <div className="img-tool__segmented">
+                            {BG_SHAPES.map(([val, label]) => (
+                                <button
+                                    key={val}
+                                    type="button"
+                                    className={`img-tool__segment${bgShape === val ? " is-active" : ""}`}
+                                    disabled={!hasImage}
+                                    onClick={() => setBgShape(val)}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {bgShape !== "none" && (
+                        <>
+                            <div>
+                                <label className="img-tool__label" htmlFor="wm-bg-color">Background color</label>
+                                <div className="img-tool__color-row">
+                                    <input
+                                        id="wm-bg-color"
+                                        className="img-tool__color-input"
+                                        type="color"
+                                        value={bgColor}
+                                        disabled={!hasImage}
+                                        onChange={(e) => setBgColor(e.target.value)}
+                                    />
+                                    <input
+                                        className="img-tool__input"
+                                        type="text"
+                                        value={bgColor}
+                                        disabled={!hasImage}
+                                        onChange={(e) => setBgColor(e.target.value)}
+                                        aria-label="Background color hex"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="img-tool__label" htmlFor="wm-bg-padding">Background padding</label>
+                                <input
+                                    id="wm-bg-padding"
+                                    className="img-tool__range"
+                                    type="range"
+                                    min={2}
+                                    max={40}
+                                    value={bgPadding}
+                                    disabled={!hasImage}
+                                    onChange={(e) => setBgPadding(Number(e.target.value))}
+                                />
+                                <div className="img-tool__range-meta">
+                                    <span>2px</span>
+                                    <span className="img-tool__range-value">{bgPadding}px</span>
+                                    <span>40px</span>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </>
             ) : (
                 <div>
                     <label className="img-tool__label">Logo image</label>
@@ -337,6 +598,7 @@ function WatermarkImage() {
                 <span className="img-tool__label">Placement</span>
                 <div className="img-tool__segmented">
                     {[
+                        ["free", "Free Drag"],
                         ["anchor", "9-Point Grid"],
                         ["tiled", "Tiled"],
                     ].map(([val, label]) => (
@@ -345,13 +607,31 @@ function WatermarkImage() {
                             type="button"
                             className={`img-tool__segment${placement === val ? " is-active" : ""}`}
                             disabled={!hasImage}
-                            onClick={() => setPlacement(val)}
+                            onClick={() => {
+                                setPlacement(val);
+                                if (val === "anchor" && sourceImage) {
+                                    const [ax, ay] = getAnchorPosition(
+                                        anchor,
+                                        sourceImage.naturalWidth,
+                                        sourceImage.naturalHeight,
+                                        padding,
+                                    );
+                                    setPositionX(ax);
+                                    setPositionY(ay);
+                                }
+                            }}
                         >
                             {label}
                         </button>
                     ))}
                 </div>
             </div>
+
+            {placement === "free" && hasImage && (
+                <p className="img-tool__hint">
+                    Drag the watermark directly on the preview canvas to position it.
+                </p>
+            )}
 
             {placement === "anchor" && (
                 <div>
@@ -363,7 +643,7 @@ function WatermarkImage() {
                                 type="button"
                                 className={`img-tool__segment${anchor === val ? " is-active" : ""}`}
                                 disabled={!hasImage}
-                                onClick={() => setAnchor(val)}
+                                onClick={() => handleAnchorSelect(val)}
                                 style={{ padding: "0.35rem 0.55rem", fontSize: "0.7rem" }}
                             >
                                 {label}
@@ -371,6 +651,45 @@ function WatermarkImage() {
                         ))}
                     </div>
                 </div>
+            )}
+
+            {placement === "free" && hasImage && (
+                <>
+                    <div>
+                        <label className="img-tool__label" htmlFor="wm-pos-x">Position X</label>
+                        <input
+                            id="wm-pos-x"
+                            className="img-tool__range"
+                            type="range"
+                            min={0}
+                            max={sourceImage.naturalWidth}
+                            value={positionX}
+                            onChange={(e) => setPositionX(Number(e.target.value))}
+                        />
+                        <div className="img-tool__range-meta">
+                            <span>0</span>
+                            <span className="img-tool__range-value">{positionX}px</span>
+                            <span>{sourceImage.naturalWidth}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="img-tool__label" htmlFor="wm-pos-y">Position Y</label>
+                        <input
+                            id="wm-pos-y"
+                            className="img-tool__range"
+                            type="range"
+                            min={0}
+                            max={sourceImage.naturalHeight}
+                            value={positionY}
+                            onChange={(e) => setPositionY(Number(e.target.value))}
+                        />
+                        <div className="img-tool__range-meta">
+                            <span>0</span>
+                            <span className="img-tool__range-value">{positionY}px</span>
+                            <span>{sourceImage.naturalHeight}</span>
+                        </div>
+                    </div>
+                </>
             )}
 
             <div>
@@ -439,6 +758,13 @@ function WatermarkImage() {
                     disabled={!hasImage}
                     onChange={(e) => setFontSize(Number(e.target.value))}
                 />
+                {mode === "text" && (
+                    <div className="img-tool__range-meta">
+                        <span>12px</span>
+                        <span className="img-tool__range-value">{fontSize}px</span>
+                        <span>120px</span>
+                    </div>
+                )}
             </div>
 
             <div>
@@ -479,10 +805,12 @@ function WatermarkImage() {
             <div
                 className={`img-tool__dropzone${isDragging ? " is-dragging" : ""}`}
                 onDragEnter={(e) => {
-                    preventDragDefaults(e); setIsDragging(true); }}
+                    preventDragDefaults(e); setIsDragging(true);
+                }}
                 onDragOver={preventDragDefaults}
                 onDragLeave={(e) => {
-                    preventDragDefaults(e); if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false); }}
+                    preventDragDefaults(e); if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
+                }}
                 onDrop={(e) => {
                     preventDragDefaults(e);
                     setIsDragging(false);
@@ -506,7 +834,16 @@ function WatermarkImage() {
             </div>
             <div className="img-tool__canvas-wrap">
                 {hasImage ? (
-                    <canvas ref={canvasRef} aria-label="Watermarked preview" />
+                    <canvas
+                        ref={canvasRef}
+                        aria-label="Watermarked preview"
+                        className={!tiled ? "img-tool__canvas--interactive" : undefined}
+                        style={{ cursor: tiled ? "default" : "grab", touchAction: "none" }}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
+                    />
                 ) : (
                     <p className="img-tool__preview-empty">Upload an image to preview watermark</p>
                 )}

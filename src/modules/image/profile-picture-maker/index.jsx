@@ -22,6 +22,26 @@ const GRADIENTS = {
     forest: ["#22c55e", "#14b8a6"],
 };
 
+function pathRoundRect(ctx, x, y, w, h, radius) {
+    const r = Math.min(radius, w / 2, h / 2);
+    if (typeof ctx.roundRect === "function") {
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, r);
+        return;
+    }
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
 function drawAvatar(canvas, image, options) {
     const {
         outputSize,
@@ -30,6 +50,7 @@ function drawAvatar(canvas, image, options) {
         panY,
         border,
         borderColor,
+        cornerRadiusPercent,
         bgType,
         bgColor,
         gradientKey,
@@ -38,7 +59,10 @@ function drawAvatar(canvas, image, options) {
     canvas.height = outputSize;
     const ctx = canvas.getContext("2d");
     const center = outputSize / 2;
-    const innerRadius = center - border;
+    const innerSize = outputSize - border * 2;
+    const innerX = border;
+    const innerY = border;
+    const cornerRadius = (cornerRadiusPercent / 50) * (innerSize / 2);
 
     ctx.clearRect(0, 0, outputSize, outputSize);
 
@@ -55,8 +79,7 @@ function drawAvatar(canvas, image, options) {
     }
 
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(center, center, innerRadius, 0, Math.PI * 2);
+    pathRoundRect(ctx, innerX, innerY, innerSize, innerSize, cornerRadius);
     ctx.clip();
 
     const imgW = image.width;
@@ -70,8 +93,7 @@ function drawAvatar(canvas, image, options) {
     ctx.restore();
 
     if (border > 0) {
-        ctx.beginPath();
-        ctx.arc(center, center, center - border / 2, 0, Math.PI * 2);
+        pathRoundRect(ctx, border / 2, border / 2, outputSize - border, outputSize - border, cornerRadius + border / 2);
         ctx.strokeStyle = borderColor;
         ctx.lineWidth = border;
         ctx.stroke();
@@ -90,6 +112,7 @@ export default function ProfilePictureMakerTool() {
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [border, setBorder] = useState(4);
+    const [cornerRadiusPercent, setCornerRadiusPercent] = useState(50);
     const [borderColor, setBorderColor] = useState("#10b981");
     const [bgType, setBgType] = useState("transparent");
     const [bgColor, setBgColor] = useState("#1e293b");
@@ -107,6 +130,7 @@ export default function ProfilePictureMakerTool() {
         panX: pan.x,
         panY: pan.y,
         border,
+        cornerRadiusPercent,
         borderColor: normalizeHexColor(borderColor),
         bgType,
         bgColor: normalizeHexColor(bgColor),
@@ -126,6 +150,7 @@ export default function ProfilePictureMakerTool() {
         setZoom(1);
         setPan({ x: 0, y: 0 });
         setBorder(4);
+        setCornerRadiusPercent(50);
         setBorderColor("#10b981");
         setBgType("transparent");
         setError("");
@@ -310,6 +335,24 @@ export default function ProfilePictureMakerTool() {
                 />
             </div>
             <div>
+                <label className="img-tool__label" htmlFor="pp-corner-radius">Corner radius</label>
+                <input
+                    id="pp-corner-radius"
+                    className="img-tool__range"
+                    type="range"
+                    min={0}
+                    max={50}
+                    value={cornerRadiusPercent}
+                    disabled={!imageSize}
+                    onChange={(e) => setCornerRadiusPercent(Number(e.target.value))}
+                />
+                <div className="img-tool__range-meta">
+                    <span>Square (0%)</span>
+                    <span className="img-tool__range-value">{cornerRadiusPercent}%</span>
+                    <span>Circle (50%)</span>
+                </div>
+            </div>
+            <div>
                 <label className="img-tool__label">Border ({border}px)</label>
                 <input
                     className="img-tool__range"
@@ -430,7 +473,7 @@ export default function ProfilePictureMakerTool() {
                     ))}
                 </div>
             </div>
-            <p className="img-tool__hint">Drag the preview to reposition the photo inside the circle.</p>
+            <p className="img-tool__hint">Drag the preview to reposition the photo inside the frame.</p>
             <div className="img-tool__actions">
                 <button type="button" className="img-tool__btn img-tool__btn--primary" disabled={!imageSize || isProcessing} onClick={handleDownload}>
                     Download Avatar
@@ -455,7 +498,7 @@ export default function ProfilePictureMakerTool() {
                     onPointerDown={handlePointerDown}
                 />
             ) : (
-                <p className="img-tool__preview-empty">Upload a photo to create a circular avatar</p>
+                <p className="img-tool__preview-empty">Upload a photo to create a profile avatar</p>
             )}
         </div>
     );

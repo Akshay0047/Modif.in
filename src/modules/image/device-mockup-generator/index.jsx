@@ -1,20 +1,108 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
-import {IMAGE_ACCEPT,
+import {
+    IMAGE_ACCEPT,
     canvasToBlob,
     createCanvas,
     formatBytes,
     loadImageFromFileWithProgress,
     triggerDownload,
-    validateStandardImage, preventDragDefaults } from "../_shared/imageToolUtils";
-// preventDragDefaults imported below
+    validateStandardImage,
+    preventDragDefaults,
+} from "../_shared/imageToolUtils";
 
-const DEVICES = {
-    macbook: { label: "MacBook", screenRatio: 16 / 10, bezel: 28, corner: 12 },
-    iphone: { label: "iPhone", screenRatio: 9 / 19.5, bezel: 14, corner: 28 },
-    ipad: { label: "iPad", screenRatio: 4 / 3, bezel: 22, corner: 18 },
-    browser: { label: "Browser", screenRatio: 16 / 10, bezel: 0, corner: 8 },
+const DEVICE_GROUPS = {
+    Phones: {
+        iphone15pro: {
+            label: "iPhone 15 Pro",
+            screenRatio: 9 / 19.5,
+            bezel: 12,
+            corner: 34,
+            type: "phone",
+            variant: "dynamic-island",
+            maxW: 520,
+        },
+        galaxys24: {
+            label: "Samsung Galaxy S24",
+            screenRatio: 9 / 20,
+            bezel: 10,
+            corner: 28,
+            type: "phone",
+            variant: "hole-punch",
+            maxW: 500,
+        },
+    },
+    Tablets: {
+        ipadpro: {
+            label: "iPad Pro",
+            screenRatio: 4 / 3,
+            bezel: 18,
+            corner: 20,
+            type: "tablet",
+            maxW: 900,
+        },
+        tablet: {
+            label: "Generic Tablet",
+            screenRatio: 16 / 10,
+            bezel: 20,
+            corner: 16,
+            type: "tablet",
+            maxW: 860,
+        },
+    },
+    Desktop: {
+        macbookpro: {
+            label: "MacBook Pro",
+            screenRatio: 16 / 10,
+            bezel: 20,
+            corner: 10,
+            type: "laptop",
+            base: 18,
+            maxW: 1200,
+        },
+        imac: {
+            label: "iMac",
+            screenRatio: 16 / 10,
+            bezel: 16,
+            corner: 14,
+            type: "imac",
+            chin: 44,
+            maxW: 1100,
+        },
+        browserMac: {
+            label: "Browser — macOS",
+            screenRatio: 16 / 10,
+            bezel: 0,
+            corner: 10,
+            type: "browser-macos",
+            barH: 38,
+            maxW: 1200,
+        },
+        browserWin: {
+            label: "Browser — Windows 11",
+            screenRatio: 16 / 10,
+            bezel: 0,
+            corner: 8,
+            type: "browser-windows",
+            barH: 44,
+            maxW: 1200,
+        },
+    },
+    Watches: {
+        applewatch: {
+            label: "Apple Watch",
+            screenRatio: 4 / 5,
+            bezel: 10,
+            corner: 28,
+            type: "watch",
+            maxW: 360,
+        },
+    },
 };
+
+const DEVICES = Object.fromEntries(
+    Object.values(DEVICE_GROUPS).flatMap((group) => Object.entries(group)),
+);
 
 function drawBackdrop(ctx, w, h, style, color) {
     if (style === "transparent") return;
@@ -29,44 +117,6 @@ function drawBackdrop(ctx, w, h, style, color) {
     grad.addColorStop(1, "#064e3b");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
-}
-
-function drawDeviceFrame(ctx, deviceKey, device, theme, x, y, w, h) {
-    const isDark = theme === "dark";
-    const body = isDark ? "#1f2937" : "#e5e7eb";
-    const accent = isDark ? "#374151" : "#d1d5db";
-
-    ctx.save();
-    ctx.fillStyle = body;
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 2;
-    roundRect(ctx, x, y, w, h, device.corner);
-    ctx.fill();
-    ctx.stroke();
-
-    if (deviceKey === "browser") {
-        const barH = Math.max(24, h * 0.06);
-        ctx.fillStyle = isDark ? "#111827" : "#f3f4f6";
-        roundRect(ctx, x, y, w, barH, device.corner, true, false);
-        ctx.fill();
-        ctx.fillStyle = isDark ? "#4b5563" : "#d1d5db";
-        roundRect(ctx, x + 12, y + barH * 0.25, w * 0.55, barH * 0.5, 6);
-        ctx.fill();
-        ctx.fillStyle = isDark ? "#6b7280" : "#9ca3af";
-        ctx.beginPath();
-        ctx.arc(x + w - 20, y + barH / 2, 5, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    if (device.label === "iPhone") {
-        const notchW = w * 0.35;
-        const notchH = 12;
-        ctx.fillStyle = body;
-        roundRect(ctx, x + (w - notchW) / 2, y + 6, notchW, notchH, 6);
-        ctx.fill();
-    }
-
-    ctx.restore();
 }
 
 function roundRect(ctx, x, y, w, h, r, topOnly = false) {
@@ -94,16 +144,120 @@ function roundRect(ctx, x, y, w, h, r, topOnly = false) {
     ctx.closePath();
 }
 
+function drawDeviceFrame(ctx, deviceKey, device, theme, x, y, w, h) {
+    const isDark = theme === "dark";
+    const body = isDark ? "#1f2937" : "#e5e7eb";
+    const accent = isDark ? "#374151" : "#d1d5db";
+
+    ctx.save();
+    ctx.fillStyle = body;
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, y, w, h, device.corner);
+    ctx.fill();
+    ctx.stroke();
+
+    if (device.type === "browser-macos") {
+        const barH = device.barH || 38;
+        ctx.fillStyle = isDark ? "#111827" : "#f3f4f6";
+        roundRect(ctx, x, y, w, barH, device.corner, true);
+        ctx.fill();
+        const dotY = y + barH / 2;
+        ["#ef4444", "#f59e0b", "#22c55e"].forEach((color, i) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x + 16 + i * 14, dotY, 5, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.fillStyle = isDark ? "#4b5563" : "#d1d5db";
+        roundRect(ctx, x + w * 0.22, y + barH * 0.22, w * 0.56, barH * 0.56, 6);
+        ctx.fill();
+    }
+
+    if (device.type === "browser-windows") {
+        const barH = device.barH || 44;
+        ctx.fillStyle = isDark ? "#0f172a" : "#f8fafc";
+        roundRect(ctx, x, y, w, barH, device.corner, true);
+        ctx.fill();
+        ctx.strokeStyle = isDark ? "#334155" : "#e2e8f0";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y + barH);
+        ctx.lineTo(x + w, y + barH);
+        ctx.stroke();
+        ctx.fillStyle = isDark ? "#1e293b" : "#ffffff";
+        roundRect(ctx, x + 14, y + 10, w * 0.62, barH - 20, 8);
+        ctx.fill();
+        ctx.strokeStyle = isDark ? "#475569" : "#cbd5e1";
+        ctx.stroke();
+        const controls = ["─", "□", "×"];
+        controls.forEach((_, i) => {
+            ctx.fillStyle = isDark ? "#94a3b8" : "#64748b";
+            ctx.fillRect(x + w - 22 - i * 18, y + 14, 12, 12);
+        });
+    }
+
+    if (device.variant === "dynamic-island") {
+        const islandW = w * 0.32;
+        const islandH = 14;
+        ctx.fillStyle = "#000000";
+        roundRect(ctx, x + (w - islandW) / 2, y + 10, islandW, islandH, 8);
+        ctx.fill();
+    }
+
+    if (device.variant === "hole-punch") {
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.arc(x + w / 2, y + 16, 6, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    if (device.type === "laptop") {
+        const baseH = device.base || 16;
+        ctx.fillStyle = isDark ? "#111827" : "#d1d5db";
+        roundRect(ctx, x - w * 0.04, y + h, w * 1.08, baseH, 4);
+        ctx.fill();
+    }
+
+    if (device.type === "imac") {
+        const chin = device.chin || 40;
+        ctx.fillStyle = isDark ? "#111827" : "#e5e7eb";
+        ctx.fillRect(x, y + h - chin, w, chin);
+        ctx.fillStyle = isDark ? "#374151" : "#cbd5e1";
+        ctx.beginPath();
+        ctx.arc(x + w / 2, y + h + chin * 0.35, chin * 0.22, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    if (device.type === "watch") {
+        ctx.fillStyle = isDark ? "#4b5563" : "#9ca3af";
+        roundRect(ctx, x + w - 4, y + h * 0.28, 6, h * 0.18, 3);
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+function getFrameExtras(device) {
+    if (device.type === "browser-macos" || device.type === "browser-windows") {
+        return { barOffset: device.barH || 40, chinOffset: 0, baseOffset: 0 };
+    }
+    if (device.type === "imac") return { barOffset: 0, chinOffset: device.chin || 40, baseOffset: 0 };
+    if (device.type === "laptop") return { barOffset: 0, chinOffset: 0, baseOffset: device.base || 16 };
+    return { barOffset: 0, chinOffset: 0, baseOffset: 0 };
+}
+
 function renderMockup(image, options) {
     const { deviceKey, theme, padding, shadow, backdrop, backdropColor } = options;
     const device = DEVICES[deviceKey];
-    const maxW = 1400;
+    const { barOffset, chinOffset, baseOffset } = getFrameExtras(device);
+    const maxW = device.maxW || 1200;
     const screenW = maxW - padding * 2 - device.bezel * 2;
     const screenH = screenW / device.screenRatio;
     const frameW = screenW + device.bezel * 2;
-    const frameH = screenH + device.bezel * 2 + (deviceKey === "browser" ? 40 : 0);
+    const frameH = screenH + device.bezel * 2 + barOffset + chinOffset;
     const canvasW = frameW + padding * 2;
-    const canvasH = frameH + padding * 2;
+    const canvasH = frameH + padding * 2 + baseOffset;
 
     const { canvas, ctx } = createCanvas(canvasW, canvasH);
     drawBackdrop(ctx, canvasW, canvasH, backdrop, backdropColor);
@@ -125,18 +279,20 @@ function renderMockup(image, options) {
     drawDeviceFrame(ctx, deviceKey, device, theme, fx, fy, frameW, frameH);
 
     const inset = device.bezel;
-    const barOffset = deviceKey === "browser" ? 40 : 0;
     const sx = fx + inset;
     const sy = fy + inset + barOffset;
     const sw = frameW - inset * 2;
-    const sh = frameH - inset * 2 - barOffset;
+    const sh = frameH - inset * 2 - barOffset - chinOffset;
 
     ctx.save();
     roundRect(ctx, sx, sy, sw, sh, Math.max(4, device.corner - 6));
     ctx.clip();
     const imgRatio = image.naturalWidth / image.naturalHeight;
     const areaRatio = sw / sh;
-    let dw, dh, dx, dy;
+    let dw;
+    let dh;
+    let dx;
+    let dy;
     if (imgRatio > areaRatio) {
         dh = sh;
         dw = dh * imgRatio;
@@ -162,7 +318,7 @@ function DeviceMockupGenerator() {
 
     const [file, setFile] = useState(null);
     const [sourceImage, setSourceImage] = useState(null);
-    const [device, setDevice] = useState("macbook");
+    const [device, setDevice] = useState("macbookpro");
     const [theme, setTheme] = useState("dark");
     const [padding, setPadding] = useState(40);
     const [shadow, setShadow] = useState(60);
@@ -288,8 +444,12 @@ function DeviceMockupGenerator() {
                     disabled={!hasImage}
                     onChange={(e) => setDevice(e.target.value)}
                 >
-                    {Object.entries(DEVICES).map(([key, d]) => (
-                        <option key={key} value={key}>{d.label}</option>
+                    {Object.entries(DEVICE_GROUPS).map(([group, devices]) => (
+                        <optgroup key={group} label={group}>
+                            {Object.entries(devices).map(([key, d]) => (
+                                <option key={key} value={key}>{d.label}</option>
+                            ))}
+                        </optgroup>
                     ))}
                 </select>
             </div>
@@ -399,10 +559,12 @@ function DeviceMockupGenerator() {
             <div
                 className={`img-tool__dropzone${isDragging ? " is-dragging" : ""}`}
                 onDragEnter={(e) => {
-                    preventDragDefaults(e); setIsDragging(true); }}
+                    preventDragDefaults(e); setIsDragging(true);
+                }}
                 onDragOver={preventDragDefaults}
                 onDragLeave={(e) => {
-                    preventDragDefaults(e); if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false); }}
+                    preventDragDefaults(e); if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
+                }}
                 onDrop={(e) => {
                     preventDragDefaults(e);
                     setIsDragging(false);

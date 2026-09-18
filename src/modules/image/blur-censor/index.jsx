@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
-import {MB,
+import {
+    MB,
     IMAGE_ACCEPT,
     formatBytes,
     validateStandardImage,
@@ -10,8 +11,9 @@ import {MB,
     copyBlobToClipboard,
     replaceExtension,
     clamp,
-    waitFrame, preventDragDefaults } from "../_shared/imageToolUtils";
-// preventDragDefaults imported below
+    waitFrame,
+    preventDragDefaults,
+} from "../_shared/imageToolUtils";
 
 const MAX_BYTES = 30 * MB;
 const MAX_HISTORY = 10;
@@ -21,10 +23,108 @@ function cloneMasks(masks) {
         ...m,
         points: m.points ? m.points.map((p) => ({ ...p })) : undefined,
         rect: m.rect ? { ...m.rect } : undefined,
+        stroke: m.stroke
+            ? { width: m.stroke.width, points: m.stroke.points.map((p) => ({ ...p })) }
+            : undefined,
     }));
 }
 
-function applyMaskEffect(ctx, image, mask, effectType, size) {
+function drawStrokePath(ctx, points, width) {
+    if (!points?.length) return;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = width;
+    if (points.length === 1) {
+        ctx.beginPath();
+        ctx.arc(points[0].x, points[0].y, width / 2, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+    }
+    ctx.beginPath();
+    points.forEach((p, i) => {
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+    });
+    ctx.stroke();
+}
+
+function applyEffectToPatch(tctx, image, sx, sy, sw, sh, effectType, effectSize) {
+    tctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
+
+    if (effectType === "pixelate") {
+        const block = clamp(effectSize, 4, 64);
+        const small = document.createElement("canvas");
+        small.width = Math.max(1, Math.floor(sw / block));
+        small.height = Math.max(1, Math.floor(sh / block));
+        const sctx = small.getContext("2d");
+        sctx.imageSmoothingEnabled = false;
+        sctx.drawImage(tctx.canvas, 0, 0, small.width, small.height);
+        tctx.imageSmoothingEnabled = false;
+        tctx.clearRect(0, 0, sw, sh);
+        tctx.drawImage(small, 0, 0, sw, sh);
+    } else if (effectType === "blur") {
+        const blurred = document.createElement("canvas");
+        blurred.width = sw;
+        blurred.height = sh;
+        const bctx = blurred.getContext("2d");
+        bctx.filter = `blur(${clamp(effectSize, 4, 64)}px)`;
+        bctx.drawImage(tctx.canvas, 0, 0);
+        tctx.clearRect(0, 0, sw, sh);
+        tctx.drawImage(blurred, 0, 0);
+    }
+}
+
+function applyStrokeMask(ctx, image, stroke, effectType, effectSize) {
+    const { points, width: brushWidth } = stroke;
+    if (!points?.length) return;
+
+    const imgW = image.width;
+    const imgH = image.height;
+    const pad = Math.max(brushWidth, effectSize) + 8;
+    const xs = points.map((p) => p.x);
+    const ys = points.map((p) => p.y);
+    const bx = clamp(Math.min(...xs) - pad, 0, imgW);
+    const by = clamp(Math.min(...ys) - pad, 0, imgH);
+    const bw = clamp(Math.max(...xs) - bx + pad, 1, imgW - bx);
+    const bh = clamp(Math.max(...ys) - by + pad, 1, imgH - by);
+
+    const maskCanvas = document.createElement("canvas");
+    maskCanvas.width = imgW;
+    maskCanvas.height = imgH;
+    const mctx = maskCanvas.getContext("2d");
+    mctx.fillStyle = "#ffffff";
+    mctx.strokeStyle = "#ffffff";
+    drawStrokePath(mctx, points, brushWidth);
+
+    const layer = document.createElement("canvas");
+    layer.width = imgW;
+    layer.height = imgH;
+    const lctx = layer.getContext("2d");
+
+    if (effectType === "bar") {
+        lctx.fillStyle = "#000000";
+        drawStrokePath(lctx, points, brushWidth);
+    } else {
+        const temp = document.createElement("canvas");
+        temp.width = bw;
+        temp.height = bh;
+        const tctx = temp.getContext("2d");
+        applyEffectToPatch(tctx, image, bx, by, bw, bh, effectType, effectSize);
+        lctx.drawImage(temp, bx, by);
+        lctx.globalCompositeOperation = "destination-in";
+        lctx.drawImage(maskCanvas, 0, 0);
+        lctx.globalCompositeOperation = "source-over";
+    }
+
+    ctx.drawImage(layer, 0, 0);
+}
+
+function applyMaskEffect(ctx, image, mask, effectType, effectSize) {
+    if (mask.stroke) {
+        applyStrokeMask(ctx, image, mask.stroke, effectType, effectSize);
+        return;
+    }
+
     const { rect, points } = mask;
     let x;
     let y;
@@ -60,7 +160,7 @@ function applyMaskEffect(ctx, image, mask, effectType, size) {
         return;
     }
 
-    const pad = effectType === "blur" ? size : 0;
+    const pad = effectType === "blur" ? effectSize : 0;
     const sx = clamp(x - pad, 0, image.width);
     const sy = clamp(y - pad, 0, image.height);
     const sw = clamp(w + pad * 2, 1, image.width - sx);
@@ -70,24 +170,7 @@ function applyMaskEffect(ctx, image, mask, effectType, size) {
     temp.width = sw;
     temp.height = sh;
     const tctx = temp.getContext("2d");
-    tctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
-
-    if (effectType === "pixelate") {
-        const block = clamp(size, 4, 64);
-        const small = document.createElement("canvas");
-        small.width = Math.max(1, Math.floor(sw / block));
-        small.height = Math.max(1, Math.floor(sh / block));
-        const sctx = small.getContext("2d");
-        sctx.imageSmoothingEnabled = false;
-        sctx.drawImage(temp, 0, 0, small.width, small.height);
-        tctx.imageSmoothingEnabled = false;
-        tctx.clearRect(0, 0, sw, sh);
-        tctx.drawImage(small, 0, 0, sw, sh);
-    } else if (effectType === "blur") {
-        tctx.filter = `blur(${clamp(size, 4, 64)}px)`;
-        tctx.drawImage(temp, 0, 0);
-        tctx.filter = "none";
-    }
+    applyEffectToPatch(tctx, image, sx, sy, sw, sh, effectType, effectSize);
 
     ctx.save();
     if (rect) {
@@ -105,12 +188,22 @@ function applyMaskEffect(ctx, image, mask, effectType, size) {
     ctx.restore();
 }
 
-function renderWithMasks(canvas, image, masks, effectType, size) {
+function renderWithMasks(canvas, image, masks, effectType, effectSize) {
     canvas.width = image.width;
     canvas.height = image.height;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(image, 0, 0);
-    masks.forEach((mask) => applyMaskEffect(ctx, image, mask, effectType, size));
+    masks.forEach((mask) => applyMaskEffect(ctx, image, mask, effectType, effectSize));
+}
+
+function drawBrushPreview(ctx, points, brushWidth, currentPoint) {
+    if (!points?.length) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(16, 185, 129, 0.85)";
+    ctx.fillStyle = "rgba(16, 185, 129, 0.35)";
+    const previewPoints = currentPoint ? [...points, currentPoint] : points;
+    drawStrokePath(ctx, previewPoints, brushWidth);
+    ctx.restore();
 }
 
 export default function BlurCensorTool() {
@@ -124,7 +217,8 @@ export default function BlurCensorTool() {
     const [imageSize, setImageSize] = useState(null);
     const [effectType, setEffectType] = useState("pixelate");
     const [tool, setTool] = useState("rect");
-    const [brushSize, setBrushSize] = useState(24);
+    const [brushStrokeSize, setBrushStrokeSize] = useState(24);
+    const [effectStrength, setEffectStrength] = useState(24);
     const [masks, setMasks] = useState([]);
     const [history, setHistory] = useState([[]]);
     const [historyIndex, setHistoryIndex] = useState(0);
@@ -230,12 +324,12 @@ export default function BlurCensorTool() {
         const canvas = canvasRef.current;
         const src = sourceRef.current;
         if (!canvas || !src?.image || !imageSize) return;
-        renderWithMasks(canvas, src.image, masks, effectType, brushSize);
+        renderWithMasks(canvas, src.image, masks, effectType, effectStrength);
         const rect = canvas.parentElement?.getBoundingClientRect();
         const scale = Math.min((rect?.width || 400) / imageSize.width, (rect?.height || 300) / imageSize.height, 1);
         canvas.style.width = `${imageSize.width * scale}px`;
         canvas.style.height = `${imageSize.height * scale}px`;
-    }, [imageSize, masks, effectType, brushSize]);
+    }, [imageSize, masks, effectType, effectStrength]);
 
     useEffect(() => {
         drawPreview();
@@ -248,7 +342,7 @@ export default function BlurCensorTool() {
         if (tool === "rect") {
             drawRef.current = { type: "rect", start: pt, current: pt };
         } else {
-            drawRef.current = { type: "brush", points: [pt] };
+            drawRef.current = { type: "brush", points: [pt], current: pt };
         }
     };
 
@@ -257,12 +351,13 @@ export default function BlurCensorTool() {
         if (!d || !imageSize) return;
         const pt = toImageCoords(e.clientX, e.clientY);
         if (!pt) return;
+        const canvas = canvasRef.current;
+        const src = sourceRef.current;
+        if (!canvas || !src?.image) return;
+
         if (d.type === "rect") {
             drawRef.current = { ...d, current: pt };
-            const canvas = canvasRef.current;
-            const src = sourceRef.current;
-            if (!canvas || !src?.image) return;
-            renderWithMasks(canvas, src.image, masks, effectType, brushSize);
+            renderWithMasks(canvas, src.image, masks, effectType, effectStrength);
             const ctx = canvas.getContext("2d");
             const x = Math.min(d.start.x, pt.x);
             const y = Math.min(d.start.y, pt.y);
@@ -272,7 +367,13 @@ export default function BlurCensorTool() {
             ctx.lineWidth = 2;
             ctx.strokeRect(x, y, w, h);
         } else {
-            drawRef.current = { ...d, points: [...d.points, pt] };
+            const last = d.points[d.points.length - 1];
+            const dist = Math.hypot(pt.x - last.x, pt.y - last.y);
+            const nextPoints = dist >= 1 ? [...d.points, pt] : d.points;
+            drawRef.current = { ...d, points: nextPoints, current: pt };
+            renderWithMasks(canvas, src.image, masks, effectType, effectStrength);
+            const ctx = canvas.getContext("2d");
+            drawBrushPreview(ctx, nextPoints, brushStrokeSize, dist < 1 ? pt : null);
         }
     };
 
@@ -287,8 +388,8 @@ export default function BlurCensorTool() {
             const w = Math.abs(d.current.x - d.start.x);
             const h = Math.abs(d.current.y - d.start.y);
             if (w > 4 && h > 4) nextMask = { rect: { x, y, w, h } };
-        } else if (d.type === "brush" && d.points?.length > 2) {
-            nextMask = { points: d.points };
+        } else if (d.type === "brush" && d.points?.length >= 1) {
+            nextMask = { stroke: { points: d.points, width: brushStrokeSize } };
         }
         if (nextMask) pushHistory([...masks, nextMask]);
     };
@@ -324,7 +425,7 @@ export default function BlurCensorTool() {
         const src = sourceRef.current;
         if (!src?.image || !imageSize) throw new Error("Load an image first.");
         const canvas = document.createElement("canvas");
-        renderWithMasks(canvas, src.image, masks, effectType, brushSize);
+        renderWithMasks(canvas, src.image, masks, effectType, effectStrength);
         await waitFrame();
         return canvasToBlob(canvas, "image/png");
     };
@@ -439,20 +540,46 @@ export default function BlurCensorTool() {
                     </button>
                 </div>
             </div>
+            {tool === "brush" ? (
+                <div>
+                    <label className="img-tool__label" htmlFor="bc-brush-size">Brush size</label>
+                    <input
+                        id="bc-brush-size"
+                        className="img-tool__range"
+                        type="range"
+                        min={5}
+                        max={100}
+                        value={brushStrokeSize}
+                        disabled={!imageSize}
+                        onChange={(e) => setBrushStrokeSize(Number(e.target.value))}
+                    />
+                    <div className="img-tool__range-meta">
+                        <span>5px</span>
+                        <span className="img-tool__range-value">{brushStrokeSize}px</span>
+                        <span>100px</span>
+                    </div>
+                </div>
+            ) : null}
             {effectType !== "bar" ? (
                 <div>
-                    <label className="img-tool__label">
-                        {effectType === "pixelate" ? "Block size" : "Blur radius"} ({brushSize}px)
+                    <label className="img-tool__label" htmlFor="bc-effect-strength">
+                        {effectType === "pixelate" ? "Block size" : "Blur radius"}
                     </label>
                     <input
+                        id="bc-effect-strength"
                         className="img-tool__range"
                         type="range"
                         min={4}
                         max={64}
-                        value={brushSize}
+                        value={effectStrength}
                         disabled={!imageSize}
-                        onChange={(e) => setBrushSize(Number(e.target.value))}
+                        onChange={(e) => setEffectStrength(Number(e.target.value))}
                     />
+                    <div className="img-tool__range-meta">
+                        <span>4px</span>
+                        <span className="img-tool__range-value">{effectStrength}px</span>
+                        <span>64px</span>
+                    </div>
                 </div>
             ) : null}
             <div className="img-tool__actions" style={{ marginTop: 0 }}>
@@ -466,7 +593,7 @@ export default function BlurCensorTool() {
                     Clear
                 </button>
             </div>
-            <p className="img-tool__hint">History keeps up to {MAX_HISTORY} steps.</p>
+            <p className="img-tool__hint">Freehand brush uses smooth round strokes. History keeps up to {MAX_HISTORY} steps.</p>
             <div className="img-tool__actions">
                 <button type="button" className="img-tool__btn img-tool__btn--primary" disabled={!imageSize || isProcessing} onClick={handleDownload}>
                     Download
@@ -487,7 +614,7 @@ export default function BlurCensorTool() {
                 <canvas
                     ref={canvasRef}
                     className="img-tool__preview-canvas"
-                    style={{ cursor: "crosshair" }}
+                    style={{ cursor: "crosshair", touchAction: "none" }}
                     onPointerDown={handlePointerDown}
                 />
             ) : (

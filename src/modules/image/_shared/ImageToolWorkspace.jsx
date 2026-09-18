@@ -4,7 +4,7 @@ import usePreventWindowDragDrop from "./usePreventWindowDragDrop";
 import "./imageToolCommon.css";
 
 const PRIVACY =
-    "🔒 100% Client-Side: Your images are processed directly in your browser memory and never uploaded to any server.";
+    "100% Client-Side: Your images are processed directly in your browser memory and never uploaded to any server.";
 
 export function ImageProgressBar({ label, progress, visible = true }) {
     if (!visible) return null;

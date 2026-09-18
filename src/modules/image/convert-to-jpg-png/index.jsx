@@ -275,7 +275,7 @@ function ConvertToJpgPng() {
                 <h1 className="cvt-jpg-png__title">Convert to JPG / PNG</h1>
 
                 <p className="cvt-jpg-png__privacy" role="note">
-                    🔒 100% Client-Side: Your images are processed directly in your
+                    100% Client-Side: Your images are processed directly in your
                     browser memory and never uploaded to any server.
                 </p>
 
