@@ -1,3 +1,9 @@
+import {
+    ASCII_EMOJIS_EXTRA,
+    EMOTICONS_EXTRA,
+    KAOMOJI_EXTRA,
+} from "./asciiEmojiExtras.js";
+
 export const ASCII_EMOJIS = [
     { label: "Smile", value: ":-)" },
     { label: "Big smile", value: ":-D" },
@@ -19,6 +25,7 @@ export const ASCII_EMOJIS = [
     { label: "Party", value: "\\o/" },
     { label: "Hug", value: "({})" },
     { label: "Robot", value: ":-|" },
+    ...ASCII_EMOJIS_EXTRA,
 ];
 
 export const KAOMOJI = [
@@ -42,6 +49,7 @@ export const KAOMOJI = [
     { label: "Wave", value: "(^_^)/" },
     { label: "Pray", value: "🙏" },
     { label: "Flower", value: "(✿◠‿◠)" },
+    ...KAOMOJI_EXTRA,
 ];
 
 export const EMOTICONS = [
@@ -65,6 +73,7 @@ export const EMOTICONS = [
     { label: "Fish", value: "><((((º>" },
     { label: "Wizard", value: "(-_-)" },
     { label: "Waiting", value: "|-)" },
+    ...EMOTICONS_EXTRA,
 ];
 
 export const UNICODE_SYMBOL_CATEGORIES = [
