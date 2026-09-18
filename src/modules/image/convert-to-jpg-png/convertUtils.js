@@ -154,6 +154,22 @@ function waitForNextFrame() {
     });
 }
 
+export const MAX_CANVAS_PIXELS = 16_777_216;
+
+function clampDimensions(width, height, maxPixels = MAX_CANVAS_PIXELS) {
+    const safeWidth = Math.max(1, Math.round(width));
+    const safeHeight = Math.max(1, Math.round(height));
+    const pixels = safeWidth * safeHeight;
+    if (pixels <= maxPixels) {
+        return { width: safeWidth, height: safeHeight };
+    }
+    const ratio = Math.sqrt(maxPixels / pixels);
+    return {
+        width: Math.max(1, Math.floor(safeWidth * ratio)),
+        height: Math.max(1, Math.floor(safeHeight * ratio)),
+    };
+}
+
 export async function convertImageOnCanvas(
     image,
     targetFormat,
@@ -164,9 +180,10 @@ export async function convertImageOnCanvas(
     onStage?.(PROCESS_STAGES.RENDERING);
     await waitForNextFrame();
 
+    const { width, height } = clampDimensions(image.naturalWidth, image.naturalHeight);
     const canvas = document.createElement("canvas");
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
+    canvas.width = width;
+    canvas.height = height;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) {
@@ -178,7 +195,7 @@ export async function convertImageOnCanvas(
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    ctx.drawImage(image, 0, 0);
+    ctx.drawImage(image, 0, 0, width, height);
 
     onStage?.(PROCESS_STAGES.COMPRESSING);
     await waitForNextFrame();
@@ -220,20 +237,10 @@ export function triggerDownload(blob, filename) {
     URL.revokeObjectURL(url);
 }
 
+import { copyBlobToClipboard as copyBlobToClipboardShared } from "../_shared/imageToolUtils.js";
+
 export async function copyImageBlobToClipboard(blob) {
-    if (!navigator.clipboard?.write) {
-        throw new Error("Clipboard access is not supported in this browser.");
-    }
-
-    if (typeof ClipboardItem === "undefined") {
-        throw new Error("Clipboard images are not supported in this browser.");
-    }
-
-    try {
-        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-    } catch {
-        throw new Error("Could not copy to clipboard. Try downloading instead.");
-    }
+    return copyBlobToClipboardShared(blob);
 }
 
 export function mapStageToProgress(stage, readProgress = 0) {

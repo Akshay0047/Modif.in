@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import ImageToolShell from "../_shared/ImageToolShell";
+import usePreventWindowDragDrop from "../_shared/usePreventWindowDragDrop";
+import { preventDragDefaults, copyBlobToClipboard } from "../_shared/imageToolUtils";
 import {
     ACCEPTED_FILE_TYPES,
     buildDownloadName,
     convertImageOnCanvas,
-    copyImageBlobToClipboard,
     formatBytes,
     formatSavingsPercent,
     loadImageFromFileWithProgress,
@@ -18,6 +19,8 @@ import {
 import "./convert-to-jpg-png.css";
 
 function ConvertToJpgPng() {
+    usePreventWindowDragDrop();
+
     const fileInputRef = useRef(null);
     const sourceRef = useRef(null);
     const previewUrlRef = useRef("");
@@ -146,23 +149,23 @@ function ConvertToJpgPng() {
     };
 
     const handleDragEnter = (event) => {
-        event.preventDefault();
+        preventDragDefaults(event);
         if (!isProcessing) setIsDragging(true);
     };
 
     const handleDragOver = (event) => {
-        event.preventDefault();
+        preventDragDefaults(event);
     };
 
     const handleDragLeave = (event) => {
-        event.preventDefault();
+        preventDragDefaults(event);
         if (!event.currentTarget.contains(event.relatedTarget)) {
             setIsDragging(false);
         }
     };
 
     const handleDrop = (event) => {
-        event.preventDefault();
+        preventDragDefaults(event);
         setIsDragging(false);
         if (isProcessing) return;
         const nextFile = event.dataTransfer.files?.[0];
@@ -246,7 +249,7 @@ function ConvertToJpgPng() {
         if (!convertedBlob || isProcessing) return;
 
         try {
-            await copyImageBlobToClipboard(convertedBlob);
+            await copyBlobToClipboard(convertedBlob);
             setStatus("Copied to clipboard.");
             setValidationError("");
         } catch (copyError) {
