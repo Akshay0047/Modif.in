@@ -4,7 +4,7 @@ import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/components/FileDropZone";
 import { downloadBytes } from "../_shared/downloadUtils";
 import { readFileAsArrayBuffer, replaceExtension } from "../_shared/fileUtils";
-import { loadPdfJsDocument, renderPageToCanvas } from "../_shared/pdfUtils";
+import { loadPdfJsDocument, PDFDocument, renderPageToCanvas } from "../_shared/pdfUtils";
 
 function RedactionTool() {
     const [file, setFile] = useState(null);
@@ -105,7 +105,7 @@ function RedactionTool() {
         setLoading(true);
         setError("");
         try {
-            const newPdf = await import("pdf-lib").then((m) => m.PDFDocument.create());
+            const newPdf = await PDFDocument.create();
 
             for (let index = 0; index < totalPages; index += 1) {
                 const canvas = document.createElement("canvas");

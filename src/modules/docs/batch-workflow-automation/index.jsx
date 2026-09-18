@@ -6,6 +6,7 @@ import ProgressBar from "../_shared/components/ProgressBar";
 import { downloadBytes } from "../_shared/downloadUtils";
 import { readFileAsArrayBuffer, replaceExtension } from "../_shared/fileUtils";
 import { drawWatermark, loadPdfLibDocument } from "../_shared/pdfUtils";
+import { createDocWorker } from "../_shared/createDocWorker";
 import { useWorkerTask } from "../_shared/useWorkerTask";
 
 const STEPS = [
@@ -15,11 +16,6 @@ const STEPS = [
     { id: "watermark", label: "Watermark" },
 ];
 
-const createWorker = () =>
-    new Worker(new URL("../_shared/workers/docWorker.js", import.meta.url), {
-        type: "module",
-    });
-
 function BatchWorkflowAutomation() {
     const [files, setFiles] = useState([]);
     const [pipeline, setPipeline] = useState(["merge", "flatten", "compress"]);
@@ -28,7 +24,7 @@ function BatchWorkflowAutomation() {
     const [status, setStatus] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const { runTask } = useWorkerTask(createWorker);
+    const { runTask } = useWorkerTask(createDocWorker);
 
     const toggleStep = (stepId) => {
         setPipeline((current) =>

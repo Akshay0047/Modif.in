@@ -12,7 +12,7 @@ function ESignature() {
     const [pageCount, setPageCount] = useState(0);
     const [posX, setPosX] = useState(100);
     const [posY, setPosY] = useState(100);
-    const [width, setWidth] = useState(180);
+    const [width] = useState(180);
     const canvasRef = useRef(null);
     const [drawing, setDrawing] = useState(false);
     const [hasSignature, setHasSignature] = useState(false);

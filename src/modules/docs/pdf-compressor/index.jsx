@@ -5,12 +5,8 @@ import FileDropZone from "../_shared/components/FileDropZone";
 import ProgressBar from "../_shared/components/ProgressBar";
 import { downloadBytes } from "../_shared/downloadUtils";
 import { formatFileSize, readFileAsArrayBuffer, replaceExtension } from "../_shared/fileUtils";
+import { createDocWorker } from "../_shared/createDocWorker";
 import { useWorkerTask } from "../_shared/useWorkerTask";
-
-const createWorker = () =>
-    new Worker(new URL("../_shared/workers/docWorker.js", import.meta.url), {
-        type: "module",
-    });
 
 function PdfCompressor() {
     const [file, setFile] = useState(null);
@@ -18,7 +14,7 @@ function PdfCompressor() {
     const [scale, setScale] = useState(1.2);
     const [originalSize, setOriginalSize] = useState(0);
     const [compressedSize, setCompressedSize] = useState(0);
-    const { runTask, loading, progress, status, error } = useWorkerTask(createWorker);
+    const { runTask, loading, progress, status, error } = useWorkerTask(createDocWorker);
 
     const compress = async () => {
         if (!file) return;

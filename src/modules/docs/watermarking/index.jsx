@@ -4,7 +4,7 @@ import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/components/FileDropZone";
 import { downloadBytes } from "../_shared/downloadUtils";
 import { readFileAsArrayBuffer, readFileAsDataUrl, replaceExtension } from "../_shared/fileUtils";
-import { degrees, drawWatermark, loadPdfLibDocument, rgb } from "../_shared/pdfUtils";
+import { drawWatermark, loadPdfLibDocument, rgb } from "../_shared/pdfUtils";
 
 function Watermarking() {
     const [file, setFile] = useState(null);

@@ -27,7 +27,7 @@ function PaginationLayout() {
             const total = pages.length;
 
             pages.forEach((page, index) => {
-                const { width, height } = page.getSize();
+                const { height } = page.getSize();
                 if (headerText) {
                     page.drawText(headerText, {
                         x: margin,

@@ -22,8 +22,12 @@ function Ocr() {
         };
     }, [previewUrl]);
 
-    const runOcrOnImage = async (imageData, width, height) => {
-        const result = await runTask("ocr", { imageData, width, height });
+    const runOcrOnImage = async (pixels, width, height) => {
+        const result = await runTask(
+            "ocr",
+            { data: pixels, width, height },
+            pixels.buffer ? [pixels.buffer] : [],
+        );
         setText(result.text);
         return result;
     };

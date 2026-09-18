@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/components/FileDropZone";
@@ -54,7 +54,7 @@ function PdfEditor() {
         };
     }, [file]);
 
-    const redraw = async () => {
+    const redraw = useCallback(async () => {
         if (!pdfDoc || !canvasRef.current) return;
         const canvas = canvasRef.current;
         await renderPageToCanvas(pdfDoc, pageNum, canvas, scale);
@@ -84,11 +84,11 @@ function PdfEditor() {
                     context.fillText(item.text, item.x, item.y);
                 }
             });
-    };
+    }, [annotations, pageNum, pdfDoc, scale]);
 
     useEffect(() => {
         redraw();
-    }, [pdfDoc, pageNum, annotations]);
+    }, [redraw]);
 
     const getPoint = (event) => {
         const canvas = canvasRef.current;
