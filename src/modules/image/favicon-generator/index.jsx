@@ -25,6 +25,14 @@ const FAVICON_SIZES = [
 
 const DEFAULT_SIZES = new Set([16, 32, 48, 180, 192, 512]);
 
+const FONT_FAMILIES = [
+    ["IBM Plex Sans, Arial, sans-serif", "IBM Plex Sans"],
+    ["Arial, Helvetica, sans-serif", "Arial"],
+    ["Georgia, Times New Roman, serif", "Georgia"],
+    ["Impact, Arial Black, sans-serif", "Impact"],
+    ["Courier New, Courier, monospace", "Courier New"],
+];
+
 function buildManifest() {
     return JSON.stringify(
         {
@@ -58,7 +66,33 @@ function buildHtmlSnippet() {
 <link rel="manifest" href="/site.webmanifest">`;
 }
 
+function drawLettermarkIcon(ctx, size, { letter, fontFamily, fontColor, bgColor, radiusPercent, withBackground }) {
+    ctx.clearRect(0, 0, size, size);
+    if (withBackground) {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, size, size);
+    }
+    ctx.save();
+    const radius = (radiusPercent / 100) * (size / 2);
+    if (radius > 0 && typeof ctx.roundRect === "function") {
+        ctx.beginPath();
+        ctx.roundRect(0, 0, size, size, radius);
+        ctx.clip();
+    }
+    const char = (letter || "A").slice(0, 1).toUpperCase();
+    ctx.fillStyle = fontColor;
+    ctx.font = `bold ${Math.round(size * 0.56)}px ${fontFamily}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(char, size / 2, size / 2 + size * 0.02);
+    ctx.restore();
+}
+
 function FaviconGenerator() {
+    const [sourceMode, setSourceMode] = useState("upload");
+    const [letter, setLetter] = useState("M");
+    const [fontFamily, setFontFamily] = useState(FONT_FAMILIES[0][0]);
+    const [fontColor, setFontColor] = useState("#10b981");
     const [selectedSizes, setSelectedSizes] = useState(() => new Set(DEFAULT_SIZES));
     const [rounding, setRounding] = useState(0);
     const [withBackground, setWithBackground] = useState(true);
@@ -87,26 +121,39 @@ function FaviconGenerator() {
 
     useEffect(() => () => revokeObjectUrl(), [revokeObjectUrl]);
 
+    const canRender = sourceMode === "upload" ? hasImage : letter.trim().length > 0;
+
     const renderIcon = useCallback(
         async (size) => {
-            const image = imageRef.current;
-            if (!image) return null;
             const canvas = document.createElement("canvas");
             canvas.width = size;
             canvas.height = size;
             const ctx = canvas.getContext("2d");
-            drawRoundedIcon(ctx, image, size, {
-                radiusPercent: rounding,
-                backgroundColor: normalizeHexColor(bgColor),
-                withBackground,
-            });
+            if (sourceMode === "lettermark") {
+                drawLettermarkIcon(ctx, size, {
+                    letter,
+                    fontFamily,
+                    fontColor: normalizeHexColor(fontColor),
+                    bgColor: normalizeHexColor(bgColor),
+                    radiusPercent: rounding,
+                    withBackground,
+                });
+            } else {
+                const image = imageRef.current;
+                if (!image) return null;
+                drawRoundedIcon(ctx, image, size, {
+                    radiusPercent: rounding,
+                    backgroundColor: normalizeHexColor(bgColor),
+                    withBackground,
+                });
+            }
             return canvasToBlob(canvas, "image/png");
         },
-        [bgColor, rounding, withBackground],
+        [bgColor, fontColor, fontFamily, letter, rounding, sourceMode, withBackground],
     );
 
     useEffect(() => {
-        if (!hasImage) return undefined;
+        if (!canRender) return undefined;
         let cancelled = false;
         (async () => {
             const blob = await renderIcon(32);
@@ -120,7 +167,7 @@ function FaviconGenerator() {
         return () => {
             cancelled = true;
         };
-    }, [hasImage, rounding, withBackground, bgColor, renderIcon]);
+    }, [canRender, rounding, withBackground, bgColor, renderIcon]);
 
     useEffect(
         () => () => {
@@ -168,7 +215,7 @@ function FaviconGenerator() {
     }, []);
 
     const downloadZip = useCallback(async () => {
-        if (!imageRef.current || selectedSizes.size === 0) return;
+        if (!canRender || selectedSizes.size === 0) return;
         setShowProgress(true);
         setProgress(10);
         try {
@@ -193,7 +240,7 @@ function FaviconGenerator() {
             setShowProgress(false);
             setProgress(0);
         }
-    }, [renderIcon, selectedSizes]);
+    }, [canRender, renderIcon, selectedSizes]);
 
     const copyHtml = useCallback(async () => {
         try {
@@ -206,42 +253,113 @@ function FaviconGenerator() {
 
     const left = (
         <>
-            <div
-                className={`img-tool__dropzone cursor-target${isDragging ? " is-dragging" : ""}`}
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                    preventDragDefaults(e);
-                    setIsDragging(false);
-                    const file = e.dataTransfer.files?.[0];
-                    if (file) processFile(file);
-                }}
-                onClick={() => fileInputRef.current?.click()}
-                onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
-                role="button"
-                tabIndex={0}
-            >
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept={IMAGE_ACCEPT}
-                    className="img-tool__dropzone-input"
-                    onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) processFile(file);
-                    }}
-                />
-                <p className="img-tool__dropzone-text">
-                    Upload a square logo or icon
-                    <br />
-                    <span>PNG, JPG, WEBP — max 15 MB</span>
-                </p>
+            <div>
+                <span className="img-tool__label">Source mode</span>
+                <div className="img-tool__segmented">
+                    {[
+                        ["upload", "Upload Image"],
+                        ["lettermark", "Create Lettermark"],
+                    ].map(([key, label]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            className={`img-tool__segment${sourceMode === key ? " is-active" : ""}`}
+                            onClick={() => setSourceMode(key)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {fileMeta ? (
+            {sourceMode === "upload" ? (
+                <div
+                    className={`img-tool__dropzone cursor-target${isDragging ? " is-dragging" : ""}`}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                        preventDragDefaults(e);
+                        setIsDragging(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) processFile(file);
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={IMAGE_ACCEPT}
+                        className="img-tool__dropzone-input"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) processFile(file);
+                        }}
+                    />
+                    <p className="img-tool__dropzone-text">
+                        Upload a square logo or icon
+                        <br />
+                        <span>PNG, JPG, WEBP — max 15 MB</span>
+                    </p>
+                </div>
+            ) : (
+                <>
+                    <div>
+                        <label className="img-tool__label" htmlFor="fav-letter">Letter</label>
+                        <input
+                            id="fav-letter"
+                            className="img-tool__input"
+                            type="text"
+                            maxLength={1}
+                            value={letter}
+                            onChange={(e) => setLetter(e.target.value.slice(0, 1))}
+                            placeholder="M"
+                        />
+                    </div>
+                    <div>
+                        <label className="img-tool__label" htmlFor="fav-font">Font family</label>
+                        <select
+                            id="fav-font"
+                            className="img-tool__select"
+                            value={fontFamily}
+                            onChange={(e) => setFontFamily(e.target.value)}
+                        >
+                            {FONT_FAMILIES.map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="img-tool__field-row">
+                        <div className="img-tool__color-row">
+                            <input
+                                type="color"
+                                className="img-tool__color-input"
+                                value={fontColor}
+                                onChange={(e) => setFontColor(e.target.value)}
+                                aria-label="Letter color"
+                            />
+                            <span className="img-tool__hint">Letter color</span>
+                        </div>
+                        <div className="img-tool__color-row">
+                            <input
+                                type="color"
+                                className="img-tool__color-input"
+                                value={bgColor}
+                                onChange={(e) => setBgColor(e.target.value)}
+                                aria-label="Background color"
+                            />
+                            <span className="img-tool__hint">Background</span>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {fileMeta && sourceMode === "upload" ? (
                 <div className="img-tool__meta">
                     <span className="img-tool__chip">
                         <strong>File</strong> {fileMeta.name}
@@ -277,7 +395,7 @@ function FaviconGenerator() {
                     max={50}
                     value={rounding}
                     onChange={(e) => setRounding(Number(e.target.value))}
-                    disabled={!hasImage}
+                    disabled={!canRender}
                 />
                 <div className="img-tool__range-meta">
                     <span>Square</span>
@@ -286,31 +404,33 @@ function FaviconGenerator() {
                 </div>
             </div>
 
-            <label className="img-tool__checkbox-row">
-                <input
-                    type="checkbox"
-                    checked={withBackground}
-                    onChange={(e) => setWithBackground(e.target.checked)}
-                    disabled={!hasImage}
-                />
-                Fill background color
-            </label>
+            {sourceMode === "upload" && (
+                <label className="img-tool__checkbox-row">
+                    <input
+                        type="checkbox"
+                        checked={withBackground}
+                        onChange={(e) => setWithBackground(e.target.checked)}
+                        disabled={!canRender}
+                    />
+                    Fill background color
+                </label>
+            )}
 
-            {withBackground ? (
+            {withBackground && sourceMode === "upload" ? (
                 <div className="img-tool__color-row">
                     <input
                         type="color"
                         className="img-tool__color-input"
                         value={bgColor}
                         onChange={(e) => setBgColor(e.target.value)}
-                        disabled={!hasImage}
+                        disabled={!canRender}
                     />
                     <input
                         type="text"
                         className="img-tool__input"
                         value={bgColor}
                         onChange={(e) => setBgColor(e.target.value)}
-                        disabled={!hasImage}
+                        disabled={!canRender}
                     />
                 </div>
             ) : null}
@@ -320,7 +440,7 @@ function FaviconGenerator() {
                     type="button"
                     className="img-tool__btn img-tool__btn--primary cursor-target"
                     onClick={downloadZip}
-                    disabled={!hasImage || selectedSizes.size === 0}
+                    disabled={!canRender || selectedSizes.size === 0}
                 >
                     Download Favicon ZIP
                 </button>
@@ -328,7 +448,7 @@ function FaviconGenerator() {
                     type="button"
                     className="img-tool__btn cursor-target"
                     onClick={copyHtml}
-                    disabled={!hasImage}
+                    disabled={!canRender}
                 >
                     Copy HTML Snippet
                 </button>
@@ -362,15 +482,24 @@ function FaviconGenerator() {
             </div>
 
             <div className="img-tool__preview-frame">
-                {sourcePreviewUrl ? (
+                {sourceMode === "upload" && sourcePreviewUrl ? (
                     <img
                         src={sourcePreviewUrl}
                         alt="Source preview"
                         className="img-tool__preview-image"
                     />
+                ) : sourceMode === "lettermark" && tabPreviewUrl ? (
+                    <img
+                        src={tabPreviewUrl}
+                        alt="Lettermark preview"
+                        className="img-tool__preview-image"
+                        style={{ maxWidth: 180, margin: "0 auto" }}
+                    />
                 ) : (
                     <p className="img-tool__preview-empty">
-                        Upload an image to generate favicon assets.
+                        {sourceMode === "upload"
+                            ? "Upload an image to generate favicon assets."
+                            : "Enter a letter to generate a typography favicon."}
                     </p>
                 )}
             </div>
