@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
-import {MB,
+import {
+    MB,
+    canvasToBlob,
     formatBytes,
     loadImageFromBuffer,
     readFileWithProgress,
     triggerDownload,
-    validateStandardImage, preventDragDefaults } from "../_shared/imageToolUtils";
+    validateStandardImage,
+    preventDragDefaults,
+} from "../_shared/imageToolUtils";
 // preventDragDefaults imported below
 
 const MAX_FILES = 20;
@@ -88,6 +92,10 @@ function ImageToPdf() {
     const [marginKey, setMarginKey] = useState("none");
     const [alignment, setAlignment] = useState("center");
     const [docTitle, setDocTitle] = useState("Image Document");
+    const [pdfQuality, setPdfQuality] = useState(85);
+    const [includePageNumbers, setIncludePageNumbers] = useState(false);
+    const [pageNumberPosition, setPageNumberPosition] = useState("center");
+    const [pageNumberSize, setPageNumberSize] = useState(10);
     const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
@@ -187,6 +195,29 @@ function ImageToPdf() {
         setItems((prev) => prev.filter((item) => item.id !== id));
     };
 
+    const embedCompressedImage = async (pdfDoc, item, quality) => {
+        const { image } = await loadImageFromBuffer(
+            item.buffer,
+            item.file.type || "application/octet-stream",
+        );
+        const canvas = document.createElement("canvas");
+        canvas.width = item.width;
+        canvas.height = item.height;
+        const ctx = canvas.getContext("2d");
+        const isJpeg =
+            item.file.type === "image/jpeg" ||
+            item.file.type === "image/jpg" ||
+            /\.jpe?g$/i.test(item.file.name);
+        if (!isJpeg) {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, item.width, item.height);
+        }
+        ctx.drawImage(image, 0, 0);
+        const jpegBuffer = await canvasToBlob(canvas, "image/jpeg", quality / 100);
+        const arrayBuffer = await jpegBuffer.arrayBuffer();
+        return pdfDoc.embedJpg(arrayBuffer);
+    };
+
     const handleGenerate = async () => {
         if (!items.length || isGenerating) return;
 
@@ -198,9 +229,10 @@ function ImageToPdf() {
         setProgress(10);
 
         try {
-            const { PDFDocument } = await import("pdf-lib");
+            const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
             const pdfDoc = await PDFDocument.create();
             pdfDoc.setTitle(docTitle || "Image Document");
+            const pageNumberFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
             const margin = MARGINS[marginKey];
 
@@ -217,34 +249,7 @@ function ImageToPdf() {
                 );
 
                 const page = pdfDoc.addPage([pageDims.width, pageDims.height]);
-                const isJpeg =
-                    item.file.type === "image/jpeg" ||
-                    item.file.type === "image/jpg" ||
-                    /\.jpe?g$/i.test(item.file.name);
-                const isPng = item.file.type === "image/png" || /\.png$/i.test(item.file.name);
-
-                let embedded;
-                if (isJpeg) {
-                    embedded = await pdfDoc.embedJpg(item.buffer);
-                } else if (isPng) {
-                    embedded = await pdfDoc.embedPng(item.buffer);
-                } else {
-                    const { image } = await loadImageFromBuffer(
-                        item.buffer,
-                        item.file.type || "application/octet-stream",
-                    );
-                    const canvas = document.createElement("canvas");
-                    canvas.width = item.width;
-                    canvas.height = item.height;
-                    canvas.getContext("2d").drawImage(image, 0, 0);
-                    const pngBuffer = await new Promise((resolve, reject) => {
-                        canvas.toBlob(async (blob) => {
-                            if (!blob) return reject(new Error("Could not encode image."));
-                            resolve(await blob.arrayBuffer());
-                        }, "image/png");
-                    });
-                    embedded = await pdfDoc.embedPng(pngBuffer);
-                }
+                const embedded = await embedCompressedImage(pdfDoc, item, pdfQuality);
 
                 const rect = computeDrawRect(
                     pageDims.width,
@@ -256,6 +261,21 @@ function ImageToPdf() {
                 );
 
                 page.drawImage(embedded, rect);
+
+                if (includePageNumbers) {
+                    const label = String(i + 1);
+                    const textWidth = pageNumberFont.widthOfTextAtSize(label, pageNumberSize);
+                    const x = pageNumberPosition === "right"
+                        ? pageDims.width - margin - textWidth
+                        : (pageDims.width - textWidth) / 2;
+                    page.drawText(label, {
+                        x: Math.max(margin, x),
+                        y: Math.max(12, margin * 0.4),
+                        size: pageNumberSize,
+                        font: pageNumberFont,
+                        color: rgb(0.45, 0.45, 0.45),
+                    });
+                }
             }
 
             setStage(STAGE_LABELS[STAGES.COMPILING]);
@@ -365,6 +385,77 @@ function ImageToPdf() {
                     ))}
                 </div>
             </div>
+
+            <div>
+                <label className="img-tool__label" htmlFor="pdf-quality">PDF quality / compression</label>
+                <input
+                    id="pdf-quality"
+                    className="img-tool__range"
+                    type="range"
+                    min={30}
+                    max={100}
+                    value={pdfQuality}
+                    disabled={isGenerating}
+                    onChange={(e) => setPdfQuality(Number(e.target.value))}
+                />
+                <div className="img-tool__range-meta">
+                    <span>Smaller file</span>
+                    <span className="img-tool__range-value">{pdfQuality}%</span>
+                    <span>Higher quality</span>
+                </div>
+            </div>
+
+            <label className="img-tool__checkbox-row">
+                <input
+                    type="checkbox"
+                    checked={includePageNumbers}
+                    disabled={isGenerating}
+                    onChange={(e) => setIncludePageNumbers(e.target.checked)}
+                />
+                Include page numbers
+            </label>
+
+            {includePageNumbers && (
+                <>
+                    <div>
+                        <span className="img-tool__label">Page number position</span>
+                        <div className="img-tool__segmented">
+                            {[
+                                ["center", "Bottom Center"],
+                                ["right", "Bottom Right"],
+                            ].map(([key, label]) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    className={`img-tool__segment${pageNumberPosition === key ? " is-active" : ""}`}
+                                    disabled={isGenerating}
+                                    onClick={() => setPageNumberPosition(key)}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="img-tool__label" htmlFor="pdf-page-num-size">Page number size</label>
+                        <input
+                            id="pdf-page-num-size"
+                            className="img-tool__range"
+                            type="range"
+                            min={8}
+                            max={18}
+                            value={pageNumberSize}
+                            disabled={isGenerating}
+                            onChange={(e) => setPageNumberSize(Number(e.target.value))}
+                        />
+                        <div className="img-tool__range-meta">
+                            <span>8pt</span>
+                            <span className="img-tool__range-value">{pageNumberSize}pt</span>
+                            <span>18pt</span>
+                        </div>
+                    </div>
+                </>
+            )}
 
             <p className="img-tool__hint">
                 Up to {MAX_FILES} images, {formatBytes(MAX_BYTES)} each. PNG, JPG, JPEG, WEBP.
