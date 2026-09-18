@@ -9,12 +9,56 @@ import {COMPRESS_ACCEPT,
     waitFrame, preventDragDefaults } from "../_shared/imageToolUtils";
 // preventDragDefaults imported below
 
-const PRESETS = {
-    "3x1": { rows: 1, cols: 3, label: "Instagram 3×1" },
-    "3x2": { rows: 2, cols: 3, label: "Instagram 3×2" },
-    "3x3": { rows: 3, cols: 3, label: "Instagram 3×3" },
-    custom: { rows: 2, cols: 2, label: "Custom" },
+const PRESET_CATEGORIES = {
+    instagram: {
+        label: "Instagram",
+        presets: {
+            "ig-3x1": { rows: 1, cols: 3, label: "3×1 Row" },
+            "ig-3x2": { rows: 2, cols: 3, label: "3×2 Grid" },
+            "ig-3x3": { rows: 3, cols: 3, label: "3×3 Carousel" },
+            "ig-3x4": { rows: 4, cols: 3, label: "3×4 Giant Grid" },
+        },
+    },
+    panoramas: {
+        label: "Panoramas",
+        presets: {
+            "pan-2x1": { rows: 1, cols: 2, label: "2×1 Swipe" },
+            "pan-3x1": { rows: 1, cols: 3, label: "3×1 Swipe" },
+        },
+    },
+    standard: {
+        label: "Standard",
+        presets: {
+            "std-2x2": { rows: 2, cols: 2, label: "2×2" },
+            "std-4x4": { rows: 4, cols: 4, label: "4×4" },
+        },
+    },
+    twitter: {
+        label: "Twitter / X",
+        presets: {
+            "x-4grid": { rows: 2, cols: 2, label: "4-Image Grid" },
+        },
+    },
+    custom: {
+        label: "Custom",
+        presets: {
+            custom: { rows: 2, cols: 2, label: "Custom Grid", isCustom: true },
+        },
+    },
 };
+
+const PRESETS = Object.fromEntries(
+    Object.values(PRESET_CATEGORIES).flatMap((category) => Object.entries(category.presets)),
+);
+
+const DEFAULT_PRESET = "ig-3x3";
+
+function getCategoryForPreset(presetKey) {
+    for (const [catKey, category] of Object.entries(PRESET_CATEGORIES)) {
+        if (category.presets[presetKey]) return catKey;
+    }
+    return "instagram";
+}
 
 function sliceImage(image, rows, cols) {
     const sliceW = Math.floor(image.naturalWidth / cols);
@@ -50,7 +94,8 @@ function ImageSplitter() {
     const [file, setFile] = useState(null);
     const [sourceImage, setSourceImage] = useState(null);
     const [dimensions, setDimensions] = useState(null);
-    const [preset, setPreset] = useState("3x3");
+    const [activeCategory, setActiveCategory] = useState("instagram");
+    const [preset, setPreset] = useState(DEFAULT_PRESET);
     const [rows, setRows] = useState(3);
     const [cols, setCols] = useState(3);
     const [previewUrl, setPreviewUrl] = useState("");
@@ -62,8 +107,10 @@ function ImageSplitter() {
     const [progressLabel, setProgressLabel] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const effectiveRows = preset === "custom" ? rows : PRESETS[preset].rows;
-    const effectiveCols = preset === "custom" ? cols : PRESETS[preset].cols;
+    const presetDef = PRESETS[preset] || PRESETS[DEFAULT_PRESET];
+    const isCustom = Boolean(presetDef.isCustom);
+    const effectiveRows = isCustom ? rows : presetDef.rows;
+    const effectiveCols = isCustom ? cols : presetDef.cols;
 
     const releaseSource = useCallback(() => {
         if (sourceRef.current?.objectUrl) URL.revokeObjectURL(sourceRef.current.objectUrl);
@@ -126,11 +173,21 @@ function ImageSplitter() {
         [releaseSource, revokePreview],
     );
 
+    const handleCategoryChange = (categoryKey) => {
+        setActiveCategory(categoryKey);
+        const firstKey = Object.keys(PRESET_CATEGORIES[categoryKey].presets)[0];
+        if (!PRESET_CATEGORIES[categoryKey].presets[preset]) {
+            handlePreset(firstKey);
+        }
+    };
+
     const handlePreset = (key) => {
         setPreset(key);
-        if (key !== "custom") {
-            setRows(PRESETS[key].rows);
-            setCols(PRESETS[key].cols);
+        setActiveCategory(getCategoryForPreset(key));
+        const next = PRESETS[key];
+        if (!next?.isCustom) {
+            setRows(next.rows);
+            setCols(next.cols);
         }
     };
 
@@ -190,9 +247,26 @@ function ImageSplitter() {
     const left = (
         <>
             <div>
+                <span className="img-tool__label">Preset category</span>
+                <div className="img-tool__tabs">
+                    {Object.entries(PRESET_CATEGORIES).map(([key, category]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            className={`img-tool__tab${activeCategory === key ? " is-active" : ""}`}
+                            disabled={!hasImage || isProcessing}
+                            onClick={() => handleCategoryChange(key)}
+                        >
+                            {category.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div>
                 <span className="img-tool__label">Grid preset</span>
-                <div className="img-tool__segmented" role="group">
-                    {Object.entries(PRESETS).map(([key, p]) => (
+                <div className="img-tool__segmented" role="group" style={{ flexWrap: "wrap" }}>
+                    {Object.entries(PRESET_CATEGORIES[activeCategory].presets).map(([key, p]) => (
                         <button
                             key={key}
                             type="button"
@@ -206,7 +280,7 @@ function ImageSplitter() {
                 </div>
             </div>
 
-            {preset === "custom" && (
+            {isCustom && (
                 <div className="img-tool__field-row">
                     <div>
                         <label className="img-tool__label" htmlFor="split-rows">Rows</label>
