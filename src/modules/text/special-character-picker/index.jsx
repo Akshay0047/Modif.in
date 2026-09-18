@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import BackButton from "../../../components/BackButton";
-import CopyButton from "../_shared/CopyButton";
+import CopyStatusLabel from "../_shared/CopyStatusLabel";
 import TextToolShell from "../_shared/TextToolShell";
 import { SPECIAL_CHARACTER_CATEGORIES } from "../_shared/symbolData";
 
@@ -8,6 +8,8 @@ function SpecialCharacterPicker() {
     const [activeCategory, setActiveCategory] = useState("accented");
     const [query, setQuery] = useState("");
     const [selectedChar, setSelectedChar] = useState("");
+    const [copied, setCopied] = useState(false);
+    const copyTimeoutRef = useRef(null);
 
     const category = SPECIAL_CHARACTER_CATEGORIES.find(
         (entry) => entry.id === activeCategory,
@@ -24,6 +26,25 @@ function SpecialCharacterPicker() {
                 symbol.char.includes(normalizedQuery),
         );
     }, [category, query]);
+
+    const handleSymbolClick = async (char) => {
+        setSelectedChar(char);
+
+        try {
+            await navigator.clipboard.writeText(char);
+            setCopied(true);
+
+            if (copyTimeoutRef.current) {
+                window.clearTimeout(copyTimeoutRef.current);
+            }
+
+            copyTimeoutRef.current = window.setTimeout(() => {
+                setCopied(false);
+            }, 2000);
+        } catch {
+            setCopied(false);
+        }
+    };
 
     return (
         <TextToolShell
@@ -67,7 +88,7 @@ function SpecialCharacterPicker() {
                     <h2 className="text-tool-section-title">
                         {category?.label ?? "Characters"}
                     </h2>
-                    <CopyButton text={selectedChar} label="Copy selected" />
+                    <CopyStatusLabel copied={copied} />
                 </div>
 
                 {filteredSymbols.length === 0 ? (
@@ -84,7 +105,7 @@ function SpecialCharacterPicker() {
                                         : ""
                                 }`}
                                 title={symbol.name}
-                                onClick={() => setSelectedChar(symbol.char)}
+                                onClick={() => handleSymbolClick(symbol.char)}
                             >
                                 {symbol.char}
                             </button>
@@ -94,7 +115,7 @@ function SpecialCharacterPicker() {
 
                 {selectedChar ? (
                     <p className="text-tool-hint" style={{ marginTop: "0.75rem" }}>
-                        Selected: {selectedChar}
+                        Last copied: {selectedChar}
                     </p>
                 ) : null}
             </div>

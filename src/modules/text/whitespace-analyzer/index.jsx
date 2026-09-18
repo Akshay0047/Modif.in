@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import TextToolShell from "../_shared/TextToolShell";
+import WhitespaceHighlightPreview from "../_shared/WhitespaceHighlightPreview";
 import { analyzeWhitespace } from "../_shared/textMetrics";
 
 function WhitespaceAnalyzer() {
@@ -29,21 +30,30 @@ function WhitespaceAnalyzer() {
             description="Inspect leading, trailing, consecutive, and unusual whitespace in your text."
             leading={<BackButton />}
         >
-            <div className="text-tool-panel">
-                <label
-                    className="text-tool-label"
-                    htmlFor="whitespace-analyzer-input"
-                >
-                    Enter or paste your text
-                </label>
-                <textarea
-                    id="whitespace-analyzer-input"
-                    className="text-tool-textarea"
-                    value={text}
-                    onChange={(event) => setText(event.target.value)}
-                    placeholder="Paste text to analyze spaces, tabs, and blank lines…"
-                    spellCheck={false}
-                />
+            <div className="text-tool-split">
+                <div className="text-tool-panel text-tool-split__panel">
+                    <label
+                        className="text-tool-label"
+                        htmlFor="whitespace-analyzer-input"
+                    >
+                        Enter or paste your text
+                    </label>
+                    <textarea
+                        id="whitespace-analyzer-input"
+                        className="text-tool-textarea"
+                        value={text}
+                        onChange={(event) => setText(event.target.value)}
+                        placeholder="Paste text to analyze spaces, tabs, and blank lines…"
+                        spellCheck={false}
+                    />
+                </div>
+
+                <div className="text-tool-panel text-tool-split__panel">
+                    <h2 className="text-tool-section-title">
+                        Unusual whitespace characters
+                    </h2>
+                    <WhitespaceHighlightPreview text={text} />
+                </div>
             </div>
 
             <div className="text-tool-panel">
@@ -60,36 +70,6 @@ function WhitespaceAnalyzer() {
                         </div>
                     ))}
                 </div>
-            </div>
-
-            <div className="text-tool-panel">
-                <h2 className="text-tool-section-title">
-                    Unusual whitespace characters
-                </h2>
-                {analysis.unusual.length === 0 ? (
-                    <p className="text-tool-empty">
-                        No unusual whitespace characters detected.
-                    </p>
-                ) : (
-                    <div className="text-tool-table-wrap">
-                        <table className="text-tool-table">
-                            <thead>
-                                <tr>
-                                    <th>Character</th>
-                                    <th>Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {analysis.unusual.map((entry) => (
-                                    <tr key={entry.label}>
-                                        <td>{entry.label}</td>
-                                        <td>{entry.count}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
             </div>
         </TextToolShell>
     );
