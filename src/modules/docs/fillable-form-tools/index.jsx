@@ -1,157 +1,150 @@
 import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import { downloadBytes } from "../_shared/downloadUtils";
-import { readFileAsArrayBuffer, replaceExtension } from "../_shared/fileUtils";
-import { loadPdfLibDocument } from "../_shared/pdfUtils";
+import FileDropZone from "../_shared/FileDropZone";
+import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
+import { loadPdfWithPdfLib } from "../_shared/pdfUtils";
 
 function FillableFormTools() {
     const [fields, setFields] = useState([]);
     const [values, setValues] = useState({});
-    const [filename, setFilename] = useState("");
-    const [sourceBuffer, setSourceBuffer] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [buffer, setBuffer] = useState(null);
+    const [file, setFile] = useState(null);
+    const [status, setStatus] = useState("");
 
-    const loadForm = async (files) => {
-        const file = files[0];
-        if (!file) return;
-        setLoading(true);
-        setError("");
+    const handleFile = async (files) => {
+        const next = files[0] ?? null;
+        setFile(next);
+        if (!next) {
+            setBuffer(null);
+            setFields([]);
+            return;
+        }
+
+        const arrayBuffer = await readFileAsArrayBuffer(next);
+        setBuffer(arrayBuffer);
+
         try {
-            const buffer = await readFileAsArrayBuffer(file);
-            const pdf = await loadPdfLibDocument(buffer);
+            const pdf = await loadPdfWithPdfLib(arrayBuffer);
             const form = pdf.getForm();
             const formFields = form.getFields().map((field) => {
                 const name = field.getName();
                 let value = "";
-                let type = field.constructor.name;
                 try {
-                    if (typeof field.getText === "function") value = field.getText();
-                    else if (typeof field.isChecked === "function") value = field.isChecked();
+                    if (field.constructor.name.includes("Text")) {
+                        value = field.getText() ?? "";
+                    } else if (field.constructor.name.includes("CheckBox")) {
+                        value = field.isChecked() ? "true" : "false";
+                    }
                 } catch {
                     value = "";
                 }
-                return { name, type, value };
+                return { name, type: field.constructor.name, value };
             });
             setFields(formFields);
             setValues(
-                Object.fromEntries(
-                    formFields.map((field) => [
-                        field.name,
-                        typeof field.value === "boolean" ? field.value : String(field.value ?? ""),
-                    ]),
-                ),
+                Object.fromEntries(formFields.map((f) => [f.name, f.value])),
             );
-            setSourceBuffer(buffer);
-            setFilename(file.name);
-        } catch (loadError) {
-            setError(loadError instanceof Error ? loadError.message : "Failed to read form fields.");
+            setStatus(`Found ${formFields.length} form field(s).`);
+        } catch {
             setFields([]);
-        } finally {
-            setLoading(false);
+            setStatus("No AcroForm fields detected in this PDF.");
         }
     };
 
-    const saveForm = async () => {
-        if (!sourceBuffer) return;
-        setLoading(true);
-        setError("");
+    const handleSave = async () => {
+        if (!buffer || !file) return;
+        setStatus("Saving form data…");
+
         try {
-            const pdf = await loadPdfLibDocument(sourceBuffer);
+            const pdf = await loadPdfWithPdfLib(buffer);
             const form = pdf.getForm();
-            form.getFields().forEach((field) => {
+
+            for (const field of form.getFields()) {
                 const name = field.getName();
                 const value = values[name];
+                if (value === undefined) continue;
+
                 try {
-                    if (typeof field.setText === "function") field.setText(String(value ?? ""));
-                    else if (typeof field.check === "function" && typeof field.uncheck === "function") {
-                        if (value === true || value === "true") field.check();
+                    if (field.constructor.name.includes("Text")) {
+                        field.setText(String(value));
+                    } else if (field.constructor.name.includes("CheckBox")) {
+                        if (value === "true" || value === true) field.check();
                         else field.uncheck();
                     }
                 } catch {
-                    // Unsupported field mutation.
+                    // Skip unsupported field types
                 }
-            });
-            const bytes = await pdf.save();
-            downloadBytes(bytes, replaceExtension(filename, "-filled.pdf"), "application/pdf");
-        } catch (saveError) {
-            setError(saveError instanceof Error ? saveError.message : "Failed to save form.");
-        } finally {
-            setLoading(false);
+            }
+
+            const result = await pdf.save();
+            downloadBytes(
+                result,
+                `${getBaseName(file.name)}-filled.pdf`,
+                "application/pdf",
+            );
+            setStatus("Filled PDF downloaded.");
+        } catch (error) {
+            setStatus(error?.message ?? "Save failed.");
         }
     };
 
     return (
         <DocToolShell
             title="Fillable Form Tools"
-            description="Parse AcroForm fields and populate PDF form inputs before saving locally."
+            description="Detect AcroForm fields and populate them before saving."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
                 <FileDropZone
                     accept=".pdf,application/pdf"
-                    label="Drop a fillable PDF form"
-                    onFiles={loadForm}
-                    disabled={loading}
+                    files={file ? [file] : []}
+                    onFiles={handleFile}
+                    label="Drop a PDF with form fields"
                 />
 
-                {fields.length ? (
-                    <>
-                        <div className="doc-tool-grid" style={{ marginTop: "1rem" }}>
-                            {fields.map((field) => (
-                                <div key={field.name}>
-                                    <label className="doc-tool-label" htmlFor={field.name}>
-                                        {field.name} <span className="doc-tool-status">({field.type})</span>
-                                    </label>
-                                    {typeof field.value === "boolean" || field.type.includes("Check") ? (
-                                        <label className="doc-tool-checkbox">
-                                            <input
-                                                id={field.name}
-                                                type="checkbox"
-                                                className="cursor-target"
-                                                checked={values[field.name] === true || values[field.name] === "true"}
-                                                onChange={(event) =>
-                                                    setValues((current) => ({
-                                                        ...current,
-                                                        [field.name]: event.target.checked,
-                                                    }))
-                                                }
-                                            />
-                                            Checked
-                                        </label>
-                                    ) : (
-                                        <input
-                                            id={field.name}
-                                            className="doc-tool-input cursor-target"
-                                            value={values[field.name] ?? ""}
-                                            onChange={(event) =>
-                                                setValues((current) => ({
-                                                    ...current,
-                                                    [field.name]: event.target.value,
-                                                }))
-                                            }
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="doc-tool-controls">
-                            <button
-                                type="button"
-                                className="doc-tool-button doc-tool-button--primary cursor-target"
-                                onClick={saveForm}
-                                disabled={loading}
-                            >
-                                Save filled PDF
-                            </button>
-                        </div>
-                    </>
+                {fields.length > 0 ? (
+                    <div style={{ marginTop: "1rem" }}>
+                        {fields.map((field) => (
+                            <div key={field.name} style={{ marginBottom: "0.75rem" }}>
+                                <label className="doc-tool-label">{field.name}</label>
+                                {field.type.includes("CheckBox") ? (
+                                    <input
+                                        type="checkbox"
+                                        className="cursor-target"
+                                        checked={values[field.name] === "true"}
+                                        onChange={(e) =>
+                                            setValues((prev) => ({
+                                                ...prev,
+                                                [field.name]: e.target.checked ? "true" : "false",
+                                            }))
+                                        }
+                                    />
+                                ) : (
+                                    <input
+                                        className="doc-tool-input cursor-target"
+                                        value={values[field.name] ?? ""}
+                                        onChange={(e) =>
+                                            setValues((prev) => ({
+                                                ...prev,
+                                                [field.name]: e.target.value,
+                                            }))
+                                        }
+                                    />
+                                )}
+                            </div>
+                        ))}
+                        <button
+                            type="button"
+                            className="doc-tool-button doc-tool-button--primary cursor-target"
+                            onClick={handleSave}
+                        >
+                            Save Filled PDF
+                        </button>
+                    </div>
                 ) : null}
 
-                {loading ? <p className="doc-tool-status">Processing form…</p> : null}
-                {error ? <p className="doc-tool-error">{error}</p> : null}
+                {status ? <p className="doc-tool-status">{status}</p> : null}
             </div>
         </DocToolShell>
     );
