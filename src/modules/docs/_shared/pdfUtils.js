@@ -1,164 +1,230 @@
 import * as pdfjs from "pdfjs-dist";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
 
-let pdfJsInitialized = false;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url,
+).href;
 
-export function initPdfJs() {
-    if (!pdfJsInitialized) {
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-            "pdfjs-dist/build/pdf.worker.min.mjs",
-            import.meta.url,
-        ).href;
-        pdfJsInitialized = true;
-    }
+export async function loadPdfWithPdfLib(arrayBuffer, options = {}) {
+    return PDFDocument.load(arrayBuffer, { ignoreEncryption: true, ...options });
 }
 
-export async function loadPdfJsDocument(arrayBuffer) {
-    initPdfJs();
+export async function loadPdfWithPdfJs(arrayBuffer) {
     const data = arrayBuffer instanceof Uint8Array
         ? arrayBuffer
         : new Uint8Array(arrayBuffer);
-    return pdfjs.getDocument({ data }).promise;
+    const loadingTask = pdfjs.getDocument({ data });
+    return loadingTask.promise;
 }
 
-export async function loadPdfLibDocument(arrayBuffer, options = {}) {
-    return PDFDocument.load(arrayBuffer, {
-        ignoreEncryption: true,
-        ...options,
-    });
+export async function getPdfPageCount(arrayBuffer) {
+    const pdf = await loadPdfWithPdfJs(arrayBuffer);
+    const count = pdf.numPages;
+    pdf.destroy();
+    return count;
 }
 
-export async function renderPageToCanvas(pdfDoc, pageNum, canvas, scale = 1.25) {
-    const page = await pdfDoc.getPage(pageNum);
+export async function renderPageToCanvas(pdf, pageNumber, scale = 1.5) {
+    const page = await pdf.getPage(pageNumber);
     const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
-    const context = canvas.getContext("2d");
     await page.render({ canvasContext: context, viewport }).promise;
-    return { page, viewport };
+    page.cleanup();
+    return canvas;
 }
 
-export async function renderPageToImageData(pdfDoc, pageNum, scale = 2) {
-    const canvas = document.createElement("canvas");
-    const { viewport } = await renderPageToCanvas(pdfDoc, pageNum, canvas, scale);
-    const imageData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
+export async function renderPageToDataUrl(pdf, pageNumber, scale = 1.5, mimeType = "image/png") {
+    const canvas = await renderPageToCanvas(pdf, pageNumber, scale);
+    const dataUrl = canvas.toDataURL(mimeType);
     canvas.width = 0;
     canvas.height = 0;
-    return { imageData, width: viewport.width, height: viewport.height };
+    return dataUrl;
 }
 
-export async function extractTextFromPdf(arrayBuffer) {
-    const pdf = await loadPdfJsDocument(arrayBuffer);
+export async function extractPageText(pdf, pageNumber) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    page.cleanup();
+    const items = content.items.map((item) => item.str);
+    return items.join(" ");
+}
+
+export async function extractAllText(pdf) {
     const pages = [];
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
-        const page = await pdf.getPage(pageNum);
-        const content = await page.getTextContent();
-        const items = content.items.map((item) => ({
-            text: item.str,
-            x: item.transform[4],
-            y: item.transform[5],
-            width: item.width,
-            height: item.height,
-        }));
-        const text = items.map((item) => item.text).join(" ");
-        pages.push({ pageNum, text, items });
+    for (let i = 1; i <= pdf.numPages; i += 1) {
+        pages.push(await extractPageText(pdf, i));
     }
-    return { numPages: pdf.numPages, pages };
+    return pages.join("\n\n");
 }
 
-export function parsePageRange(rangeStr, totalPages) {
-    const trimmed = rangeStr.trim();
-    if (!trimmed) return [];
-
-    const indices = new Set();
-    const parts = trimmed.split(",");
-
-    for (const part of parts) {
-        const segment = part.trim();
-        if (!segment) continue;
-
-        if (segment.includes("-")) {
-            const [startRaw, endRaw] = segment.split("-");
-            const start = Number.parseInt(startRaw, 10);
-            const end = Number.parseInt(endRaw, 10);
-            if (!Number.isFinite(start) || !Number.isFinite(end)) {
-                throw new Error(`Invalid page range segment: ${segment}`);
-            }
-            const from = Math.min(start, end);
-            const to = Math.max(start, end);
-            for (let page = from; page <= to; page += 1) {
-                if (page >= 1 && page <= totalPages) indices.add(page - 1);
-            }
-        } else {
-            const page = Number.parseInt(segment, 10);
-            if (!Number.isFinite(page)) {
-                throw new Error(`Invalid page number: ${segment}`);
-            }
-            if (page >= 1 && page <= totalPages) indices.add(page - 1);
-        }
+export async function mergePdfBuffers(buffers) {
+    const merged = await PDFDocument.create();
+    for (const buffer of buffers) {
+        const source = await PDFDocument.load(buffer, { ignoreEncryption: true });
+        const indices = source.getPageIndices();
+        const pages = await merged.copyPages(source, indices);
+        pages.forEach((page) => merged.addPage(page));
     }
-
-    return Array.from(indices).sort((a, b) => a - b);
+    return merged.save();
 }
 
-export async function copyPagesToNewPdf(sourcePdf, pageIndices) {
+export async function extractPages(buffer, pageIndices) {
+    const source = await PDFDocument.load(buffer, { ignoreEncryption: true });
     const output = await PDFDocument.create();
-    const copied = await output.copyPages(sourcePdf, pageIndices);
-    copied.forEach((page) => output.addPage(page));
-    return output;
+    const pages = await output.copyPages(source, pageIndices);
+    pages.forEach((page) => output.addPage(page));
+    return output.save();
 }
 
-export async function embedCanvasPage(pdfDoc, canvas, pageWidth, pageHeight) {
-    const pngData = canvas.toDataURL("image/png");
-    const image = await pdfDoc.embedPng(pngData);
-    const page = pdfDoc.addPage([pageWidth, pageHeight]);
-    page.drawImage(image, {
-        x: 0,
-        y: 0,
-        width: pageWidth,
-        height: pageHeight,
-    });
-    return page;
+export async function reorderPages(buffer, order, rotations = {}) {
+    const source = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const output = await PDFDocument.create();
+    const allPages = await output.copyPages(source, source.getPageIndices());
+
+    for (const index of order) {
+        const page = allPages[index];
+        const rotation = rotations[index] ?? 0;
+        if (rotation) {
+            page.setRotation(degrees(rotation));
+        }
+        output.addPage(page);
+    }
+
+    return output.save();
 }
 
-export async function drawWatermark(page, pdfDoc, text, options = {}) {
+export async function embedImageInPdf(imageBytes, mimeType) {
+    const pdf = await PDFDocument.create();
+    const image = mimeType.includes("png")
+        ? await pdf.embedPng(imageBytes)
+        : await pdf.embedJpg(imageBytes);
+    const page = pdf.addPage([image.width, image.height]);
+    page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+    return pdf.save();
+}
+
+export async function addWatermark(buffer, options) {
     const {
+        text = "CONFIDENTIAL",
+        opacity = 0.3,
         fontSize = 48,
-        opacity = 0.2,
         angle = -45,
         color = rgb(0.5, 0.5, 0.5),
         tile = false,
     } = options;
-    const { width, height } = page.getSize();
-    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const textWidth = font.widthOfTextAtSize(text, fontSize);
 
-    if (tile) {
-        for (let y = 0; y < height; y += fontSize * 3) {
-            for (let x = -width; x < width * 2; x += textWidth + 40) {
-                page.drawText(text, {
-                    x,
-                    y,
-                    size: fontSize,
-                    font,
-                    color,
-                    opacity,
-                    rotate: degrees(angle),
-                });
+    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const font = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const pages = pdf.getPages();
+
+    for (const page of pages) {
+        const { width, height } = page.getSize();
+        if (tile) {
+            for (let y = 0; y < height; y += fontSize * 3) {
+                for (let x = 0; x < width; x += text.length * fontSize * 0.6) {
+                    page.drawText(text, {
+                        x,
+                        y,
+                        size: fontSize,
+                        font,
+                        color,
+                        opacity,
+                        rotate: degrees(angle),
+                    });
+                }
             }
+        } else {
+            const textWidth = font.widthOfTextAtSize(text, fontSize);
+            page.drawText(text, {
+                x: (width - textWidth) / 2,
+                y: height / 2,
+                size: fontSize,
+                font,
+                color,
+                opacity,
+                rotate: degrees(angle),
+            });
         }
-        return;
     }
 
-    page.drawText(text, {
-        x: width / 2 - textWidth / 2,
-        y: height / 2,
-        size: fontSize,
-        font,
-        color,
-        opacity,
-        rotate: degrees(angle),
-    });
+    return pdf.save();
 }
 
-export { PDFDocument, degrees, rgb, StandardFonts };
+export async function stripMetadata(buffer) {
+    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    pdf.setTitle("");
+    pdf.setAuthor("");
+    pdf.setSubject("");
+    pdf.setKeywords([]);
+    pdf.setProducer("");
+    pdf.setCreator("");
+    pdf.setCreationDate(new Date(0));
+    pdf.setModificationDate(new Date(0));
+    return pdf.save();
+}
+
+export async function flattenPdf(buffer) {
+    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const form = pdf.getForm();
+    try {
+        form.flatten();
+    } catch {
+        // No form fields to flatten
+    }
+    return pdf.save();
+}
+
+export async function addPageNumbers(buffer, options = {}) {
+    const {
+        format = "Page {n} of {total}",
+        fontSize = 10,
+        margin = 30,
+    } = options;
+
+    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
+    const pages = pdf.getPages();
+    const total = pages.length;
+
+    pages.forEach((page, index) => {
+        const { width } = page.getSize();
+        const label = format
+            .replace("{n}", String(index + 1))
+            .replace("{total}", String(total));
+        const textWidth = font.widthOfTextAtSize(label, fontSize);
+        page.drawText(label, {
+            x: (width - textWidth) / 2,
+            y: margin,
+            size: fontSize,
+            font,
+            color: rgb(0.3, 0.3, 0.3),
+        });
+    });
+
+    return pdf.save();
+}
+
+export async function repairPdf(buffer) {
+    try {
+        const pdf = await PDFDocument.load(buffer, {
+            ignoreEncryption: true,
+            throwOnInvalidObject: false,
+        });
+        return pdf.save();
+    } catch {
+        const pdf = await PDFDocument.create();
+        const page = pdf.addPage();
+        page.drawText("Document could not be fully recovered.", {
+            x: 50,
+            y: page.getHeight() - 50,
+            size: 12,
+        });
+        return pdf.save();
+    }
+}
+
+export { PDFDocument, degrees, rgb, StandardFonts, pdfjs };

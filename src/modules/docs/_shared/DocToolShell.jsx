@@ -5,7 +5,7 @@ import DepthText from "../../../components/DepthText";
 import TargetCursor from "../../../components/TargetCursor";
 import Footer from "../../../sections/Footer";
 import "../../../layouts/ToolHubLayout.css";
-import LocalSecurityDisclaimer from "../../text/_shared/LocalSecurityDisclaimer";
+import LocalSecurityDisclaimer from "./LocalSecurityDisclaimer";
 import "./doc-tool.css";
 
 function DocToolShell({

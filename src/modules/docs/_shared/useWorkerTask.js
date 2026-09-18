@@ -1,72 +1,67 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useWorkerTask(workerFactory) {
+export function useWorkerTask(workerUrl) {
     const workerRef = useRef(null);
-    const [loading, setLoading] = useState(false);
+    const [running, setRunning] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [status, setStatus] = useState("");
     const [error, setError] = useState("");
 
     useEffect(() => {
+        workerRef.current = new Worker(workerUrl, { type: "module" });
         return () => {
             workerRef.current?.terminate();
             workerRef.current = null;
         };
-    }, []);
+    }, [workerUrl]);
 
-    const runTask = useCallback(
-        async (type, payload, transferables = []) => {
-            setLoading(true);
-            setProgress(0);
-            setStatus("");
-            setError("");
+    const run = useCallback(
+        (payload) =>
+            new Promise((resolve, reject) => {
+                const worker = workerRef.current;
+                if (!worker) {
+                    reject(new Error("Worker not available"));
+                    return;
+                }
 
-            if (!workerRef.current) {
-                workerRef.current = workerFactory();
-            }
+                setRunning(true);
+                setProgress(0);
+                setError("");
 
-            const worker = workerRef.current;
-
-            return new Promise((resolve, reject) => {
                 const handleMessage = (event) => {
-                    const message = event.data;
-                    if (message.type === "progress") {
-                        setProgress(message.progress ?? 0);
-                        if (message.status) setStatus(message.status);
+                    const { type, result, error: workerError, progress: pct } = event.data ?? {};
+                    if (type === "progress") {
+                        setProgress(pct ?? 0);
                         return;
                     }
-                    if (message.type === "result") {
-                        worker.removeEventListener("message", handleMessage);
-                        worker.removeEventListener("error", handleError);
-                        setLoading(false);
-                        resolve(message.result);
+                    worker.removeEventListener("message", handleMessage);
+                    worker.removeEventListener("error", handleError);
+                    setRunning(false);
+                    if (type === "error") {
+                        setError(workerError ?? "Processing failed");
+                        reject(new Error(workerError ?? "Processing failed"));
                         return;
                     }
-                    if (message.type === "error") {
-                        worker.removeEventListener("message", handleMessage);
-                        worker.removeEventListener("error", handleError);
-                        setLoading(false);
-                        setError(message.error);
-                        reject(new Error(message.error));
+                    if (type === "done" || result !== undefined) {
+                        resolve(result);
+                        return;
                     }
+                    reject(new Error("Worker returned no result"));
                 };
 
                 const handleError = (event) => {
                     worker.removeEventListener("message", handleMessage);
                     worker.removeEventListener("error", handleError);
-                    setLoading(false);
-                    const message = event.message || "Worker failed.";
-                    setError(message);
-                    reject(new Error(message));
+                    setRunning(false);
+                    setError(event.message ?? "Worker error");
+                    reject(event);
                 };
 
                 worker.addEventListener("message", handleMessage);
                 worker.addEventListener("error", handleError);
-                worker.postMessage({ type, payload }, transferables);
-            });
-        },
-        [workerFactory],
+                worker.postMessage(payload);
+            }),
+        [],
     );
 
-    return { runTask, loading, progress, status, error, setError };
+    return { run, running, progress, error, setError };
 }
