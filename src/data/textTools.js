@@ -68,6 +68,11 @@ export const textToolsData = [
                 "Invisible Character Tools",
                 "ASCII, Unicode & Symbols",
             ),
+            tool(
+                "separators-dividers",
+                "Separators and Dividers",
+                "ASCII, Unicode & Symbols",
+            ),
         ],
     },
     {

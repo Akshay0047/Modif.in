@@ -396,6 +396,58 @@
   word-break: break-word;
 }
 
+.text-tool-divider-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.text-tool-divider-card {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(15, 20, 35, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  color: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.text-tool-divider-card:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.12);
+  transform: translateY(-1px);
+}
+
+.text-tool-divider-card.is-selected {
+  border-color: rgba(16, 185, 129, 0.65);
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.text-tool-divider-card__label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #94a3b8;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.text-tool-divider-card__value {
+  display: block;
+  color: #f8fafc;
+  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
 .text-tool-info-grid {
   display: grid;
   gap: 0.75rem;
