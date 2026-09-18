@@ -23,25 +23,177 @@ const FORMATS = [
     { id: "svg", label: "SVG", mime: "image/svg+xml" },
 ];
 
-function buildSvg({ width, height, bgColor, textColor, label, fontSize }) {
+const FONT_FAMILIES = [
+    ["IBM Plex Sans, Arial, sans-serif", "IBM Plex Sans"],
+    ["Arial, Helvetica, sans-serif", "Arial"],
+    ["Georgia, Times New Roman, serif", "Georgia"],
+    ["Courier New, Courier, monospace", "Courier New"],
+    ["Impact, Arial Black, sans-serif", "Impact"],
+];
+
+const BG_STYLES = [
+    ["solid", "Solid Color"],
+    ["checkerboard", "Checkerboard"],
+    ["dots", "Dots"],
+    ["stripes", "Diagonal Stripes"],
+];
+
+function createPatternCanvas(style, color, width, height) {
+    const tile = document.createElement("canvas");
+    const size = style === "dots" ? 24 : 20;
+    tile.width = size;
+    tile.height = size;
+    const ctx = tile.getContext("2d");
+    const light = color;
+    const dark = adjustBrightness(color, -18);
+
+    if (style === "checkerboard") {
+        ctx.fillStyle = light;
+        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = dark;
+        ctx.fillRect(0, 0, size / 2, size / 2);
+        ctx.fillRect(size / 2, size / 2, size / 2, size / 2);
+    } else if (style === "dots") {
+        ctx.fillStyle = light;
+        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = dark;
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, 3, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (style === "stripes") {
+        ctx.fillStyle = light;
+        ctx.fillRect(0, 0, size, size);
+        ctx.strokeStyle = dark;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-size, size);
+        ctx.lineTo(size, -size);
+        ctx.moveTo(0, size * 2);
+        ctx.lineTo(size * 2, 0);
+        ctx.stroke();
+    }
+
+    const patternCanvas = document.createElement("canvas");
+    patternCanvas.width = width;
+    patternCanvas.height = height;
+    const pctx = patternCanvas.getContext("2d");
+    const pattern = pctx.createPattern(tile, "repeat");
+    pctx.fillStyle = pattern;
+    pctx.fillRect(0, 0, width, height);
+    return patternCanvas;
+}
+
+function adjustBrightness(hex, amount) {
+    const n = normalizeHexColor(hex, "#1e293b");
+    const r = clamp(parseInt(n.slice(1, 3), 16) + amount, 0, 255);
+    const g = clamp(parseInt(n.slice(3, 5), 16) + amount, 0, 255);
+    const b = clamp(parseInt(n.slice(5, 7), 16) + amount, 0, 255);
+    return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function applyBorder(ctx, width, height, borderWidth, borderColor, borderStyle) {
+    if (borderWidth <= 0) return;
+    ctx.save();
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = borderWidth;
+    if (borderStyle === "dashed") ctx.setLineDash([borderWidth * 2, borderWidth * 1.5]);
+    else if (borderStyle === "dotted") ctx.setLineDash([borderWidth, borderWidth]);
+    const inset = borderWidth / 2;
+    ctx.strokeRect(inset, inset, width - borderWidth, height - borderWidth);
+    ctx.restore();
+}
+
+function paintPlaceholder(ctx, options) {
+    const {
+        width,
+        height,
+        bgStyle,
+        bgColor,
+        textColor,
+        label,
+        fontSize,
+        fontFamily,
+        borderWidth,
+        borderColor,
+        borderStyle,
+    } = options;
+
+    if (bgStyle === "solid") {
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, width, height);
+    } else {
+        const pattern = createPatternCanvas(bgStyle, bgColor, width, height);
+        ctx.drawImage(pattern, 0, 0);
+    }
+
+    applyBorder(ctx, width, height, borderWidth, borderColor, borderStyle);
+
+    const size = clamp(fontSize, 8, Math.min(width, height) / 2);
+    ctx.fillStyle = textColor;
+    ctx.font = `600 ${size}px ${fontFamily}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, width / 2, height / 2);
+}
+
+function buildSvg(options) {
+    const {
+        width,
+        height,
+        bgColor,
+        textColor,
+        label,
+        fontSize,
+        fontFamily,
+        borderWidth,
+        borderColor,
+        borderStyle,
+        bgStyle,
+    } = options;
     const escaped = label
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
+    const dash = borderStyle === "dashed" ? "12 8" : borderStyle === "dotted" ? "4 4" : "none";
+    const patternDefs = bgStyle === "checkerboard"
+        ? `<pattern id="bg" width="20" height="20" patternUnits="userSpaceOnUse">
+  <rect width="20" height="20" fill="${bgColor}"/>
+  <rect width="10" height="10" fill="${adjustBrightness(bgColor, -18)}"/>
+  <rect x="10" y="10" width="10" height="10" fill="${adjustBrightness(bgColor, -18)}"/>
+</pattern>`
+        : bgStyle === "dots"
+            ? `<pattern id="bg" width="24" height="24" patternUnits="userSpaceOnUse">
+  <rect width="24" height="24" fill="${bgColor}"/>
+  <circle cx="12" cy="12" r="3" fill="${adjustBrightness(bgColor, -18)}"/>
+</pattern>`
+            : bgStyle === "stripes"
+                ? `<pattern id="bg" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+  <rect width="20" height="20" fill="${bgColor}"/>
+  <line x1="0" y1="0" x2="0" y2="20" stroke="${adjustBrightness(bgColor, -18)}" stroke-width="4"/>
+</pattern>`
+                : "";
+    const fill = bgStyle === "solid" ? bgColor : "url(#bg)";
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <rect width="100%" height="100%" fill="${bgColor}"/>
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="${textColor}" font-family="IBM Plex Sans, Arial, sans-serif" font-size="${fontSize}" font-weight="600">${escaped}</text>
+  ${patternDefs ? `<defs>${patternDefs}</defs>` : ""}
+  <rect width="100%" height="100%" fill="${fill}"/>
+  ${borderWidth > 0 ? `<rect x="${borderWidth / 2}" y="${borderWidth / 2}" width="${width - borderWidth}" height="${height - borderWidth}" fill="none" stroke="${borderColor}" stroke-width="${borderWidth}" stroke-dasharray="${dash}"/>` : ""}
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="600">${escaped}</text>
 </svg>`;
 }
 
 function PlaceholderImageGenerator() {
     const [width, setWidth] = useState(600);
     const [height, setHeight] = useState(400);
+    const [bgStyle, setBgStyle] = useState("solid");
     const [bgColor, setBgColor] = useState("#1e293b");
     const [textColor, setTextColor] = useState("#94a3b8");
+    const [fontFamily, setFontFamily] = useState(FONT_FAMILIES[0][0]);
     const [label, setLabel] = useState("");
     const [fontSize, setFontSize] = useState(32);
+    const [borderWidth, setBorderWidth] = useState(0);
+    const [borderColor, setBorderColor] = useState("#10b981");
+    const [borderStyle, setBorderStyle] = useState("solid");
     const [format, setFormat] = useState("png");
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
@@ -53,6 +205,36 @@ function PlaceholderImageGenerator() {
     const safeHeight = clamp(Math.round(height), 1, MAX_DIMENSION);
     const safeBg = normalizeHexColor(bgColor, "#1e293b");
     const safeText = normalizeHexColor(textColor, "#94a3b8");
+    const safeBorder = normalizeHexColor(borderColor, "#10b981");
+
+    const renderOptions = useMemo(
+        () => ({
+            width: safeWidth,
+            height: safeHeight,
+            bgStyle,
+            bgColor: safeBg,
+            textColor: safeText,
+            label: displayLabel,
+            fontSize,
+            fontFamily,
+            borderWidth,
+            borderColor: safeBorder,
+            borderStyle,
+        }),
+        [
+            safeWidth,
+            safeHeight,
+            bgStyle,
+            safeBg,
+            safeText,
+            displayLabel,
+            fontSize,
+            fontFamily,
+            borderWidth,
+            safeBorder,
+            borderStyle,
+        ],
+    );
 
     const renderCanvas = useCallback(() => {
         const canvas = canvasRef.current;
@@ -60,29 +242,18 @@ function PlaceholderImageGenerator() {
         canvas.width = safeWidth;
         canvas.height = safeHeight;
         const ctx = canvas.getContext("2d");
-        ctx.fillStyle = safeBg;
-        ctx.fillRect(0, 0, safeWidth, safeHeight);
-        const size = clamp(fontSize, 8, Math.min(safeWidth, safeHeight) / 2);
-        ctx.fillStyle = safeText;
-        ctx.font = `600 ${size}px IBM Plex Sans, Arial, sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(displayLabel, safeWidth / 2, safeHeight / 2);
+        paintPlaceholder(ctx, renderOptions);
         return canvas;
-    }, [displayLabel, fontSize, safeBg, safeHeight, safeText, safeWidth]);
+    }, [renderOptions, safeHeight, safeWidth]);
 
     const svgPreviewUrl = useMemo(() => {
         if (format !== "svg") return "";
         const svg = buildSvg({
-            width: safeWidth,
-            height: safeHeight,
-            bgColor: safeBg,
-            textColor: safeText,
-            label: displayLabel,
+            ...renderOptions,
             fontSize: clamp(fontSize, 8, Math.min(safeWidth, safeHeight) / 2),
         });
         return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-    }, [displayLabel, fontSize, format, safeBg, safeHeight, safeText, safeWidth]);
+    }, [fontSize, format, renderOptions, safeHeight, safeWidth]);
 
     useEffect(() => {
         if (format === "svg") return;
@@ -94,11 +265,7 @@ function PlaceholderImageGenerator() {
         if (!selected) return null;
         if (format === "svg") {
             const svg = buildSvg({
-                width: safeWidth,
-                height: safeHeight,
-                bgColor: safeBg,
-                textColor: safeText,
-                label: displayLabel,
+                ...renderOptions,
                 fontSize: clamp(fontSize, 8, Math.min(safeWidth, safeHeight) / 2),
             });
             return new Blob([svg], { type: "image/svg+xml" });
@@ -106,7 +273,7 @@ function PlaceholderImageGenerator() {
         const canvas = renderCanvas();
         if (!canvas) return null;
         return canvasToBlob(canvas, selected.mime, format === "jpg" ? 0.92 : undefined);
-    }, [displayLabel, fontSize, format, renderCanvas, safeBg, safeHeight, safeText, safeWidth]);
+    }, [fontSize, format, renderCanvas, renderOptions, safeHeight, safeWidth]);
 
     const downloadImage = useCallback(async () => {
         setShowProgress(true);
@@ -210,6 +377,33 @@ function PlaceholderImageGenerator() {
                 />
             </div>
 
+            <div>
+                <label className="img-tool__label" htmlFor="ph-font">Font family</label>
+                <select
+                    id="ph-font"
+                    className="img-tool__select"
+                    value={fontFamily}
+                    onChange={(e) => setFontFamily(e.target.value)}
+                >
+                    {FONT_FAMILIES.map(([value, name]) => (
+                        <option key={value} value={value}>{name}</option>
+                    ))}
+                </select>
+            </div>
+
+            <div>
+                <span className="img-tool__label">Background style</span>
+                <select
+                    className="img-tool__select"
+                    value={bgStyle}
+                    onChange={(e) => setBgStyle(e.target.value)}
+                >
+                    {BG_STYLES.map(([value, name]) => (
+                        <option key={value} value={value}>{name}</option>
+                    ))}
+                </select>
+            </div>
+
             <div className="img-tool__field-row">
                 <div>
                     <span className="img-tool__label">Background</span>
@@ -265,6 +459,57 @@ function PlaceholderImageGenerator() {
             </div>
 
             <div>
+                <label className="img-tool__label" htmlFor="ph-border-width">Border width</label>
+                <input
+                    id="ph-border-width"
+                    type="range"
+                    className="img-tool__range"
+                    min={0}
+                    max={24}
+                    value={borderWidth}
+                    onChange={(e) => setBorderWidth(Number(e.target.value))}
+                />
+                <div className="img-tool__range-meta">
+                    <span>0px</span>
+                    <span className="img-tool__range-value">{borderWidth}px</span>
+                    <span>24px</span>
+                </div>
+            </div>
+
+            {borderWidth > 0 && (
+                <>
+                    <div className="img-tool__color-row">
+                        <input
+                            type="color"
+                            className="img-tool__color-input"
+                            value={safeBorder}
+                            onChange={(e) => setBorderColor(e.target.value)}
+                        />
+                        <span className="img-tool__hint">Border color</span>
+                    </div>
+                    <div>
+                        <span className="img-tool__label">Border style</span>
+                        <div className="img-tool__segmented">
+                            {[
+                                ["solid", "Solid"],
+                                ["dashed", "Dashed"],
+                                ["dotted", "Dotted"],
+                            ].map(([value, name]) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    className={`img-tool__segment${borderStyle === value ? " is-active" : ""}`}
+                                    onClick={() => setBorderStyle(value)}
+                                >
+                                    {name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            <div>
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
                     {FORMATS.map((entry) => (
@@ -306,19 +551,17 @@ function PlaceholderImageGenerator() {
     );
 
     const right = (
-        <>
-            <div className="img-tool__preview-frame">
-                {format === "svg" ? (
-                    <img
-                        src={svgPreviewUrl}
-                        alt="Placeholder preview"
-                        className="img-tool__preview-image"
-                    />
-                ) : (
-                    <canvas ref={canvasRef} className="img-tool__preview-canvas" />
-                )}
-            </div>
-        </>
+        <div className="img-tool__preview-frame">
+            {format === "svg" ? (
+                <img
+                    src={svgPreviewUrl}
+                    alt="Placeholder preview"
+                    className="img-tool__preview-image"
+                />
+            ) : (
+                <canvas ref={canvasRef} className="img-tool__preview-canvas" />
+            )}
+        </div>
     );
 
     return (
