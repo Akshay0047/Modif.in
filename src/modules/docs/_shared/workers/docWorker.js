@@ -70,7 +70,8 @@ async function runOcr(payload) {
     });
 
     try {
-        const { imageData, width, height } = payload;
+        const { data, width, height } = payload;
+        const imageData = new ImageData(new Uint8ClampedArray(data), width, height);
         const result = await worker.recognize(imageData, { rectangle: { left: 0, top: 0, width, height } });
         postProgress(100, "Done");
         return {

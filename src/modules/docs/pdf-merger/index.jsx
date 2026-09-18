@@ -5,16 +5,12 @@ import FileDropZone from "../_shared/components/FileDropZone";
 import ProgressBar from "../_shared/components/ProgressBar";
 import { downloadBytes } from "../_shared/downloadUtils";
 import { formatFileSize, readFileAsArrayBuffer } from "../_shared/fileUtils";
+import { createDocWorker } from "../_shared/createDocWorker";
 import { useWorkerTask } from "../_shared/useWorkerTask";
-
-const createWorker = () =>
-    new Worker(new URL("../_shared/workers/docWorker.js", import.meta.url), {
-        type: "module",
-    });
 
 function PdfMerger() {
     const [files, setFiles] = useState([]);
-    const { runTask, loading, progress, status, error } = useWorkerTask(createWorker);
+    const { runTask, loading, progress, status, error } = useWorkerTask(createDocWorker);
 
     const totalSize = useMemo(
         () => files.reduce((sum, file) => sum + file.size, 0),

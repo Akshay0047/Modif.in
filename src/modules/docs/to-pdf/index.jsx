@@ -6,76 +6,107 @@ import { downloadBytes } from "../_shared/downloadUtils";
 import { getBaseName, readFileAsArrayBuffer, readFileAsText } from "../_shared/fileUtils";
 import { PDFDocument, StandardFonts, rgb } from "../_shared/pdfUtils";
 
-async function imageToPdfPage(pdfDoc, file) {
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+async function imageFileToPdf(file) {
     const bytes = await readFileAsArrayBuffer(file);
-    const mime = file.type;
-    const image = mime.includes("png")
-        ? await pdfDoc.embedPng(bytes)
-        : await pdfDoc.embedJpg(bytes);
-    const { width, height } = image.scale(1);
-    const page = pdfDoc.addPage([width, height]);
-    page.drawImage(image, { x: 0, y: 0, width, height });
+    const pdf = await PDFDocument.create();
+    const uint8 = new Uint8Array(bytes);
+
+    let image;
+    if (file.type === "image/png") image = await pdf.embedPng(uint8);
+    else if (file.type === "image/webp" || file.type === "image/jpeg") {
+        try {
+            image = await pdf.embedJpg(uint8);
+        } catch {
+            const blob = new Blob([uint8], { type: file.type });
+            const url = URL.createObjectURL(blob);
+            const img = await new Promise((resolve, reject) => {
+                const element = new Image();
+                element.onload = () => resolve(element);
+                element.onerror = reject;
+                element.src = url;
+            });
+            URL.revokeObjectURL(url);
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            const pngUrl = canvas.toDataURL("image/png");
+            image = await pdf.embedPng(pngUrl);
+            canvas.width = 0;
+            canvas.height = 0;
+        }
+    } else {
+        throw new Error(`Unsupported image type: ${file.type}`);
+    }
+
+    const page = pdf.addPage([image.width, image.height]);
+    page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+    return pdf.save();
 }
 
-async function textToPdfPage(pdfDoc, text) {
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+async function textFileToPdf(file) {
+    const text = await readFileAsText(file);
+    const pdf = await PDFDocument.create();
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
     const fontSize = 12;
-    const margin = 48;
+    const margin = 50;
     const lineHeight = fontSize * 1.4;
     const pageWidth = 612;
     const pageHeight = 792;
     const maxWidth = pageWidth - margin * 2;
+
     const words = text.split(/\s+/);
-    const lines = [];
-    let current = "";
-
-    for (const word of words) {
-        const candidate = current ? `${current} ${word}` : word;
-        if (font.widthOfTextAtSize(candidate, fontSize) > maxWidth) {
-            if (current) lines.push(current);
-            current = word;
-        } else {
-            current = candidate;
-        }
-    }
-    if (current) lines.push(current);
-
-    let page = pdfDoc.addPage([pageWidth, pageHeight]);
+    let page = pdf.addPage([pageWidth, pageHeight]);
     let y = pageHeight - margin;
-    for (const line of lines) {
-        if (y < margin) {
-            page = pdfDoc.addPage([pageWidth, pageHeight]);
-            y = pageHeight - margin;
-        }
+    let line = "";
+
+    const flushLine = () => {
+        if (!line.trim()) return;
         page.drawText(line, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
         y -= lineHeight;
+        line = "";
+    };
+
+    for (const word of words) {
+        const candidate = line ? `${line} ${word}` : word;
+        const width = font.widthOfTextAtSize(candidate, fontSize);
+        if (width > maxWidth && line) {
+            flushLine();
+            if (y < margin) {
+                page = pdf.addPage([pageWidth, pageHeight]);
+                y = pageHeight - margin;
+            }
+            line = word;
+        } else {
+            line = candidate;
+        }
     }
+    flushLine();
+
+    return pdf.save();
 }
 
 function ToPdf() {
-    const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const convert = async () => {
+    const handleFiles = async (files) => {
+        const file = files[0];
+        if (!file) return;
         setLoading(true);
         setError("");
         try {
-            const pdfDoc = await PDFDocument.create();
-            for (const file of files) {
-                if (file.type.startsWith("image/")) {
-                    await imageToPdfPage(pdfDoc, file);
-                } else if (file.type === "text/plain" || file.name.endsWith(".txt")) {
-                    const text = await readFileAsText(file);
-                    await textToPdfPage(pdfDoc, text);
-                } else {
-                    throw new Error(`Unsupported file type: ${file.name}`);
-                }
+            let bytes;
+            if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+                bytes = await textFileToPdf(file);
+            } else if (IMAGE_TYPES.includes(file.type)) {
+                bytes = await imageFileToPdf(file);
+            } else {
+                throw new Error("Upload PNG, JPEG, WebP, or TXT files.");
             }
-            if (!pdfDoc.getPageCount()) throw new Error("No convertible files selected.");
-            const bytes = await pdfDoc.save();
-            const base = files.length === 1 ? getBaseName(files[0].name) : "converted";
-            downloadBytes(bytes, `${base}.pdf`, "application/pdf");
+            downloadBytes(bytes, `${getBaseName(file.name)}.pdf`, "application/pdf");
         } catch (convertError) {
             setError(convertError instanceof Error ? convertError.message : "Conversion failed.");
         } finally {
@@ -86,36 +117,18 @@ function ToPdf() {
     return (
         <DocToolShell
             title="To PDF"
-            description="Convert PNG, JPEG, WebP, or TXT files into a PDF with automatic page sizing."
+            description="Convert images or plain text files into PDF documents with automatic page sizing."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
                 <FileDropZone
-                    accept=".png,.jpg,.jpeg,.webp,.txt,image/*,text/plain"
-                    multiple
-                    label="Drop images or text files here"
+                    accept=".png,.jpg,.jpeg,.webp,.txt,image/png,image/jpeg,image/webp,text/plain"
+                    label="Drop an image or text file here"
                     hint="Supported: PNG, JPEG, WebP, TXT"
-                    onFiles={(incoming) => setFiles((current) => [...current, ...incoming])}
+                    onFiles={handleFiles}
                     disabled={loading}
                 />
-                <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
-                    <button
-                        type="button"
-                        className="doc-tool-button doc-tool-button--primary cursor-target"
-                        onClick={convert}
-                        disabled={!files.length || loading}
-                    >
-                        {loading ? "Converting…" : "Convert to PDF"}
-                    </button>
-                    <button
-                        type="button"
-                        className="doc-tool-button cursor-target"
-                        onClick={() => setFiles([])}
-                        disabled={!files.length || loading}
-                    >
-                        Clear
-                    </button>
-                </div>
+                {loading ? <p className="doc-tool-status">Converting to PDF…</p> : null}
                 {error ? <p className="doc-tool-error">{error}</p> : null}
             </div>
         </DocToolShell>
