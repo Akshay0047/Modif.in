@@ -47,7 +47,7 @@ export const textToolsData = [
         id: "ascii-unicode-symbols",
         name: "ASCII, Unicode & Symbols",
         tools: [
-            tool("ascii-kaomoji", "ASCII & Kaomoji", "ASCII, Unicode & Symbols"),
+            tool("ascii-kaomoji", "ASCII Emojis", "ASCII, Unicode & Symbols"),
             tool(
                 "unicode-symbol-picker",
                 "Unicode Symbol Picker",

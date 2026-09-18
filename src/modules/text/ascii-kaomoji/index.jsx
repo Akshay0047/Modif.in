@@ -24,7 +24,7 @@ function AsciiKaomoji() {
 
     return (
         <TextToolShell
-            title="ASCII & Kaomoji"
+            title="ASCII Emojis"
             description="Browse ASCII emojis, kaomoji, and emoticons as one-line copyable expressions."
             leading={<BackButton />}
         >
