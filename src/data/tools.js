@@ -1,11 +1,61 @@
+const POPULAR_TOOLS_CATEGORY_ID = "popular-tools";
+
+function sortToolsPopularFirst(tools = []) {
+    return [...tools].sort(
+        (left, right) => Number(right.isPopular) - Number(left.isPopular),
+    );
+}
+
+function buildPopularCategory(categories = []) {
+    const seen = new Set();
+    const tools = [];
+
+    for (const category of categories) {
+        for (const tool of category.tools) {
+            if (!tool.isPopular || seen.has(tool.id)) continue;
+            seen.add(tool.id);
+            tools.push(tool);
+        }
+    }
+
+    if (tools.length === 0) return null;
+
+    return {
+        id: POPULAR_TOOLS_CATEGORY_ID,
+        name: "Popular Tools",
+        tools,
+    };
+}
+
+export function prepareHubToolsData(categories = []) {
+    const sortedCategories = categories.map((category) => ({
+        ...category,
+        tools: sortToolsPopularFirst(category.tools),
+    }));
+
+    const popularCategory = buildPopularCategory(sortedCategories);
+    if (!popularCategory) return sortedCategories;
+
+    return [popularCategory, ...sortedCategories];
+}
+
 export function flattenTools(categories = []) {
+    const seen = new Set();
+
     return categories.flatMap((category) =>
-        category.tools.map((tool) => ({
-            ...tool,
-            category: tool.category ?? category.name,
-            categoryId: category.id,
-            searchLabel: `${tool.category ?? category.name} : ${tool.name}`,
-        })),
+        category.tools.flatMap((tool) => {
+            if (seen.has(tool.id)) return [];
+            seen.add(tool.id);
+
+            return [
+                {
+                    ...tool,
+                    category: tool.category ?? category.name,
+                    categoryId: category.id,
+                    searchLabel: `${tool.category ?? category.name} : ${tool.name}`,
+                },
+            ];
+        }),
     );
 }
 

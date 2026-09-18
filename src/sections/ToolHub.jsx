@@ -1,11 +1,17 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import WarpText from "../components/WarpText";
 import SearchBar from "../components/SearchBar";
 import ToolButton from "../components/ToolButton";
+import { prepareHubToolsData } from "../data/tools";
 import "./ToolHub.css";
 
 function ToolHub({ title, subheading, toolsData = [] }) {
     const navigate = useNavigate();
+    const displayToolsData = useMemo(
+        () => prepareHubToolsData(toolsData),
+        [toolsData],
+    );
 
     const handleToolSelect = (tool) => {
         if (tool?.path) {
@@ -37,7 +43,7 @@ function ToolHub({ title, subheading, toolsData = [] }) {
 
                 <div className="tool-hub__search-wrap">
                     <SearchBar
-                        categories={toolsData}
+                        categories={displayToolsData}
                         onSelect={handleToolSelect}
                     />
                 </div>
@@ -64,7 +70,7 @@ function ToolHub({ title, subheading, toolsData = [] }) {
                 className="tool-hub__body tool-hub__grid"
                 aria-label="Tool categories"
             >
-                {toolsData.map((category) => (
+                {displayToolsData.map((category) => (
                     <div key={category.id} className="tool-category">
                         <h2 className="tool-category__title">{category.name}</h2>
                         <div className="tool-category__grid">
