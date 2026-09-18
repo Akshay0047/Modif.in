@@ -4,4 +4,10 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: ['pdfjs-dist', 'pdf-lib', 'tesseract.js'],
+  },
+  worker: {
+    format: 'es',
+  },
 })
