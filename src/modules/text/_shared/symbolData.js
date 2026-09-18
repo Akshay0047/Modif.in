@@ -3,6 +3,10 @@ import {
     EMOTICONS_EXTRA,
     KAOMOJI_EXTRA,
 } from "./asciiEmojiExtras.js";
+import {
+    SPECIAL_CHARACTER_CATEGORIES,
+    getAllSpecialCharacterSymbols,
+} from "./specialCharacterData.js";
 
 export const ASCII_EMOJIS = [
     { label: "Smile", value: ":-)" },
@@ -228,107 +232,12 @@ export const UNICODE_SYMBOL_CATEGORIES = [
     },
 ];
 
-export const SPECIAL_CHARACTER_CATEGORIES = [
-    {
-        id: "accented",
-        label: "Accented characters",
-        symbols: [
-            { char: "á", name: "a acute" },
-            { char: "à", name: "a grave" },
-            { char: "â", name: "a circumflex" },
-            { char: "ä", name: "a diaeresis" },
-            { char: "ã", name: "a tilde" },
-            { char: "é", name: "e acute" },
-            { char: "è", name: "e grave" },
-            { char: "ê", name: "e circumflex" },
-            { char: "ë", name: "e diaeresis" },
-            { char: "í", name: "i acute" },
-            { char: "ì", name: "i grave" },
-            { char: "î", name: "i circumflex" },
-            { char: "ï", name: "i diaeresis" },
-            { char: "ó", name: "o acute" },
-            { char: "ò", name: "o grave" },
-            { char: "ô", name: "o circumflex" },
-            { char: "ö", name: "o diaeresis" },
-            { char: "õ", name: "o tilde" },
-            { char: "ú", name: "u acute" },
-            { char: "ù", name: "u grave" },
-            { char: "û", name: "u circumflex" },
-            { char: "ü", name: "u diaeresis" },
-            { char: "ñ", name: "n tilde" },
-            { char: "ç", name: "c cedilla" },
-        ],
-    },
-    {
-        id: "typographic",
-        label: "Typographic characters",
-        symbols: [
-            { char: "–", name: "En dash" },
-            { char: "—", name: "Em dash" },
-            { char: "‑", name: "Non-breaking hyphen" },
-            { char: "‒", name: "Figure dash" },
-            { char: "…", name: "Ellipsis" },
-            { char: "·", name: "Middle dot" },
-            { char: "•", name: "Bullet" },
-            { char: "‰", name: "Per mille" },
-            { char: "‱", name: "Per ten thousand" },
-            { char: "§", name: "Section sign" },
-            { char: "¶", name: "Pilcrow" },
-            { char: "©", name: "Copyright" },
-            { char: "®", name: "Registered sign" },
-            { char: "™", name: "Trade mark" },
-        ],
-    },
-    {
-        id: "quotes",
-        label: "Quotes",
-        symbols: [
-            { char: "“", name: "Left double quotation mark" },
-            { char: "”", name: "Right double quotation mark" },
-            { char: "‘", name: "Left single quotation mark" },
-            { char: "’", name: "Right single quotation mark" },
-            { char: "«", name: "Left guillemet" },
-            { char: "»", name: "Right guillemet" },
-            { char: "‹", name: "Single left angle quotation mark" },
-            { char: "›", name: "Single right angle quotation mark" },
-            { char: "„", name: "Double low quotation mark" },
-            { char: "‚", name: "Single low quotation mark" },
-        ],
-    },
-    {
-        id: "dashes",
-        label: "Dashes",
-        symbols: [
-            { char: "-", name: "Hyphen-minus" },
-            { char: "‐", name: "Hyphen" },
-            { char: "‑", name: "Non-breaking hyphen" },
-            { char: "‒", name: "Figure dash" },
-            { char: "–", name: "En dash" },
-            { char: "—", name: "Em dash" },
-            { char: "―", name: "Horizontal bar" },
-        ],
-    },
-    {
-        id: "misc",
-        label: "Miscellaneous characters",
-        symbols: [
-            { char: "°", name: "Degree sign" },
-            { char: "±", name: "Plus-minus sign" },
-            { char: "×", name: "Multiplication sign" },
-            { char: "÷", name: "Division sign" },
-            { char: "µ", name: "Micro sign" },
-            { char: "№", name: "Numero sign" },
-            { char: "℗", name: "Sound recording copyright" },
-            { char: "℞", name: "Prescription take" },
-            { char: "℅", name: "Care of" },
-            { char: "№", name: "Numero" },
-            { char: "←", name: "Leftwards arrow" },
-            { char: "→", name: "Rightwards arrow" },
-            { char: "✓", name: "Check mark" },
-            { char: "✗", name: "Ballot X" },
-        ],
-    },
-];
+export {
+    SPECIAL_CHARACTER_CATEGORIES,
+    getAllSpecialCharacterSymbols,
+    getSpecialCharacterCount,
+    getSpecialCharacterSymbols,
+} from "./specialCharacterData.js";
 
 export const INVISIBLE_CHARACTERS = [
     {
@@ -420,13 +329,14 @@ export const KAOMOJI_CATEGORIES = [
 export function buildSymbolNameMap() {
     const map = new Map();
 
-    for (const category of [
-        ...UNICODE_SYMBOL_CATEGORIES,
-        ...SPECIAL_CHARACTER_CATEGORIES,
-    ]) {
+    for (const category of UNICODE_SYMBOL_CATEGORIES) {
         for (const symbol of category.symbols) {
             map.set(symbol.char, symbol.name);
         }
+    }
+
+    for (const symbol of getAllSpecialCharacterSymbols()) {
+        map.set(symbol.char, symbol.name);
     }
 
     for (const entry of INVISIBLE_CHARACTERS) {
