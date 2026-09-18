@@ -1,57 +1,33 @@
 import { useState } from "react";
 import BackButton from "../../../components/BackButton";
+import CopyButton from "../../text/_shared/CopyButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import { downloadText } from "../_shared/downloadUtils";
-import { getBaseName, readFileAsArrayBuffer, readFileAsText } from "../_shared/fileUtils";
-import {
-    matrixToMarkdownTable,
-    parseCsv,
-    parseExcelFile,
-    parseExcelMatrix,
-    rowsToMarkdownTable,
-} from "../_shared/csvUtils";
+import FileDropZone from "../_shared/FileDropZone";
+import { parseCsv, parseExcel, toMarkdownTable } from "../_shared/csvUtils";
 
 function TableToMarkdown() {
-    const [markdown, setMarkdown] = useState("");
-    const [error, setError] = useState("");
-
-    const handleCsv = async (file) => {
-        const text = await readFileAsText(file);
-        const rows = parseCsv(text);
-        setMarkdown(rowsToMarkdownTable(rows));
-    };
-
-    const handleExcel = async (file) => {
-        const buffer = await readFileAsArrayBuffer(file);
-        try {
-            const rows = await parseExcelFile(buffer);
-            setMarkdown(rowsToMarkdownTable(rows));
-        } catch {
-            const matrix = await parseExcelMatrix(buffer);
-            setMarkdown(matrixToMarkdownTable(matrix));
-        }
-    };
+    const [output, setOutput] = useState("");
+    const [status, setStatus] = useState("");
 
     const handleFile = async (files) => {
         const file = files[0];
-        if (!file) return;
-        setError("");
-        try {
-            if (file.name.endsWith(".xlsx")) await handleExcel(file);
-            else await handleCsv(file);
-        } catch (parseError) {
-            setError(parseError instanceof Error ? parseError.message : "Failed to convert table.");
-            setMarkdown("");
+        if (!file) {
+            setOutput("");
+            return;
         }
-    };
 
-    const copyMarkdown = async () => {
-        await navigator.clipboard.writeText(markdown);
-    };
-
-    const downloadMarkdown = () => {
-        downloadText(markdown, `${getBaseName("table")}.md`, "text/markdown");
+        try {
+            let data;
+            if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+                data = await parseExcel(await file.arrayBuffer());
+            } else {
+                data = parseCsv(await file.text());
+            }
+            setOutput(toMarkdownTable(data));
+            setStatus("Markdown table generated.");
+        } catch (error) {
+            setStatus(error?.message ?? "Failed to parse file.");
+        }
     };
 
     return (
@@ -62,30 +38,23 @@ function TableToMarkdown() {
         >
             <div className="doc-tool-panel">
                 <FileDropZone
-                    accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    label="Drop a CSV or Excel file here"
+                    accept=".csv,.xlsx,.xls,text/csv"
                     onFiles={handleFile}
+                    label="Drop a CSV or Excel file"
                 />
-
-                {markdown ? (
-                    <>
-                        <div className="doc-tool-output-header" style={{ marginTop: "1rem" }}>
-                            <h2 className="doc-tool-section-title">Markdown output</h2>
-                            <div className="doc-tool-controls" style={{ marginBottom: 0 }}>
-                                <button type="button" className="doc-tool-button cursor-target" onClick={copyMarkdown}>
-                                    Copy
-                                </button>
-                                <button type="button" className="doc-tool-button doc-tool-button--primary cursor-target" onClick={downloadMarkdown}>
-                                    Download .md
-                                </button>
-                            </div>
-                        </div>
-                        <textarea className="doc-tool-textarea" value={markdown} readOnly />
-                    </>
-                ) : null}
-
-                {error ? <p className="doc-tool-error">{error}</p> : null}
             </div>
+
+            {output ? (
+                <div className="doc-tool-panel">
+                    <div className="doc-tool-output-header">
+                        <h2 className="doc-tool-section-title">Markdown Output</h2>
+                        <CopyButton text={output} />
+                    </div>
+                    <textarea className="doc-tool-textarea" value={output} readOnly />
+                </div>
+            ) : null}
+
+            {status ? <p className="doc-tool-status">{status}</p> : null}
         </DocToolShell>
     );
 }

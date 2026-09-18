@@ -1,167 +1,119 @@
 import { useMemo, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import { downloadText } from "../_shared/downloadUtils";
-import { getBaseName, readFileAsText } from "../_shared/fileUtils";
-import { parseCsv, unparseCsv } from "../_shared/csvUtils";
+import FileDropZone from "../_shared/FileDropZone";
+import { dedupeRows, filterRows, parseCsv, toCsv } from "../_shared/csvUtils";
+import { downloadBlob } from "../_shared/downloadUtils";
 
 function CsvEditorTransformer() {
-    const [rows, setRows] = useState([]);
-    const [columns, setColumns] = useState([]);
-    const [filename, setFilename] = useState("");
+    const [data, setData] = useState([]);
+    const [headers, setHeaders] = useState([]);
     const [search, setSearch] = useState("");
-    const [filterColumn, setFilterColumn] = useState("");
-    const [filterValue, setFilterValue] = useState("");
-    const [error, setError] = useState("");
+    const [dedupeKey, setDedupeKey] = useState("");
+    const [status, setStatus] = useState("");
+
+    const filtered = useMemo(() => {
+        let rows = data;
+        if (search) rows = filterRows(rows, search);
+        if (dedupeKey) rows = dedupeRows(rows, dedupeKey);
+        return rows;
+    }, [data, search, dedupeKey]);
 
     const handleFile = async (files) => {
         const file = files[0];
-        if (!file) return;
-        setError("");
-        try {
-            const text = await readFileAsText(file);
-            const parsed = parseCsv(text);
-            setRows(parsed);
-            setColumns(parsed.length ? Object.keys(parsed[0]) : []);
-            setFilename(getBaseName(file.name));
-        } catch (parseError) {
-            setError(parseError instanceof Error ? parseError.message : "Failed to parse CSV.");
+        if (!file) {
+            setData([]);
+            setHeaders([]);
+            return;
         }
-    };
-
-    const filteredRows = useMemo(() => {
-        let result = rows;
-        if (filterColumn && filterValue) {
-            result = result.filter((row) =>
-                String(row[filterColumn] ?? "")
-                    .toLowerCase()
-                    .includes(filterValue.toLowerCase()),
-            );
-        }
-        if (search) {
-            const query = search.toLowerCase();
-            result = result.filter((row) =>
-                Object.values(row).some((value) => String(value).toLowerCase().includes(query)),
-            );
-        }
-        return result;
-    }, [rows, filterColumn, filterValue, search]);
-
-    const removeDuplicates = () => {
-        const seen = new Set();
-        setRows((current) =>
-            current.filter((row) => {
-                const key = JSON.stringify(row);
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            }),
-        );
+        const text = await file.text();
+        const parsed = parseCsv(text);
+        setData(parsed);
+        setHeaders(Object.keys(parsed[0] ?? {}));
+        setStatus(`Loaded ${parsed.length} rows.`);
     };
 
     const moveColumn = (index, direction) => {
+        const next = [...headers];
         const target = index + direction;
-        if (target < 0 || target >= columns.length) return;
-        setColumns((current) => {
-            const next = [...current];
-            [next[index], next[target]] = [next[target], next[index]];
-            return next;
-        });
-        setRows((current) =>
-            current.map((row) => {
-                const reordered = {};
-                const nextColumns = [...columns];
-                [nextColumns[index], nextColumns[target]] = [nextColumns[target], nextColumns[index]];
-                nextColumns.forEach((key) => {
-                    reordered[key] = row[key];
-                });
-                return reordered;
-            }),
-        );
+        if (target < 0 || target >= next.length) return;
+        [next[index], next[target]] = [next[target], next[index]];
+        setHeaders(next);
     };
 
-    const exportCsv = () => {
-        const ordered = filteredRows.map((row) => {
-            const entry = {};
-            columns.forEach((key) => {
-                entry[key] = row[key];
+    const handleExport = () => {
+        const rows = filtered.map((row) => {
+            const ordered = {};
+            headers.forEach((key) => {
+                ordered[key] = row[key];
             });
-            return entry;
+            return ordered;
         });
-        downloadText(unparseCsv(ordered), `${filename || "export"}-edited.csv`, "text/csv");
+        const csv = toCsv(rows);
+        downloadBlob(new Blob([csv], { type: "text/csv" }), "transformed.csv");
+        setStatus("CSV exported successfully.");
     };
 
     return (
         <DocToolShell
             title="CSV Editor & Transformer"
-            description="Filter, search, reorder columns, and remove duplicate rows before exporting CSV."
+            description="Filter, search, deduplicate, and reorder columns before exporting."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
-                <FileDropZone accept=".csv,text/csv" label="Drop a CSV file here" onFiles={handleFile} />
+                <FileDropZone
+                    accept=".csv,text/csv"
+                    onFiles={handleFile}
+                    label="Drop a CSV file"
+                />
 
-                {rows.length ? (
+                {headers.length > 0 ? (
                     <>
-                        <div className="doc-tool-grid doc-tool-grid--3" style={{ marginTop: "1rem" }}>
+                        <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                             <div>
-                                <label className="doc-tool-label" htmlFor="csv-search">Search</label>
+                                <label className="doc-tool-label">Search rows</label>
                                 <input
-                                    id="csv-search"
                                     className="doc-tool-input cursor-target"
                                     value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="Search all columns"
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Filter by value…"
                                 />
                             </div>
                             <div>
-                                <label className="doc-tool-label" htmlFor="filter-column">Filter column</label>
+                                <label className="doc-tool-label">Dedupe by column</label>
                                 <select
-                                    id="filter-column"
                                     className="doc-tool-select cursor-target"
-                                    value={filterColumn}
-                                    onChange={(event) => setFilterColumn(event.target.value)}
+                                    value={dedupeKey}
+                                    onChange={(e) => setDedupeKey(e.target.value)}
                                 >
-                                    <option value="">All</option>
-                                    {columns.map((column) => (
-                                        <option key={column} value={column}>{column}</option>
+                                    <option value="">None</option>
+                                    {headers.map((h) => (
+                                        <option key={h} value={h}>{h}</option>
                                     ))}
                                 </select>
                             </div>
-                            <div>
-                                <label className="doc-tool-label" htmlFor="filter-value">Filter value</label>
-                                <input
-                                    id="filter-value"
-                                    className="doc-tool-input cursor-target"
-                                    value={filterValue}
-                                    onChange={(event) => setFilterValue(event.target.value)}
-                                />
-                            </div>
                         </div>
 
-                        <div className="doc-tool-controls">
-                            <button type="button" className="doc-tool-button cursor-target" onClick={removeDuplicates}>
-                                Remove duplicates
-                            </button>
+                        <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
+                            <span className="doc-tool-status">{filtered.length} rows shown</span>
                             <button
                                 type="button"
                                 className="doc-tool-button doc-tool-button--primary cursor-target"
-                                onClick={exportCsv}
+                                onClick={handleExport}
                             >
                                 Export CSV
                             </button>
                         </div>
 
-                        <div className="doc-tool-controls">
-                            {columns.map((column, index) => (
-                                <span key={column} style={{ display: "inline-flex", gap: "0.25rem", alignItems: "center" }}>
-                                    <span className="doc-tool-status">{column}</span>
+                        <div className="doc-tool-controls" style={{ marginTop: "0.5rem" }}>
+                            {headers.map((header, index) => (
+                                <span key={header} style={{ display: "flex", gap: "0.25rem" }}>
                                     <button
                                         type="button"
                                         className="doc-tool-button cursor-target"
                                         onClick={() => moveColumn(index, -1)}
                                     >
-                                        ←
+                                        ← {header}
                                     </button>
                                     <button
                                         type="button"
@@ -174,33 +126,29 @@ function CsvEditorTransformer() {
                             ))}
                         </div>
 
-                        <div className="doc-tool-table-wrap">
+                        <div className="doc-tool-table-wrap" style={{ marginTop: "1rem" }}>
                             <table className="doc-tool-table">
                                 <thead>
                                     <tr>
-                                        {columns.map((column) => <th key={column}>{column}</th>)}
+                                        {headers.map((h) => <th key={h}>{h}</th>)}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredRows.slice(0, 100).map((row, index) => (
-                                        <tr key={index}>
-                                            {columns.map((column) => (
-                                                <td key={column}>{row[column]}</td>
-                                            ))}
+                                    {filtered.slice(0, 100).map((row, i) => (
+                                        <tr key={i}>
+                                            {headers.map((h) => <td key={h}>{row[h]}</td>)}
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                            {filtered.length > 100 ? (
+                                <p className="doc-tool-status">Showing first 100 of {filtered.length} rows</p>
+                            ) : null}
                         </div>
-                        {filteredRows.length > 100 ? (
-                            <p className="doc-tool-status">Showing first 100 of {filteredRows.length} rows.</p>
-                        ) : (
-                            <p className="doc-tool-status">{filteredRows.length} rows shown.</p>
-                        )}
                     </>
                 ) : null}
 
-                {error ? <p className="doc-tool-error">{error}</p> : null}
+                {status ? <p className="doc-tool-status">{status}</p> : null}
             </div>
         </DocToolShell>
     );
