@@ -1,93 +1,92 @@
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import ProgressBar from "../_shared/components/ProgressBar";
-import { downloadBytes } from "../_shared/downloadUtils";
-import { formatFileSize, readFileAsArrayBuffer } from "../_shared/fileUtils";
-import { createDocWorker } from "../_shared/createDocWorker";
+import FileDropZone from "../_shared/FileDropZone";
+import ProgressBar from "../_shared/ProgressBar";
+import { downloadBytes, readFileAsArrayBuffer } from "../_shared/downloadUtils";
+import { mergePdfBuffers } from "../_shared/pdfUtils";
 import { useWorkerTask } from "../_shared/useWorkerTask";
+
+const WORKER_URL = new URL("../_shared/workers/docWorker.js", import.meta.url);
 
 function PdfMerger() {
     const [files, setFiles] = useState([]);
-    const { runTask, loading, progress, status, error } = useWorkerTask(createDocWorker);
-
-    const totalSize = useMemo(
-        () => files.reduce((sum, file) => sum + file.size, 0),
-        [files],
-    );
+    const [status, setStatus] = useState("");
+    const { run, running, progress, error } = useWorkerTask(WORKER_URL);
 
     const handleMerge = async () => {
-        const buffers = await Promise.all(files.map((file) => readFileAsArrayBuffer(file)));
-        const bytes = await runTask("merge-pdfs", { buffers });
-        downloadBytes(bytes, "merged.pdf", "application/pdf");
-    };
+        if (files.length < 2) {
+            setStatus("Select at least two PDF files to merge.");
+            return;
+        }
 
-    const removeFile = useCallback((index) => {
-        setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
-    }, []);
+        setStatus("Merging PDFs…");
+        try {
+            const buffers = await Promise.all(
+                files.map((file) => readFileAsArrayBuffer(file)),
+            );
+
+            let merged;
+            try {
+                merged = await run({
+                    task: "merge",
+                    payload: { buffers },
+                });
+            } catch {
+                merged = await mergePdfBuffers(buffers);
+            }
+
+            downloadBytes(merged, "merged.pdf", "application/pdf");
+            setStatus("Merged PDF downloaded successfully.");
+        } catch (mergeError) {
+            setStatus(mergeError?.message ?? "Failed to merge PDFs.");
+        }
+    };
 
     return (
         <DocToolShell
             title="PDF Merger"
-            description="Combine multiple PDF files into one document. Processing runs entirely in your browser."
+            description="Combine multiple PDF files into a single document. Files are merged in the order shown."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
                 <FileDropZone
                     accept=".pdf,application/pdf"
                     multiple
-                    label="Drop PDF files here or click to browse"
-                    hint="Files are merged in the order shown below."
-                    onFiles={(incoming) => setFiles((current) => [...current, ...incoming])}
-                    disabled={loading}
+                    files={files}
+                    onFiles={setFiles}
+                    label="Drop PDF files here"
+                    hint="Select two or more PDFs — order matters"
                 />
 
-                {files.length ? (
-                    <ul className="doc-tool-file-list" style={{ marginTop: "1rem" }}>
-                        {files.map((file, index) => (
-                            <li key={`${file.name}-${index}`} className="doc-tool-file-list__item">
-                                <span>{index + 1}. {file.name} ({formatFileSize(file.size)})</span>
-                                <button
-                                    type="button"
-                                    className="doc-tool-button cursor-target"
-                                    onClick={() => removeFile(index)}
-                                    disabled={loading}
-                                >
-                                    Remove
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="doc-tool-empty" style={{ marginTop: "1rem" }}>
-                        No PDF files selected yet.
-                    </p>
-                )}
+                {running ? <ProgressBar value={progress} label="Merging pages…" /> : null}
 
                 <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
                     <button
                         type="button"
                         className="doc-tool-button doc-tool-button--primary cursor-target"
                         onClick={handleMerge}
-                        disabled={files.length < 2 || loading}
+                        disabled={running || files.length < 2}
                     >
-                        {loading ? "Merging…" : "Merge & Download"}
+                        Merge & Download
                     </button>
-                    <button
-                        type="button"
-                        className="doc-tool-button cursor-target"
-                        onClick={() => setFiles([])}
-                        disabled={!files.length || loading}
-                    >
-                        Clear
-                    </button>
+                    {files.length > 0 ? (
+                        <button
+                            type="button"
+                            className="doc-tool-button cursor-target"
+                            onClick={() => setFiles([])}
+                            disabled={running}
+                        >
+                            Clear All
+                        </button>
+                    ) : null}
                 </div>
 
-                {loading ? <ProgressBar value={progress} label={status || "Merging PDFs…"} /> : null}
-                {error ? <p className="doc-tool-error">{error}</p> : null}
-                {files.length ? (
-                    <p className="doc-tool-status">Total input size: {formatFileSize(totalSize)}</p>
+                {error ? <p className="doc-tool-status doc-tool-status--error">{error}</p> : null}
+                {status ? (
+                    <p className={`doc-tool-status${status.includes("success") ? " doc-tool-status--success" : ""}`}>
+                        {status}
+                    </p>
                 ) : null}
             </div>
         </DocToolShell>

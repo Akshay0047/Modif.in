@@ -1,17 +1,16 @@
 import { useState } from "react";
-import ePub from "epubjs";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import { downloadBytes, downloadText } from "../_shared/downloadUtils";
-import { getBaseName, readFileAsArrayBuffer } from "../_shared/fileUtils";
+import FileDropZone from "../_shared/FileDropZone";
+import { downloadBlob, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
 import { PDFDocument, StandardFonts, rgb } from "../_shared/pdfUtils";
+import ePub from "epubjs";
 
 async function extractEpubText(arrayBuffer) {
     const book = ePub(arrayBuffer);
     await book.ready;
-    const sections = [];
     const spine = await book.loaded.spine;
+    const sections = [];
 
     for (const item of spine.items) {
         const doc = await book.load(item.href);
@@ -25,42 +24,41 @@ async function extractEpubText(arrayBuffer) {
 
 async function textToPdf(text) {
     const pdf = await PDFDocument.create();
-    const font = await pdf.embedFont(StandardFonts.TimesRoman);
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
     const fontSize = 11;
     const margin = 50;
     const lineHeight = fontSize * 1.5;
-    const pageWidth = 612;
-    const pageHeight = 792;
+    const pageWidth = 595;
+    const pageHeight = 842;
     const maxWidth = pageWidth - margin * 2;
 
-    const paragraphs = text.split(/\n{2,}/);
     let page = pdf.addPage([pageWidth, pageHeight]);
     let y = pageHeight - margin;
 
-    for (const paragraph of paragraphs) {
-        const words = paragraph.split(/\s+/).filter(Boolean);
+    for (const paragraph of text.split(/\n\n+/)) {
+        const words = paragraph.split(/\s+/);
         let line = "";
         for (const word of words) {
-            const candidate = line ? `${line} ${word}` : word;
-            if (font.widthOfTextAtSize(candidate, fontSize) > maxWidth && line) {
+            const testLine = line ? `${line} ${word}` : word;
+            if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth && line) {
+                page.drawText(line, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
+                y -= lineHeight;
+                line = word;
                 if (y < margin) {
                     page = pdf.addPage([pageWidth, pageHeight]);
                     y = pageHeight - margin;
                 }
-                page.drawText(line, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
-                y -= lineHeight;
-                line = word;
             } else {
-                line = candidate;
+                line = testLine;
             }
         }
         if (line) {
+            page.drawText(line, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
+            y -= lineHeight * 1.5;
             if (y < margin) {
                 page = pdf.addPage([pageWidth, pageHeight]);
                 y = pageHeight - margin;
             }
-            page.drawText(line, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
-            y -= lineHeight * 1.5;
         }
     }
 
@@ -68,63 +66,78 @@ async function textToPdf(text) {
 }
 
 function EbookConversion() {
-    const [outputFormat, setOutputFormat] = useState("txt");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [file, setFile] = useState(null);
+    const [output, setOutput] = useState("txt");
+    const [status, setStatus] = useState("");
+    const [running, setRunning] = useState(false);
 
-    const handleFile = async (files) => {
-        const file = files[0];
+    const handleConvert = async () => {
         if (!file) return;
-        setLoading(true);
-        setError("");
+        setRunning(true);
+        setStatus("Parsing e-book…");
+
         try {
             const buffer = await readFileAsArrayBuffer(file);
             const text = await extractEpubText(buffer);
-            const base = getBaseName(file.name);
-            if (outputFormat === "txt") {
-                downloadText(text, `${base}.txt`);
+
+            if (output === "txt") {
+                downloadBlob(
+                    new Blob([text], { type: "text/plain" }),
+                    `${getBaseName(file.name)}.txt`,
+                );
             } else {
-                const bytes = await textToPdf(text);
-                downloadBytes(bytes, `${base}.pdf`, "application/pdf");
+                const pdfBytes = await textToPdf(text);
+                const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                downloadBlob(blob, `${getBaseName(file.name)}.pdf`);
             }
-        } catch (convertError) {
-            setError(convertError instanceof Error ? convertError.message : "E-book conversion failed.");
+
+            setStatus("E-book converted successfully.");
+        } catch (error) {
+            setStatus(error?.message ?? "Conversion failed.");
         } finally {
-            setLoading(false);
+            setRunning(false);
         }
     };
 
     return (
         <DocToolShell
             title="E-Book Conversion"
-            description="Extract text from EPUB files and export as plain text or a formatted PDF."
+            description="Convert EPUB e-books to plain text or structured PDF."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
-                <div className="doc-tool-controls">
-                    <button
-                        type="button"
-                        className={`doc-tool-button cursor-target${outputFormat === "txt" ? " is-active" : ""}`}
-                        onClick={() => setOutputFormat("txt")}
-                    >
-                        Export TXT
-                    </button>
-                    <button
-                        type="button"
-                        className={`doc-tool-button cursor-target${outputFormat === "pdf" ? " is-active" : ""}`}
-                        onClick={() => setOutputFormat("pdf")}
-                    >
-                        Export PDF
-                    </button>
-                </div>
                 <FileDropZone
                     accept=".epub,application/epub+zip"
-                    label="Drop an EPUB file here"
-                    onFiles={handleFile}
-                    disabled={loading}
+                    files={file ? [file] : []}
+                    onFiles={(files) => setFile(files[0] ?? null)}
+                    label="Drop an EPUB file"
                 />
-                {loading ? <p className="doc-tool-status">Extracting e-book content…</p> : null}
-                {error ? <p className="doc-tool-error">{error}</p> : null}
+
+                <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
+                    <button
+                        type="button"
+                        className={`doc-tool-button cursor-target${output === "txt" ? " is-active" : ""}`}
+                        onClick={() => setOutput("txt")}
+                    >
+                        TXT
+                    </button>
+                    <button
+                        type="button"
+                        className={`doc-tool-button cursor-target${output === "pdf" ? " is-active" : ""}`}
+                        onClick={() => setOutput("pdf")}
+                    >
+                        PDF
+                    </button>
+                    <button
+                        type="button"
+                        className="doc-tool-button doc-tool-button--primary cursor-target"
+                        onClick={handleConvert}
+                        disabled={running || !file}
+                    >
+                        Convert
+                    </button>
+                </div>
+                {status ? <p className="doc-tool-status">{status}</p> : null}
             </div>
         </DocToolShell>
     );

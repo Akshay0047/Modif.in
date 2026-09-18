@@ -1,204 +1,160 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import { downloadBytes } from "../_shared/downloadUtils";
-import { readFileAsArrayBuffer, replaceExtension } from "../_shared/fileUtils";
-import {
-    PDFDocument,
-    degrees,
-    loadPdfJsDocument,
-    loadPdfLibDocument,
-    renderPageToCanvas,
-} from "../_shared/pdfUtils";
-
-function PageThumbnail({ pdfDoc, pageIndex, rotation, onRotate, onDelete, dragProps }) {
-    const canvasRef = useRef(null);
-
-    useEffect(() => {
-        let cancelled = false;
-        const canvas = canvasRef.current;
-        if (!pdfDoc || !canvas) return undefined;
-
-        renderPageToCanvas(pdfDoc, pageIndex + 1, canvas, 0.35).then(() => {
-            if (cancelled || !rotation) return;
-            const context = canvas.getContext("2d");
-            const image = context.getImageData(0, 0, canvas.width, canvas.height);
-            const rotated = document.createElement("canvas");
-            const rotContext = rotated.getContext("2d");
-            rotated.width = canvas.height;
-            rotated.height = canvas.width;
-            rotContext.putImageData(image, 0, 0);
-            canvas.width = rotated.width;
-            canvas.height = rotated.height;
-            context.save();
-            context.translate(canvas.width / 2, canvas.height / 2);
-            context.rotate((rotation * Math.PI) / 180);
-            context.drawImage(rotated, -image.width / 2, -image.height / 2);
-            context.restore();
-            rotated.width = 0;
-            rotated.height = 0;
-        });
-
-        return () => {
-            cancelled = true;
-            if (canvas) {
-                canvas.width = 0;
-                canvas.height = 0;
-            }
-        };
-    }, [pdfDoc, pageIndex, rotation]);
-
-    return (
-        <div className="doc-tool-page-thumb" draggable {...dragProps}>
-            <canvas ref={canvasRef} className="doc-tool-page-thumb__canvas" />
-            <span className="doc-tool-page-thumb__label">Page {pageIndex + 1}</span>
-            <div className="doc-tool-controls" style={{ padding: "0.35rem" }}>
-                <button type="button" className="doc-tool-button cursor-target" onClick={onRotate}>
-                    Rotate
-                </button>
-                <button type="button" className="doc-tool-button cursor-target" onClick={onDelete}>
-                    Delete
-                </button>
-            </div>
-        </div>
-    );
-}
+import FileDropZone from "../_shared/FileDropZone";
+import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
+import { loadPdfWithPdfJs, reorderPages, renderPageToDataUrl } from "../_shared/pdfUtils";
 
 function PageOrganizer() {
     const [file, setFile] = useState(null);
-    const [pdfJsDoc, setPdfJsDoc] = useState(null);
-    const [sourceBuffer, setSourceBuffer] = useState(null);
-    const [pageOrder, setPageOrder] = useState([]);
+    const [buffer, setBuffer] = useState(null);
+    const [order, setOrder] = useState([]);
     const [rotations, setRotations] = useState({});
+    const [thumbnails, setThumbnails] = useState([]);
     const [dragIndex, setDragIndex] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [status, setStatus] = useState("");
 
     useEffect(() => {
-        if (!file) return undefined;
+        if (!buffer) return undefined;
         let cancelled = false;
 
         (async () => {
-            setLoading(true);
-            setError("");
-            try {
-                const buffer = await readFileAsArrayBuffer(file);
-                const doc = await loadPdfJsDocument(buffer);
-                if (cancelled) return;
-                setSourceBuffer(buffer);
-                setPdfJsDoc(doc);
-                setPageOrder(Array.from({ length: doc.numPages }, (_, index) => index));
-                setRotations({});
-            } catch (loadError) {
-                if (!cancelled) {
-                    setError(loadError instanceof Error ? loadError.message : "Failed to load PDF.");
-                }
-            } finally {
-                if (!cancelled) setLoading(false);
+            const pdf = await loadPdfWithPdfJs(buffer);
+            if (cancelled) return;
+            const indices = Array.from({ length: pdf.numPages }, (_, i) => i);
+            setOrder(indices);
+            setRotations({});
+
+            const thumbs = [];
+            for (let i = 1; i <= pdf.numPages; i += 1) {
+                thumbs.push(await renderPageToDataUrl(pdf, i, 0.4));
             }
+            pdf.destroy();
+            if (!cancelled) setThumbnails(thumbs);
         })();
 
         return () => {
             cancelled = true;
         };
-    }, [file]);
+    }, [buffer]);
+
+    const handleFile = async (files) => {
+        const next = files[0] ?? null;
+        setFile(next);
+        setStatus("");
+        setBuffer(next ? await readFileAsArrayBuffer(next) : null);
+    };
 
     const movePage = (from, to) => {
-        if (from === to || from === null || to === null) return;
-        setPageOrder((current) => {
-            const next = [...current];
+        if (from === to) return;
+        setOrder((prev) => {
+            const next = [...prev];
             const [item] = next.splice(from, 1);
             next.splice(to, 0, item);
             return next;
         });
     };
 
-    const rotatePage = (pageIndex) => {
-        setRotations((current) => ({
-            ...current,
-            [pageIndex]: ((current[pageIndex] ?? 0) + 90) % 360,
+    const rotatePage = (position) => {
+        const pageIndex = order[position];
+        setRotations((prev) => ({
+            ...prev,
+            [pageIndex]: ((prev[pageIndex] ?? 0) + 90) % 360,
         }));
     };
 
     const deletePage = (position) => {
-        setPageOrder((current) => current.filter((_, index) => index !== position));
+        setOrder((prev) => prev.filter((_, i) => i !== position));
     };
 
-    const applyChanges = async () => {
-        if (!sourceBuffer || !file || !pageOrder.length) return;
-        setLoading(true);
-        setError("");
+    const handleSave = async () => {
+        if (!buffer || !file || order.length === 0) return;
+        setStatus("Saving reorganized PDF…");
         try {
-            const sourcePdf = await loadPdfLibDocument(sourceBuffer);
-            const output = await PDFDocument.create();
-            const pages = await output.copyPages(sourcePdf, pageOrder);
-            pages.forEach((page, index) => {
-                const rotation = rotations[pageOrder[index]] ?? 0;
-                if (rotation) page.setRotation(degrees(rotation));
-                output.addPage(page);
-            });
-            const bytes = await output.save();
-            downloadBytes(bytes, replaceExtension(file.name, "-organized.pdf"), "application/pdf");
-        } catch (applyError) {
-            setError(applyError instanceof Error ? applyError.message : "Failed to organize pages.");
-        } finally {
-            setLoading(false);
+            const result = await reorderPages(buffer, order, rotations);
+            downloadBytes(
+                result,
+                `${getBaseName(file.name)}-organized.pdf`,
+                "application/pdf",
+            );
+            setStatus("Reorganized PDF downloaded successfully.");
+        } catch (error) {
+            setStatus(error?.message ?? "Failed to save PDF.");
         }
     };
 
     return (
         <DocToolShell
             title="Page Organizer"
-            description="Reorder, rotate, and delete PDF pages visually before exporting a new document."
+            description="Reorder, rotate, and delete PDF pages with visual drag-and-drop."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
                 <FileDropZone
                     accept=".pdf,application/pdf"
-                    label="Drop a PDF file here or click to browse"
-                    onFiles={(files) => setFile(files[0] ?? null)}
-                    disabled={loading}
+                    files={file ? [file] : []}
+                    onFiles={handleFile}
+                    label="Drop a PDF file"
                 />
 
-                {pdfJsDoc && pageOrder.length ? (
+                {order.length > 0 ? (
                     <>
-                        <p className="doc-tool-status">Drag thumbnails to reorder pages.</p>
-                        <div className="doc-tool-page-grid" style={{ marginTop: "1rem" }}>
-                            {pageOrder.map((pageIndex, position) => (
-                                <PageThumbnail
-                                    key={`${pageIndex}-${position}`}
-                                    pdfDoc={pdfJsDoc}
-                                    pageIndex={pageIndex}
-                                    rotation={rotations[pageIndex] ?? 0}
-                                    onRotate={() => rotatePage(pageIndex)}
-                                    onDelete={() => deletePage(position)}
-                                    dragProps={{
-                                        onDragStart: () => setDragIndex(position),
-                                        onDragOver: (event) => event.preventDefault(),
-                                        onDrop: () => {
-                                            movePage(dragIndex, position);
-                                            setDragIndex(null);
-                                        },
-                                        onDragEnd: () => setDragIndex(null),
-                                    }}
-                                />
-                            ))}
-                        </div>
                         <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
                             <button
                                 type="button"
                                 className="doc-tool-button doc-tool-button--primary cursor-target"
-                                onClick={applyChanges}
-                                disabled={loading}
+                                onClick={handleSave}
                             >
-                                {loading ? "Processing…" : "Export organized PDF"}
+                                Save & Download
                             </button>
+                        </div>
+
+                        <div className="doc-tool-page-grid">
+                            {order.map((pageIndex, position) => (
+                                <div
+                                    key={`${pageIndex}-${position}`}
+                                    className="doc-tool-page-thumb"
+                                    draggable
+                                    onDragStart={() => setDragIndex(position)}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={() => {
+                                        if (dragIndex !== null) movePage(dragIndex, position);
+                                        setDragIndex(null);
+                                    }}
+                                >
+                                    <img
+                                        src={thumbnails[pageIndex]}
+                                        alt={`Page ${pageIndex + 1}`}
+                                        style={{
+                                            transform: `rotate(${rotations[pageIndex] ?? 0}deg)`,
+                                        }}
+                                    />
+                                    <span className="doc-tool-page-thumb__label">
+                                        Page {pageIndex + 1}
+                                    </span>
+                                    <div className="doc-tool-controls" style={{ padding: "0.5rem" }}>
+                                        <button
+                                            type="button"
+                                            className="doc-tool-button cursor-target"
+                                            onClick={() => rotatePage(position)}
+                                        >
+                                            Rotate
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="doc-tool-button cursor-target"
+                                            onClick={() => deletePage(position)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </>
                 ) : null}
 
-                {error ? <p className="doc-tool-error">{error}</p> : null}
+                {status ? <p className="doc-tool-status doc-tool-status--success">{status}</p> : null}
             </div>
         </DocToolShell>
     );
