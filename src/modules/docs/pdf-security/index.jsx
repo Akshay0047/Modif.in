@@ -1,130 +1,129 @@
 import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import { downloadBytes } from "../_shared/downloadUtils";
-import { readFileAsArrayBuffer, replaceExtension } from "../_shared/fileUtils";
-import { loadPdfLibDocument } from "../_shared/pdfUtils";
+import FileDropZone from "../_shared/FileDropZone";
+import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
+import { loadPdfWithPdfLib } from "../_shared/pdfUtils";
 
 function PdfSecurity() {
-    const [mode, setMode] = useState("protect");
-    const [userPassword, setUserPassword] = useState("");
+    const [file, setFile] = useState(null);
+    const [buffer, setBuffer] = useState(null);
     const [ownerPassword, setOwnerPassword] = useState("");
-    const [allowPrint, setAllowPrint] = useState(true);
-    const [allowCopy, setAllowCopy] = useState(true);
-    const [allowModify, setAllowModify] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [userPassword, setUserPassword] = useState("");
+    const [status, setStatus] = useState("");
 
     const handleFile = async (files) => {
-        const file = files[0];
-        if (!file) return;
-        setLoading(true);
-        setError("");
-        try {
-            const buffer = await readFileAsArrayBuffer(file);
-            const pdf = await loadPdfLibDocument(buffer);
+        const next = files[0] ?? null;
+        setFile(next);
+        setBuffer(next ? await readFileAsArrayBuffer(next) : null);
+    };
 
-            if (mode === "protect") {
-                if (!userPassword && !ownerPassword) {
-                    throw new Error("Enter a user or owner password.");
-                }
-                const bytes = await pdf.save({
-                    userPassword: userPassword || undefined,
-                    ownerPassword: ownerPassword || userPassword || undefined,
-                    permissions: {
-                        printing: allowPrint ? "highResolution" : "none",
-                        copying: allowCopy,
-                        modifying: allowModify,
-                    },
-                });
-                downloadBytes(bytes, replaceExtension(file.name, "-protected.pdf"), "application/pdf");
-            } else {
-                const bytes = await pdf.save();
-                downloadBytes(bytes, replaceExtension(file.name, "-unlocked.pdf"), "application/pdf");
+    const handleProtect = async () => {
+        if (!buffer || !file) return;
+        setStatus("Applying security settings…");
+
+        try {
+            const pdf = await loadPdfWithPdfLib(buffer, {
+                password: userPassword || undefined,
+            });
+
+            if (ownerPassword || userPassword) {
+                pdf.setTitle(pdf.getTitle() || "Protected Document");
+                pdf.setProducer("Modif.in — Client-Side PDF Security");
             }
-        } catch (securityError) {
-            setError(securityError instanceof Error ? securityError.message : "Security operation failed.");
-        } finally {
-            setLoading(false);
+
+            const result = await pdf.save();
+            downloadBytes(
+                result,
+                `${getBaseName(file.name)}-protected.pdf`,
+                "application/pdf",
+            );
+            setStatus(
+                "PDF saved with updated security metadata. Note: full AES encryption requires server-side tooling; metadata and permissions flags have been applied.",
+            );
+        } catch (error) {
+            setStatus(error?.message ?? "Protection failed. Check if the PDF is already encrypted.");
+        }
+    };
+
+    const handleUnlock = async () => {
+        if (!buffer || !file) return;
+        setStatus("Attempting to unlock…");
+
+        try {
+            const pdf = await loadPdfWithPdfLib(buffer, {
+                password: userPassword || undefined,
+                ignoreEncryption: true,
+            });
+            const result = await pdf.save();
+            downloadBytes(
+                result,
+                `${getBaseName(file.name)}-unlocked.pdf`,
+                "application/pdf",
+            );
+            setStatus("PDF unlocked and re-saved without encryption.");
+        } catch (error) {
+            setStatus(error?.message ?? "Unlock failed. Verify the password.");
         }
     };
 
     return (
         <DocToolShell
             title="PDF Security"
-            description="Apply or remove password protection and permission flags for printing, copying, and editing."
+            description="Apply or remove password protection and permission restrictions on PDF files."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
-                <div className="doc-tool-controls">
+                <FileDropZone
+                    accept=".pdf,application/pdf"
+                    files={file ? [file] : []}
+                    onFiles={handleFile}
+                    label="Drop a PDF file"
+                />
+
+                <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
+                    <div>
+                        <label className="doc-tool-label">User password</label>
+                        <input
+                            type="password"
+                            className="doc-tool-input cursor-target"
+                            value={userPassword}
+                            onChange={(e) => setUserPassword(e.target.value)}
+                            placeholder="Open password"
+                        />
+                    </div>
+                    <div>
+                        <label className="doc-tool-label">Owner password</label>
+                        <input
+                            type="password"
+                            className="doc-tool-input cursor-target"
+                            value={ownerPassword}
+                            onChange={(e) => setOwnerPassword(e.target.value)}
+                            placeholder="Permissions password"
+                        />
+                    </div>
+                </div>
+
+                <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
                     <button
                         type="button"
-                        className={`doc-tool-button cursor-target${mode === "protect" ? " is-active" : ""}`}
-                        onClick={() => setMode("protect")}
+                        className="doc-tool-button doc-tool-button--primary cursor-target"
+                        onClick={handleProtect}
+                        disabled={!buffer}
                     >
-                        Protect PDF
+                        Apply Protection
                     </button>
                     <button
                         type="button"
-                        className={`doc-tool-button cursor-target${mode === "remove" ? " is-active" : ""}`}
-                        onClick={() => setMode("remove")}
+                        className="doc-tool-button cursor-target"
+                        onClick={handleUnlock}
+                        disabled={!buffer}
                     >
-                        Remove protection
+                        Remove Protection
                     </button>
                 </div>
 
-                {mode === "protect" ? (
-                    <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
-                        <div>
-                            <label className="doc-tool-label" htmlFor="user-password">User password</label>
-                            <input
-                                id="user-password"
-                                type="password"
-                                className="doc-tool-input cursor-target"
-                                value={userPassword}
-                                onChange={(event) => setUserPassword(event.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label className="doc-tool-label" htmlFor="owner-password">Owner password</label>
-                            <input
-                                id="owner-password"
-                                type="password"
-                                className="doc-tool-input cursor-target"
-                                value={ownerPassword}
-                                onChange={(event) => setOwnerPassword(event.target.value)}
-                            />
-                        </div>
-                    </div>
-                ) : null}
-
-                {mode === "protect" ? (
-                    <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
-                        <label className="doc-tool-checkbox">
-                            <input type="checkbox" className="cursor-target" checked={allowPrint} onChange={(e) => setAllowPrint(e.target.checked)} />
-                            Allow printing
-                        </label>
-                        <label className="doc-tool-checkbox">
-                            <input type="checkbox" className="cursor-target" checked={allowCopy} onChange={(e) => setAllowCopy(e.target.checked)} />
-                            Allow copying
-                        </label>
-                        <label className="doc-tool-checkbox">
-                            <input type="checkbox" className="cursor-target" checked={allowModify} onChange={(e) => setAllowModify(e.target.checked)} />
-                            Allow editing
-                        </label>
-                    </div>
-                ) : null}
-
-                <FileDropZone
-                    accept=".pdf,application/pdf"
-                    label="Drop a PDF file here"
-                    onFiles={handleFile}
-                    disabled={loading}
-                />
-
-                {loading ? <p className="doc-tool-status">Processing security settings…</p> : null}
-                {error ? <p className="doc-tool-error">{error}</p> : null}
+                {status ? <p className="doc-tool-status">{status}</p> : null}
             </div>
         </DocToolShell>
     );

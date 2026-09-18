@@ -1,139 +1,147 @@
 import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import ProgressBar from "../_shared/components/ProgressBar";
-import { downloadBytes } from "../_shared/downloadUtils";
-import { readFileAsArrayBuffer, replaceExtension } from "../_shared/fileUtils";
-import { drawWatermark, loadPdfLibDocument } from "../_shared/pdfUtils";
-import { createDocWorker } from "../_shared/createDocWorker";
+import FileDropZone from "../_shared/FileDropZone";
+import ProgressBar from "../_shared/ProgressBar";
+import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
+import {
+    addPageNumbers,
+    addWatermark,
+    flattenPdf,
+    mergePdfBuffers,
+    rgb,
+    stripMetadata,
+} from "../_shared/pdfUtils";
 import { useWorkerTask } from "../_shared/useWorkerTask";
 
-const STEPS = [
-    { id: "merge", label: "Merge PDFs" },
-    { id: "flatten", label: "Flatten forms" },
+const WORKER_URL = new URL("../_shared/workers/docWorker.js", import.meta.url);
+
+const OPERATIONS = [
+    { id: "merge", label: "Merge" },
+    { id: "flatten", label: "Flatten" },
     { id: "compress", label: "Compress" },
     { id: "watermark", label: "Watermark" },
+    { id: "paginate", label: "Page Numbers" },
+    { id: "strip-meta", label: "Strip Metadata" },
 ];
+
+async function runPipeline(buffers, steps, workerRun) {
+    let current = buffers.length === 1 ? buffers[0] : await mergePdfBuffers(buffers);
+
+    for (const step of steps) {
+        if (step === "merge" && buffers.length > 1) {
+            current = await mergePdfBuffers(buffers);
+        } else if (step === "flatten") {
+            current = await flattenPdf(current);
+        } else if (step === "compress") {
+            current = await workerRun({
+                task: "compress",
+                payload: { buffer: current, quality: 0.6, scale: 1.2 },
+            });
+        } else if (step === "watermark") {
+            current = await addWatermark(current, {
+                text: "PROCESSED",
+                opacity: 0.2,
+                fontSize: 36,
+                angle: -45,
+                color: rgb(0.5, 0.5, 0.5),
+            });
+        } else if (step === "paginate") {
+            current = await addPageNumbers(current);
+        } else if (step === "strip-meta") {
+            current = await stripMetadata(current);
+        }
+    }
+
+    return current;
+}
 
 function BatchWorkflowAutomation() {
     const [files, setFiles] = useState([]);
-    const [pipeline, setPipeline] = useState(["merge", "flatten", "compress"]);
-    const [watermarkText, setWatermarkText] = useState("BATCH");
-    const [progress, setProgress] = useState(0);
+    const [pipeline, setPipeline] = useState(["flatten", "compress"]);
     const [status, setStatus] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const { runTask } = useWorkerTask(createDocWorker);
+    const { run, running, progress, error } = useWorkerTask(WORKER_URL);
 
-    const toggleStep = (stepId) => {
-        setPipeline((current) =>
-            current.includes(stepId)
-                ? current.filter((entry) => entry !== stepId)
-                : [...current, stepId],
+    const toggleStep = (id) => {
+        setPipeline((prev) =>
+            prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
         );
     };
 
-    const runPipeline = async () => {
-        if (!files.length) return;
-        setLoading(true);
-        setError("");
-        setProgress(0);
+    const handleRun = async () => {
+        if (!files.length || !pipeline.length) return;
+        setStatus("Running pipeline…");
+
         try {
-            let workingBuffer;
-
-            if (pipeline.includes("merge")) {
-                setStatus("Merging PDFs…");
-                const buffers = await Promise.all(files.map((file) => readFileAsArrayBuffer(file)));
-                workingBuffer = await runTask("merge-pdfs", { buffers });
-                setProgress(25);
-            } else {
-                workingBuffer = await readFileAsArrayBuffer(files[0]);
-            }
-
-            if (pipeline.includes("flatten")) {
-                setStatus("Flattening forms…");
-                const pdf = await loadPdfLibDocument(workingBuffer);
-                pdf.getForm().flatten();
-                workingBuffer = await pdf.save();
-                setProgress(50);
-            }
-
-            if (pipeline.includes("compress")) {
-                setStatus("Compressing…");
-                workingBuffer = await runTask("compress-pdf", {
-                    buffer: workingBuffer,
-                    quality: 0.7,
-                    scale: 1.2,
-                });
-                setProgress(75);
-            }
-
-            if (pipeline.includes("watermark")) {
-                setStatus("Applying watermark…");
-                const pdf = await loadPdfLibDocument(workingBuffer);
-                for (const page of pdf.getPages()) {
-                    await drawWatermark(page, pdf, watermarkText, { opacity: 0.15, tile: true });
-                }
-                workingBuffer = await pdf.save();
-            }
-
-            setProgress(100);
-            setStatus("Pipeline complete.");
-            const base = files.length === 1 ? files[0].name : "batch-output.pdf";
-            downloadBytes(workingBuffer, replaceExtension(base, "-workflow.pdf"), "application/pdf");
+            const buffers = await Promise.all(
+                files.map((f) => readFileAsArrayBuffer(f)),
+            );
+            const result = await runPipeline(buffers, pipeline, run);
+            const name = files.length === 1
+                ? getBaseName(files[0].name)
+                : "batch";
+            downloadBytes(result, `${name}-processed.pdf`, "application/pdf");
+            setStatus(`Pipeline complete: ${pipeline.join(" → ")}`);
         } catch (pipelineError) {
-            setError(pipelineError instanceof Error ? pipelineError.message : "Pipeline failed.");
-        } finally {
-            setLoading(false);
+            setStatus(pipelineError?.message ?? "Pipeline failed.");
         }
     };
 
     return (
         <DocToolShell
             title="Batch Workflow Automation"
-            description="Chain document operations in-memory before downloading a single output file."
+            description="Chain multiple PDF operations sequentially before a single download."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
                 <FileDropZone
                     accept=".pdf,application/pdf"
                     multiple
-                    label="Drop one or more PDFs"
-                    onFiles={(incoming) => setFiles((current) => [...current, ...incoming])}
-                    disabled={loading}
+                    files={files}
+                    onFiles={setFiles}
+                    label="Drop PDF file(s)"
+                    hint="Multiple files will be merged first if Merge is in the pipeline"
                 />
-                <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
-                    {STEPS.map((step) => (
+
+                <label className="doc-tool-label" style={{ marginTop: "1rem" }}>
+                    Pipeline steps (in order)
+                </label>
+                <div className="doc-tool-controls">
+                    {OPERATIONS.map((op) => (
                         <button
-                            key={step.id}
+                            key={op.id}
                             type="button"
-                            className={`doc-tool-button cursor-target${pipeline.includes(step.id) ? " is-active" : ""}`}
-                            onClick={() => toggleStep(step.id)}
-                            disabled={loading}
+                            className={`doc-tool-button cursor-target${
+                                pipeline.includes(op.id) ? " is-active" : ""
+                            }`}
+                            onClick={() => toggleStep(op.id)}
                         >
-                            {step.label}
+                            {op.label}
                         </button>
                     ))}
                 </div>
-                {pipeline.includes("watermark") ? (
-                    <input
-                        className="doc-tool-input cursor-target"
-                        value={watermarkText}
-                        onChange={(e) => setWatermarkText(e.target.value)}
-                        placeholder="Watermark text"
-                    />
+
+                {pipeline.length > 0 ? (
+                    <p className="doc-tool-status">
+                        Order: {pipeline.map((s) => OPERATIONS.find((o) => o.id === s)?.label).join(" → ")}
+                    </p>
                 ) : null}
-                <div className="doc-tool-controls">
-                    <button type="button" className="doc-tool-button doc-tool-button--primary cursor-target" onClick={runPipeline} disabled={!files.length || loading}>
-                        Run pipeline
-                    </button>
-                    <button type="button" className="doc-tool-button cursor-target" onClick={() => setFiles([])} disabled={loading}>
-                        Clear files
+
+                {running ? <ProgressBar value={progress} label="Processing pipeline…" /> : null}
+
+                <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
+                    <button
+                        type="button"
+                        className="doc-tool-button doc-tool-button--primary cursor-target"
+                        onClick={handleRun}
+                        disabled={running || !files.length || !pipeline.length}
+                    >
+                        Run Pipeline & Download
                     </button>
                 </div>
-                {loading ? <ProgressBar value={progress} label={status} /> : null}
-                {error ? <p className="doc-tool-error">{error}</p> : null}
+
+                {error ? <p className="doc-tool-status doc-tool-status--error">{error}</p> : null}
+                {status && !running ? <p className="doc-tool-status doc-tool-status--success">{status}</p> : null}
             </div>
         </DocToolShell>
     );

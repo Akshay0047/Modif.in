@@ -1,201 +1,205 @@
 import { useEffect, useRef, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
-import FileDropZone from "../_shared/components/FileDropZone";
-import { downloadBytes } from "../_shared/downloadUtils";
-import { readFileAsArrayBuffer, replaceExtension } from "../_shared/fileUtils";
-import { loadPdfJsDocument, PDFDocument, renderPageToCanvas } from "../_shared/pdfUtils";
+import FileDropZone from "../_shared/FileDropZone";
+import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
+import { loadPdfWithPdfJs, loadPdfWithPdfLib, renderPageToCanvas, rgb } from "../_shared/pdfUtils";
 
 function RedactionTool() {
+    const canvasRef = useRef(null);
     const [file, setFile] = useState(null);
-    const [pdfDoc, setPdfDoc] = useState(null);
-    const [sourceBuffer, setSourceBuffer] = useState(null);
+    const [buffer, setBuffer] = useState(null);
     const [pageNum, setPageNum] = useState(1);
-    const [totalPages, setTotalPages] = useState(0);
+    const [pageCount, setPageCount] = useState(0);
     const [boxes, setBoxes] = useState([]);
     const [drawing, setDrawing] = useState(false);
     const [start, setStart] = useState(null);
-    const canvasRef = useRef(null);
-    const [scale] = useState(1.5);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [current, setCurrent] = useState(null);
+    const [status, setStatus] = useState("");
 
     useEffect(() => {
-        if (!file) return undefined;
+        if (!buffer) return undefined;
         let cancelled = false;
+
         (async () => {
-            setLoading(true);
-            try {
-                const buffer = await readFileAsArrayBuffer(file);
-                const doc = await loadPdfJsDocument(buffer);
-                if (cancelled) return;
-                setSourceBuffer(buffer);
-                setPdfDoc(doc);
-                setTotalPages(doc.numPages);
-                setPageNum(1);
-                setBoxes([]);
-            } catch (loadError) {
-                if (!cancelled) setError(loadError instanceof Error ? loadError.message : "Failed to load PDF.");
-            } finally {
-                if (!cancelled) setLoading(false);
+            const pdf = await loadPdfWithPdfJs(buffer);
+            if (cancelled) return;
+            setPageCount(pdf.numPages);
+            const canvas = await renderPageToCanvas(pdf, pageNum, 1.5);
+            pdf.destroy();
+            if (cancelled) return;
+
+            const display = canvasRef.current;
+            if (!display) return;
+            display.width = canvas.width;
+            display.height = canvas.height;
+            const ctx = display.getContext("2d");
+            ctx.drawImage(canvas, 0, 0);
+            canvas.width = 0;
+            canvas.height = 0;
+
+            boxes
+                .filter((b) => b.page === pageNum)
+                .forEach((box) => {
+                    ctx.fillStyle = "#000";
+                    ctx.fillRect(box.x, box.y, box.w, box.h);
+                });
+
+            if (current && start) {
+                ctx.fillStyle = "rgba(0,0,0,0.5)";
+                ctx.fillRect(
+                    Math.min(start.x, current.x),
+                    Math.min(start.y, current.y),
+                    Math.abs(current.x - start.x),
+                    Math.abs(current.y - start.y),
+                );
             }
         })();
-        return () => {
-            cancelled = true;
-        };
-    }, [file]);
-
-    useEffect(() => {
-        if (!pdfDoc || !canvasRef.current) return undefined;
-        let cancelled = false;
-        const canvas = canvasRef.current;
-
-        (async () => {
-            await renderPageToCanvas(pdfDoc, pageNum, canvas, scale);
-            if (cancelled) return;
-            const context = canvas.getContext("2d");
-            boxes
-                .filter((box) => box.page === pageNum)
-                .forEach((box) => {
-                    context.fillStyle = "#000000";
-                    context.fillRect(box.x, box.y, box.width, box.height);
-                });
-        })();
 
         return () => {
             cancelled = true;
         };
-    }, [pdfDoc, pageNum, scale, boxes]);
+    }, [buffer, pageNum, boxes, start, current]);
 
-    const getCanvasPoint = (event) => {
-        const canvas = canvasRef.current;
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
+    const handleFile = async (files) => {
+        const next = files[0] ?? null;
+        setFile(next);
+        setBoxes([]);
+        setPageNum(1);
+        setBuffer(next ? await readFileAsArrayBuffer(next) : null);
+    };
+
+    const getCoords = (event) => {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const scaleX = canvasRef.current.width / rect.width;
+        const scaleY = canvasRef.current.height / rect.height;
         return {
             x: (event.clientX - rect.left) * scaleX,
             y: (event.clientY - rect.top) * scaleY,
         };
     };
 
-    const handlePointerDown = (event) => {
+    const handleMouseDown = (event) => {
         setDrawing(true);
-        setStart(getCanvasPoint(event));
+        setStart(getCoords(event));
+        setCurrent(getCoords(event));
     };
 
-    const handlePointerUp = (event) => {
-        if (!drawing || !start) return;
-        const end = getCanvasPoint(event);
+    const handleMouseMove = (event) => {
+        if (!drawing) return;
+        setCurrent(getCoords(event));
+    };
+
+    const handleMouseUp = () => {
+        if (!drawing || !start || !current) return;
+        setDrawing(false);
         const box = {
             page: pageNum,
-            x: Math.min(start.x, end.x),
-            y: Math.min(start.y, end.y),
-            width: Math.abs(end.x - start.x),
-            height: Math.abs(end.y - start.y),
+            x: Math.min(start.x, current.x),
+            y: Math.min(start.y, current.y),
+            w: Math.abs(current.x - start.x),
+            h: Math.abs(current.y - start.y),
         };
-        if (box.width > 4 && box.height > 4) {
-            setBoxes((current) => [...current, box]);
+        if (box.w > 5 && box.h > 5) {
+            setBoxes((prev) => [...prev, box]);
         }
-        setDrawing(false);
         setStart(null);
+        setCurrent(null);
     };
 
-    const applyRedactions = async () => {
-        if (!sourceBuffer || !file || !pdfDoc) return;
-        setLoading(true);
-        setError("");
-        try {
-            const newPdf = await PDFDocument.create();
+    const handleApply = async () => {
+        if (!buffer || !file || boxes.length === 0) return;
+        setStatus("Applying permanent redactions…");
 
-            for (let index = 0; index < totalPages; index += 1) {
-                const canvas = document.createElement("canvas");
-                await renderPageToCanvas(pdfDoc, index + 1, canvas, scale);
-                const context = canvas.getContext("2d");
-                boxes
-                    .filter((box) => box.page === index + 1)
-                    .forEach((box) => {
-                        context.fillStyle = "#000000";
-                        context.fillRect(box.x, box.y, box.width, box.height);
-                    });
-                const pngData = canvas.toDataURL("image/png");
-                const image = await newPdf.embedPng(pngData);
-                const page = newPdf.addPage([canvas.width, canvas.height]);
-                page.drawImage(image, {
-                    x: 0,
-                    y: 0,
-                    width: canvas.width,
-                    height: canvas.height,
+        try {
+            const pdf = await loadPdfWithPdfLib(buffer);
+            const pages = pdf.getPages();
+
+            for (const box of boxes) {
+                const page = pages[box.page - 1];
+                if (!page) continue;
+                const { height } = page.getSize();
+                page.drawRectangle({
+                    x: box.x,
+                    y: height - box.y - box.h,
+                    width: box.w,
+                    height: box.h,
+                    color: rgb(0, 0, 0),
                 });
-                canvas.width = 0;
-                canvas.height = 0;
             }
 
-            const bytes = await newPdf.save();
-            downloadBytes(bytes, replaceExtension(file.name, "-redacted.pdf"), "application/pdf");
-        } catch (redactError) {
-            setError(redactError instanceof Error ? redactError.message : "Redaction failed.");
-        } finally {
-            setLoading(false);
+            const result = await pdf.save();
+            downloadBytes(
+                result,
+                `${getBaseName(file.name)}-redacted.pdf`,
+                "application/pdf",
+            );
+            setStatus("Redacted PDF downloaded. Content under black boxes is permanently covered.");
+        } catch (error) {
+            setStatus(error?.message ?? "Redaction failed.");
         }
     };
 
     return (
         <DocToolShell
             title="Redaction Tool"
-            description="Draw permanent black redaction boxes over sensitive content. Redacted regions are rasterized to prevent recovery."
+            description="Draw redaction boxes over sensitive content to permanently cover it with solid black."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
                 <FileDropZone
                     accept=".pdf,application/pdf"
-                    label="Drop a PDF to redact"
-                    onFiles={(files) => setFile(files[0] ?? null)}
-                    disabled={loading}
+                    files={file ? [file] : []}
+                    onFiles={handleFile}
+                    label="Drop a PDF file"
                 />
 
-                {pdfDoc ? (
+                {buffer ? (
                     <>
                         <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
                             <button
                                 type="button"
                                 className="doc-tool-button cursor-target"
-                                onClick={() => setPageNum((current) => Math.max(1, current - 1))}
                                 disabled={pageNum <= 1}
+                                onClick={() => setPageNum((p) => p - 1)}
                             >
-                                Previous page
+                                Prev
                             </button>
-                            <span className="doc-tool-status">Page {pageNum} of {totalPages}</span>
+                            <span className="doc-tool-status">Page {pageNum} / {pageCount}</span>
                             <button
                                 type="button"
                                 className="doc-tool-button cursor-target"
-                                onClick={() => setPageNum((current) => Math.min(totalPages, current + 1))}
-                                disabled={pageNum >= totalPages}
+                                disabled={pageNum >= pageCount}
+                                onClick={() => setPageNum((p) => p + 1)}
                             >
-                                Next page
+                                Next
                             </button>
                             <button
                                 type="button"
                                 className="doc-tool-button doc-tool-button--primary cursor-target"
-                                onClick={applyRedactions}
-                                disabled={loading || !boxes.length}
+                                onClick={handleApply}
+                                disabled={boxes.length === 0}
                             >
-                                Apply redactions
+                                Apply Redactions ({boxes.length})
                             </button>
                         </div>
-                        <div className="doc-tool-canvas-wrap">
+
+                        <p className="doc-tool-status">Click and drag to draw redaction boxes</p>
+
+                        <div className="doc-tool-canvas-wrap" style={{ marginTop: "0.5rem" }}>
                             <canvas
                                 ref={canvasRef}
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUp}
+                                onMouseLeave={handleMouseUp}
                                 className="cursor-target"
-                                onMouseDown={handlePointerDown}
-                                onMouseUp={handlePointerUp}
                             />
                         </div>
-                        <p className="doc-tool-status">Click and drag to draw redaction boxes on the current page.</p>
                     </>
                 ) : null}
 
-                {loading ? <p className="doc-tool-status">Processing…</p> : null}
-                {error ? <p className="doc-tool-error">{error}</p> : null}
+                {status ? <p className="doc-tool-status doc-tool-status--success">{status}</p> : null}
             </div>
         </DocToolShell>
     );
