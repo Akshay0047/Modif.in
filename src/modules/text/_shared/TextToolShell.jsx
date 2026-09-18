@@ -5,9 +5,20 @@ import DepthText from "../../../components/DepthText";
 import TargetCursor from "../../../components/TargetCursor";
 import Footer from "../../../sections/Footer";
 import "../../../layouts/ToolHubLayout.css";
+import { insertTabAtCursor } from "./textInputUtils";
 import "./text-tool.css";
 
 function TextToolShell({ title, description, leading, children }) {
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key !== "Tab" || event.shiftKey) return;
+            insertTabAtCursor(event);
+        };
+
+        document.addEventListener("keydown", handleKeyDown, true);
+        return () => document.removeEventListener("keydown", handleKeyDown, true);
+    }, []);
+
     useEffect(() => {
         const html = document.documentElement;
         const body = document.body;
