@@ -22,6 +22,13 @@ const ASPECT_PRESETS = {
     "4:5": 4 / 5,
     "9:16": 9 / 16,
 };
+
+const SOCIAL_PRESETS = {
+    youtube: { label: "YouTube Thumbnail", width: 1280, height: 720, ratio: 16 / 9 },
+    twitter: { label: "Twitter Header", width: 1500, height: 500, ratio: 3 },
+    facebook: { label: "Facebook Cover", width: 820, height: 312, ratio: 820 / 312 },
+    linkedin: { label: "LinkedIn Banner", width: 1584, height: 396, ratio: 4 },
+};
 const MIME_BY_FORMAT = { png: "image/png", jpg: "image/jpeg", webp: "image/webp" };
 
 function validateCropResizeFile(file) {
@@ -75,6 +82,8 @@ export default function CropResizeTool() {
     const [interpolation, setInterpolation] = useState("bicubic");
     const [exportFormat, setExportFormat] = useState("png");
     const [quality, setQuality] = useState(90);
+    const [straightenAngle, setStraightenAngle] = useState(0);
+    const [socialPreset, setSocialPreset] = useState("");
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
     const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -105,6 +114,8 @@ export default function CropResizeTool() {
         setOutWidth("");
         setOutHeight("");
         setScalePct(100);
+        setStraightenAngle(0);
+        setSocialPreset("");
         setError("");
         setStatus("");
         setProgress(0);
@@ -195,38 +206,67 @@ export default function CropResizeTool() {
         const scale = getDisplayScale();
         const ox = (rect.width - imageSize.width * scale) / 2;
         const oy = (rect.height - imageSize.height * scale) / 2;
-        ctx.drawImage(src.image, ox, oy, imageSize.width * scale, imageSize.height * scale);
+        const cx = ox + (imageSize.width * scale) / 2;
+        const cy = oy + (imageSize.height * scale) / 2;
+        const rad = (straightenAngle * Math.PI) / 180;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rad);
+        ctx.drawImage(
+            src.image,
+            (-imageSize.width * scale) / 2,
+            (-imageSize.height * scale) / 2,
+            imageSize.width * scale,
+            imageSize.height * scale,
+        );
+        ctx.restore();
+
         if (mode !== "resize") {
             const { x, y, w, h } = crop;
+            ctx.save();
             ctx.fillStyle = "rgba(0,0,0,0.45)";
             ctx.fillRect(ox, oy, imageSize.width * scale, imageSize.height * scale);
-            ctx.clearRect(ox + x * scale, oy + y * scale, w * scale, h * scale);
+            ctx.translate(cx, cy);
+            ctx.rotate(rad);
+            ctx.clearRect(
+                -imageSize.width * scale / 2 + x * scale,
+                -imageSize.height * scale / 2 + y * scale,
+                w * scale,
+                h * scale,
+            );
             ctx.drawImage(
                 src.image,
                 x,
                 y,
                 w,
                 h,
-                ox + x * scale,
-                oy + y * scale,
+                -imageSize.width * scale / 2 + x * scale,
+                -imageSize.height * scale / 2 + y * scale,
                 w * scale,
                 h * scale,
             );
             ctx.strokeStyle = "#10b981";
             ctx.lineWidth = 2;
-            ctx.strokeRect(ox + x * scale, oy + y * scale, w * scale, h * scale);
+            ctx.strokeRect(
+                -imageSize.width * scale / 2 + x * scale,
+                -imageSize.height * scale / 2 + y * scale,
+                w * scale,
+                h * scale,
+            );
             const hs = 8;
-            [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy]) => {
+            [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([px, py]) => {
                 ctx.fillStyle = "#10b981";
                 ctx.fillRect(
-                    ox + cx * scale - hs / 2,
-                    oy + cy * scale - hs / 2,
+                    -imageSize.width * scale / 2 + px * scale - hs / 2,
+                    -imageSize.height * scale / 2 + py * scale - hs / 2,
                     hs,
                     hs,
                 );
             });
+            ctx.restore();
         }
-    }, [crop, getDisplayScale, imageSize, mode]);
+    }, [crop, getDisplayScale, imageSize, mode, straightenAngle]);
 
     useEffect(() => {
         drawPreview();
@@ -323,8 +363,23 @@ export default function CropResizeTool() {
 
     const handleAspectChange = (key) => {
         setAspectKey(key);
+        setSocialPreset("");
         const ratio = ASPECT_PRESETS[key];
         if (ratio && imageSize) setCrop((c) => applyAspectToCrop(c, ratio));
+    };
+
+    const handleSocialPreset = (key) => {
+        const preset = SOCIAL_PRESETS[key];
+        if (!preset || !imageSize) return;
+        setSocialPreset(key);
+        setMode("both");
+        setLockAspect(true);
+        const ratioKey = Object.entries(ASPECT_PRESETS).find(([, r]) => r && Math.abs(r - preset.ratio) < 0.02)?.[0];
+        if (ratioKey) setAspectKey(ratioKey);
+        else setAspectKey("freeform");
+        setCrop((c) => applyAspectToCrop(c, preset.ratio));
+        setOutWidth(String(preset.width));
+        setOutHeight(String(preset.height));
     };
 
     const handleWidthChange = (val) => {
@@ -383,7 +438,14 @@ export default function CropResizeTool() {
             sw = crop.w;
             sh = crop.h;
         }
-        drawResizedRegion(ctx, src.image, sx, sy, sw, sh, dw, dh, smooth);
+        const rad = (straightenAngle * Math.PI) / 180;
+        ctx.save();
+        ctx.translate(dw / 2, dh / 2);
+        ctx.rotate(rad);
+        ctx.imageSmoothingEnabled = smooth;
+        if (smooth) ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(src.image, sx, sy, sw, sh, -dw / 2, -dh / 2, dw, dh);
+        ctx.restore();
         await waitFrame();
         const mime = MIME_BY_FORMAT[exportFormat];
         const q = exportFormat === "png" ? undefined : quality / 100;
@@ -514,7 +576,7 @@ export default function CropResizeTool() {
                             <button
                                 key={key}
                                 type="button"
-                                className={`img-tool__segment${aspectKey === key ? " is-active" : ""}`}
+                                className={`img-tool__segment${aspectKey === key && !socialPreset ? " is-active" : ""}`}
                                 disabled={!imageSize}
                                 onClick={() => handleAspectChange(key)}
                             >
@@ -525,6 +587,49 @@ export default function CropResizeTool() {
                                       : key}
                             </button>
                         ))}
+                    </div>
+                </div>
+            ) : null}
+            {mode !== "resize" ? (
+                <div>
+                    <span className="img-tool__label">Social presets</span>
+                    <div className="img-tool__segmented" style={{ flexWrap: "wrap" }}>
+                        {Object.entries(SOCIAL_PRESETS).map(([key, preset]) => (
+                            <button
+                                key={key}
+                                type="button"
+                                className={`img-tool__segment${socialPreset === key ? " is-active" : ""}`}
+                                disabled={!imageSize}
+                                onClick={() => handleSocialPreset(key)}
+                            >
+                                {preset.label}
+                            </button>
+                        ))}
+                    </div>
+                    {socialPreset ? (
+                        <p className="img-tool__hint">
+                            Output: {SOCIAL_PRESETS[socialPreset].width}×{SOCIAL_PRESETS[socialPreset].height}px
+                        </p>
+                    ) : null}
+                </div>
+            ) : null}
+            {mode !== "resize" ? (
+                <div>
+                    <label className="img-tool__label" htmlFor="crop-straighten">Straighten</label>
+                    <input
+                        id="crop-straighten"
+                        className="img-tool__range"
+                        type="range"
+                        min={-45}
+                        max={45}
+                        value={straightenAngle}
+                        disabled={!imageSize}
+                        onChange={(e) => setStraightenAngle(Number(e.target.value))}
+                    />
+                    <div className="img-tool__range-meta">
+                        <span>-45°</span>
+                        <span className="img-tool__range-value">{straightenAngle}°</span>
+                        <span>45°</span>
                     </div>
                 </div>
             ) : null}
