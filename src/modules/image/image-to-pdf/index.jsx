@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {
     MB,
     canvasToBlob,
@@ -81,9 +82,96 @@ function computeDrawRect(pageW, pageH, imgW, imgH, margin, alignment) {
     return { x, y, width, height };
 }
 
+async function embedCompressedImage(pdfDoc, item, quality) {
+    const { image } = await loadImageFromBuffer(
+        item.buffer,
+        item.file.type || "application/octet-stream",
+    );
+    const canvas = document.createElement("canvas");
+    canvas.width = item.width;
+    canvas.height = item.height;
+    const ctx = canvas.getContext("2d");
+    const isJpeg =
+        item.file.type === "image/jpeg" ||
+        item.file.type === "image/jpg" ||
+        /\.jpe?g$/i.test(item.file.name);
+    if (!isJpeg) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, item.width, item.height);
+    }
+    ctx.drawImage(image, 0, 0);
+    const jpegBuffer = await canvasToBlob(canvas, "image/jpeg", quality / 100);
+    const arrayBuffer = await jpegBuffer.arrayBuffer();
+    return pdfDoc.embedJpg(arrayBuffer);
+}
+
+async function buildPdfBlob(items, options, onProgress) {
+    const {
+        docTitle,
+        pageSize,
+        orientation,
+        marginKey,
+        alignment,
+        pdfQuality,
+        includePageNumbers,
+        pageNumberPosition,
+        pageNumberSize,
+    } = options;
+
+    const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+    const pdfDoc = await PDFDocument.create();
+    pdfDoc.setTitle(docTitle || "Image Document");
+    const pageNumberFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const margin = MARGINS[marginKey];
+
+    onProgress?.({ stage: STAGE_LABELS[STAGES.LOADING], progress: 10 });
+
+    for (let i = 0; i < items.length; i += 1) {
+        const item = items[i];
+        onProgress?.({
+            stage: `${STAGE_LABELS[STAGES.LAYOUT]} (${i + 1} of ${items.length})`,
+            progress: 15 + Math.round((i / items.length) * 45),
+        });
+
+        const pageDims = resolvePageSize(pageSize, orientation, item.width, item.height);
+        const page = pdfDoc.addPage([pageDims.width, pageDims.height]);
+        const embedded = await embedCompressedImage(pdfDoc, item, pdfQuality);
+        const rect = computeDrawRect(
+            pageDims.width,
+            pageDims.height,
+            embedded.width,
+            embedded.height,
+            margin,
+            alignment,
+        );
+
+        page.drawImage(embedded, rect);
+
+        if (includePageNumbers) {
+            const label = String(i + 1);
+            const textWidth = pageNumberFont.widthOfTextAtSize(label, pageNumberSize);
+            const x = pageNumberPosition === "right"
+                ? pageDims.width - margin - textWidth
+                : (pageDims.width - textWidth) / 2;
+            page.drawText(label, {
+                x: Math.max(margin, x),
+                y: Math.max(12, margin * 0.4),
+                size: pageNumberSize,
+                font: pageNumberFont,
+                color: rgb(0.45, 0.45, 0.45),
+            });
+        }
+    }
+
+    onProgress?.({ stage: STAGE_LABELS[STAGES.COMPILING], progress: 85 });
+    const pdfBytes = await pdfDoc.save();
+    return new Blob([pdfBytes], { type: "application/pdf" });
+}
+
 function ImageToPdf() {
     const fileInputRef = useRef(null);
     const thumbUrlsRef = useRef([]);
+    const previewUrlRef = useRef("");
     const operationRef = useRef(0);
 
     const [items, setItems] = useState([]);
@@ -103,6 +191,28 @@ function ImageToPdf() {
     const [progress, setProgress] = useState(0);
     const [showProgress, setShowProgress] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState("");
+    const [showPreview, setShowPreview] = useState(false);
+
+    const revokePreviewUrl = useCallback(() => {
+        if (previewUrlRef.current) {
+            URL.revokeObjectURL(previewUrlRef.current);
+            previewUrlRef.current = "";
+        }
+        setPreviewUrl("");
+    }, []);
+
+    const pdfOptions = {
+        docTitle,
+        pageSize,
+        orientation,
+        marginKey,
+        alignment,
+        pdfQuality,
+        includePageNumbers,
+        pageNumberPosition,
+        pageNumberSize,
+    };
 
     const revokeThumbUrls = useCallback(() => {
         thumbUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
@@ -112,14 +222,16 @@ function ImageToPdf() {
     const clearAll = useCallback(() => {
         operationRef.current += 1;
         revokeThumbUrls();
+        revokePreviewUrl();
         setItems([]);
         setError("");
         setStatus("");
         setStage("");
         setProgress(0);
         setShowProgress(false);
+        setShowPreview(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
-    }, [revokeThumbUrls]);
+    }, [revokeThumbUrls, revokePreviewUrl]);
 
     const addFiles = useCallback(
         async (incoming) => {
@@ -177,8 +289,9 @@ function ImageToPdf() {
         () => () => {
             operationRef.current += 1;
             revokeThumbUrls();
+            revokePreviewUrl();
         },
-        [revokeThumbUrls],
+        [revokeThumbUrls, revokePreviewUrl],
     );
 
     const moveItem = (index, direction) => {
@@ -195,107 +308,50 @@ function ImageToPdf() {
         setItems((prev) => prev.filter((item) => item.id !== id));
     };
 
-    const embedCompressedImage = async (pdfDoc, item, quality) => {
-        const { image } = await loadImageFromBuffer(
-            item.buffer,
-            item.file.type || "application/octet-stream",
-        );
-        const canvas = document.createElement("canvas");
-        canvas.width = item.width;
-        canvas.height = item.height;
-        const ctx = canvas.getContext("2d");
-        const isJpeg =
-            item.file.type === "image/jpeg" ||
-            item.file.type === "image/jpg" ||
-            /\.jpe?g$/i.test(item.file.name);
-        if (!isJpeg) {
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, item.width, item.height);
-        }
-        ctx.drawImage(image, 0, 0);
-        const jpegBuffer = await canvasToBlob(canvas, "image/jpeg", quality / 100);
-        const arrayBuffer = await jpegBuffer.arrayBuffer();
-        return pdfDoc.embedJpg(arrayBuffer);
-    };
-
-    const handleGenerate = async () => {
-        if (!items.length || isGenerating) return;
+    const runPdfGeneration = async ({ download = false, preview = false } = {}) => {
+        if (!items.length || isGenerating) return null;
 
         setIsGenerating(true);
         setShowProgress(true);
         setError("");
-        setStatus("");
-        setStage(STAGE_LABELS[STAGES.LOADING]);
-        setProgress(10);
+        if (!preview) setStatus("");
 
         try {
-            const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
-            const pdfDoc = await PDFDocument.create();
-            pdfDoc.setTitle(docTitle || "Image Document");
-            const pageNumberFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const blob = await buildPdfBlob(items, pdfOptions, ({ stage: nextStage, progress: nextProgress }) => {
+                setStage(nextStage);
+                setProgress(nextProgress);
+            });
 
-            const margin = MARGINS[marginKey];
-
-            for (let i = 0; i < items.length; i += 1) {
-                const item = items[i];
-                setStage(`${STAGE_LABELS[STAGES.LAYOUT]} (${i + 1} of ${items.length})`);
-                setProgress(15 + Math.round((i / items.length) * 45));
-
-                const pageDims = resolvePageSize(
-                    pageSize,
-                    orientation,
-                    item.width,
-                    item.height,
-                );
-
-                const page = pdfDoc.addPage([pageDims.width, pageDims.height]);
-                const embedded = await embedCompressedImage(pdfDoc, item, pdfQuality);
-
-                const rect = computeDrawRect(
-                    pageDims.width,
-                    pageDims.height,
-                    embedded.width,
-                    embedded.height,
-                    margin,
-                    alignment,
-                );
-
-                page.drawImage(embedded, rect);
-
-                if (includePageNumbers) {
-                    const label = String(i + 1);
-                    const textWidth = pageNumberFont.widthOfTextAtSize(label, pageNumberSize);
-                    const x = pageNumberPosition === "right"
-                        ? pageDims.width - margin - textWidth
-                        : (pageDims.width - textWidth) / 2;
-                    page.drawText(label, {
-                        x: Math.max(margin, x),
-                        y: Math.max(12, margin * 0.4),
-                        size: pageNumberSize,
-                        font: pageNumberFont,
-                        color: rgb(0.45, 0.45, 0.45),
-                    });
-                }
+            if (preview) {
+                revokePreviewUrl();
+                const url = URL.createObjectURL(blob);
+                previewUrlRef.current = url;
+                setPreviewUrl(url);
+                setShowPreview(true);
+                setStage(STAGE_LABELS[STAGES.DONE]);
+                setProgress(100);
+                setStatus("PDF preview ready.");
+            } else if (download) {
+                const safeTitle = (docTitle || "images").replace(/[^\w-]+/g, "-").toLowerCase();
+                triggerDownload(blob, `${safeTitle || "document"}.pdf`);
+                setStage(STAGE_LABELS[STAGES.DONE]);
+                setProgress(100);
+                setStatus("PDF download started.");
             }
 
-            setStage(STAGE_LABELS[STAGES.COMPILING]);
-            setProgress(85);
-
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: "application/pdf" });
-            const safeTitle = (docTitle || "images").replace(/[^\w-]+/g, "-").toLowerCase();
-            triggerDownload(blob, `${safeTitle || "document"}.pdf`);
-
-            setStage(STAGE_LABELS[STAGES.DONE]);
-            setProgress(100);
-            setStatus("PDF download started.");
+            return blob;
         } catch (genError) {
             setError(genError.message || "PDF generation failed.");
             setShowProgress(false);
+            return null;
         } finally {
             setIsGenerating(false);
         }
     };
+
+    const handlePreview = () => runPdfGeneration({ preview: true });
+
+    const handleGenerate = () => runPdfGeneration({ download: true });
 
     const left = (
         <>
@@ -386,24 +442,18 @@ function ImageToPdf() {
                 </div>
             </div>
 
-            <div>
-                <label className="img-tool__label" htmlFor="pdf-quality">PDF quality / compression</label>
-                <input
-                    id="pdf-quality"
-                    className="img-tool__range"
-                    type="range"
-                    min={30}
-                    max={100}
-                    value={pdfQuality}
-                    disabled={isGenerating}
-                    onChange={(e) => setPdfQuality(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>Smaller file</span>
-                    <span className="img-tool__range-value">{pdfQuality}%</span>
-                    <span>Higher quality</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="pdf-quality"
+                label="PDF quality / compression"
+                min={30}
+                max={100}
+                value={pdfQuality}
+                disabled={isGenerating}
+                onChange={setPdfQuality}
+                unit="%"
+                lowLabel="Smaller file"
+                highLabel="Higher quality"
+            />
 
             <label className="img-tool__checkbox-row">
                 <input
@@ -436,24 +486,18 @@ function ImageToPdf() {
                             ))}
                         </div>
                     </div>
-                    <div>
-                        <label className="img-tool__label" htmlFor="pdf-page-num-size">Page number size</label>
-                        <input
-                            id="pdf-page-num-size"
-                            className="img-tool__range"
-                            type="range"
-                            min={8}
-                            max={18}
-                            value={pageNumberSize}
-                            disabled={isGenerating}
-                            onChange={(e) => setPageNumberSize(Number(e.target.value))}
-                        />
-                        <div className="img-tool__range-meta">
-                            <span>8pt</span>
-                            <span className="img-tool__range-value">{pageNumberSize}pt</span>
-                            <span>18pt</span>
-                        </div>
-                    </div>
+                    <ImageToolRange
+                        id="pdf-page-num-size"
+                        label="Page number size"
+                        min={8}
+                        max={18}
+                        value={pageNumberSize}
+                        disabled={isGenerating}
+                        onChange={setPageNumberSize}
+                        formatDisplay={(val) => `${val}pt`}
+                        lowLabel="8pt"
+                        highLabel="18pt"
+                    />
                 </>
             )}
 
@@ -462,6 +506,14 @@ function ImageToPdf() {
             </p>
 
             <div className="img-tool__actions">
+                <button
+                    type="button"
+                    className="img-tool__btn cursor-target"
+                    disabled={!items.length || isGenerating}
+                    onClick={handlePreview}
+                >
+                    PDF Preview
+                </button>
                 <button
                     type="button"
                     className="img-tool__btn img-tool__btn--primary cursor-target"
@@ -568,6 +620,16 @@ function ImageToPdf() {
                     ))}
                 </div>
             )}
+
+            {showPreview && previewUrl ? (
+                <div className="img-tool__preview-frame" style={{ minHeight: "360px", maxHeight: "min(60vh, 520px)" }}>
+                    <iframe
+                        title="PDF preview"
+                        src={previewUrl}
+                        style={{ width: "100%", height: "min(58vh, 500px)", border: 0, background: "#fff" }}
+                    />
+                </div>
+            ) : null}
         </>
     );
 
