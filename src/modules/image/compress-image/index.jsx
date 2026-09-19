@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
+import useDebouncedValue from "../_shared/useDebouncedValue";
 import {COMPRESS_ACCEPT,
     compressImage,
     copyBlobToClipboard,
@@ -24,6 +26,7 @@ function CompressImage() {
     const [sourceImage, setSourceImage] = useState(null);
     const [dimensions, setDimensions] = useState(null);
     const [quality, setQuality] = useState(80);
+    const debouncedQuality = useDebouncedValue(quality, 250);
     const [useWebp, setUseWebp] = useState(false);
     const [capWidth, setCapWidth] = useState(false);
     const [split, setSplit] = useState(50);
@@ -144,7 +147,7 @@ function CompressImage() {
             try {
                 await waitFrame();
                 const result = await compressImage(sourceImage, file, {
-                    quality,
+                    quality: debouncedQuality,
                     useWebp,
                     maxWidth: capWidth ? 1920 : null,
                 });
@@ -173,7 +176,7 @@ function CompressImage() {
         return () => {
             cancelled = true;
         };
-    }, [sourceImage, file, quality, useWebp, capWidth]);
+    }, [sourceImage, file, debouncedQuality, useWebp, capWidth]);
 
     useEffect(
         () => () => {
@@ -206,24 +209,18 @@ function CompressImage() {
 
     const left = (
         <>
-            <div>
-                <label className="img-tool__label" htmlFor="cmp-quality">Quality</label>
-                <input
-                    id="cmp-quality"
-                    className="img-tool__range"
-                    type="range"
-                    min={1}
-                    max={100}
-                    value={quality}
-                    disabled={!hasImage || isProcessing}
-                    onChange={(e) => setQuality(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>Low</span>
-                    <span className="img-tool__range-value">{quality}%</span>
-                    <span>High</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="cmp-quality"
+                label="Quality"
+                min={1}
+                max={100}
+                value={quality}
+                disabled={!hasImage}
+                onChange={setQuality}
+                unit="%"
+                lowLabel="Low"
+                highLabel="High"
+            />
 
             <label className="img-tool__checkbox-row">
                 <input

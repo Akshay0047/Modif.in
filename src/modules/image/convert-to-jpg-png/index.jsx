@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import ImageToolShell from "../_shared/ImageToolShell";
+import ImageToolRange from "../_shared/ImageToolRange";
+import useDebouncedValue from "../_shared/useDebouncedValue";
 import usePreventWindowDragDrop from "../_shared/usePreventWindowDragDrop";
 import { preventDragDefaults, copyBlobToClipboard } from "../_shared/imageToolUtils";
 import {
@@ -30,6 +32,7 @@ function ConvertToJpgPng() {
     const [sourceImage, setSourceImage] = useState(null);
     const [targetFormat, setTargetFormat] = useState("jpg");
     const [quality, setQuality] = useState(90);
+    const debouncedQuality = useDebouncedValue(quality, 250);
     const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
     const [convertedBlob, setConvertedBlob] = useState(null);
     const [previewUrl, setPreviewUrl] = useState("");
@@ -187,7 +190,7 @@ function ConvertToJpgPng() {
                 const blob = await convertImageOnCanvas(
                     sourceImage,
                     targetFormat,
-                    quality,
+                    debouncedQuality,
                     backgroundColor,
                     {
                         onStage: (nextStage) => {
@@ -223,7 +226,7 @@ function ConvertToJpgPng() {
     }, [
         sourceImage,
         targetFormat,
-        quality,
+        debouncedQuality,
         backgroundColor,
         revokePreviewUrl,
         setPreviewFromBlob,
@@ -311,28 +314,19 @@ function ConvertToJpgPng() {
                             </div>
                         </div>
 
-                        <div>
-                            <label className="cvt-jpg-png__label" htmlFor="cvt-quality">
-                                Quality
-                            </label>
-                            <input
-                                id="cvt-quality"
-                                className="cvt-jpg-png__range"
-                                type="range"
-                                min={1}
-                                max={100}
-                                value={quality}
-                                disabled={!isJpg || isProcessing}
-                                onChange={(event) => setQuality(Number(event.target.value))}
-                            />
-                            <div className="cvt-jpg-png__range-meta">
-                                <span>Low</span>
-                                <span className="cvt-jpg-png__range-value">
-                                    {isJpg ? `${quality}%` : "N/A for PNG"}
-                                </span>
-                                <span>High</span>
-                            </div>
-                        </div>
+                        <ImageToolRange
+                            id="cvt-quality"
+                            classPrefix="cvt-jpg-png"
+                            label="Quality"
+                            min={1}
+                            max={100}
+                            value={quality}
+                            disabled={!isJpg}
+                            onChange={setQuality}
+                            formatDisplay={(val) => (isJpg ? `${val}%` : "N/A for PNG")}
+                            lowLabel="Low"
+                            highLabel="High"
+                        />
 
                         <div>
                             <span className="cvt-jpg-png__label">Transparency fill (JPG only)</span>
