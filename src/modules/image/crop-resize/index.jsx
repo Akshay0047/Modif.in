@@ -50,6 +50,86 @@ function clampCrop(crop, imgW, imgH) {
     return { x, y, w, h };
 }
 
+function getFixedPoint(crop, handle) {
+    const { x, y, w, h } = crop;
+    if (handle === "nw") return { fx: x + w, fy: y + h };
+    if (handle === "ne") return { fx: x, fy: y + h };
+    if (handle === "sw") return { fx: x + w, fy: y };
+    if (handle === "se") return { fx: x, fy: y };
+    return { fx: x + w / 2, fy: y + h / 2 };
+}
+
+function applyAspectToCrop(nextCrop, ratio, handle = "center") {
+    if (!ratio) return nextCrop;
+
+    let { w, h } = nextCrop;
+    w = Math.max(1, w);
+    h = Math.max(1, h);
+
+    if (w / h > ratio) h = w / ratio;
+    else w = h * ratio;
+
+    const { fx, fy } = getFixedPoint(nextCrop, handle);
+    let x;
+    let y;
+
+    if (handle === "nw") {
+        x = fx - w;
+        y = fy - h;
+    } else if (handle === "ne") {
+        x = fx;
+        y = fy - h;
+    } else if (handle === "sw") {
+        x = fx - w;
+        y = fy;
+    } else if (handle === "se") {
+        x = fx;
+        y = fy;
+    } else {
+        x = fx - w / 2;
+        y = fy - h / 2;
+    }
+
+    return { x, y, w, h };
+}
+
+function clampCropWithAspect(crop, imgW, imgH, ratio = null, handle = "center") {
+    if (!ratio) return clampCrop(crop, imgW, imgH);
+
+    const maxW = Math.min(imgW, imgH * ratio);
+    const maxH = maxW / ratio;
+    let next = applyAspectToCrop(crop, ratio, handle);
+
+    if (next.w > maxW || next.h > maxH) {
+        const scale = Math.min(maxW / next.w, maxH / next.h, 1);
+        next = applyAspectToCrop(
+            { ...next, w: Math.max(1, next.w * scale), h: Math.max(1, next.h * scale) },
+            ratio,
+            handle,
+        );
+    }
+
+    let { x, y, w, h } = next;
+    w = clamp(w, 1, maxW);
+    h = clamp(h, 1, maxH);
+    next = applyAspectToCrop({ x, y, w, h }, ratio, handle);
+    ({ x, y, w, h } = next);
+    x = clamp(x, 0, imgW - w);
+    y = clamp(y, 0, imgH - h);
+
+    return { x, y, w, h };
+}
+
+function fitCropToImage(crop, imgW, imgH, ratio = null, handle = "center") {
+    return clampCropWithAspect(
+        ratio ? applyAspectToCrop(crop, ratio, handle) : crop,
+        imgW,
+        imgH,
+        ratio,
+        handle,
+    );
+}
+
 function fitOutputSize(width, height, maxDim = MAX_OUTPUT) {
     const scale = Math.min(1, maxDim / Math.max(width, height));
     return {
@@ -132,18 +212,9 @@ export default function CropResizeTool() {
         if (fileInputRef.current) fileInputRef.current.value = "";
     }, [releaseSource, revokePreview]);
 
-    const applyAspectToCrop = useCallback(
-        (nextCrop, ratio) => {
-            if (!ratio || !imageSize) return nextCrop;
-            let { x, y, w, h } = nextCrop;
-            const cx = x + w / 2;
-            const cy = y + h / 2;
-            if (w / h > ratio) h = w / ratio;
-            else w = h * ratio;
-            x = cx - w / 2;
-            y = cy - h / 2;
-            return clampCrop({ x, y, w, h }, imageSize.width, imageSize.height);
-        },
+    const applyAspectToCropForImage = useCallback(
+        (nextCrop, ratio, handle = "center") =>
+            fitCropToImage(nextCrop, imageSize.width, imageSize.height, ratio, handle),
         [imageSize],
     );
 
@@ -338,6 +409,7 @@ export default function CropResizeTool() {
         if (drag.mode === "move") {
             next.x += dx;
             next.y += dy;
+            next = clampCropWithAspect(next, imageSize.width, imageSize.height, ratio, "center");
         } else {
             if (drag.mode.includes("n")) {
                 next.y += dy;
@@ -351,9 +423,13 @@ export default function CropResizeTool() {
             if (drag.mode.includes("e")) next.w += dx;
             if (next.w < 1) next.w = 1;
             if (next.h < 1) next.h = 1;
-            if (ratio) next = applyAspectToCrop(next, ratio);
+            if (ratio) {
+                next = clampCropWithAspect(next, imageSize.width, imageSize.height, ratio, drag.mode);
+            } else {
+                next = clampCrop(next, imageSize.width, imageSize.height);
+            }
         }
-        setCrop(clampCrop(next, imageSize.width, imageSize.height));
+        setCrop(next);
     };
 
     const handleCanvasMouseUp = () => {
@@ -373,7 +449,7 @@ export default function CropResizeTool() {
         setAspectKey(key);
         setSocialPreset("");
         const ratio = ASPECT_PRESETS[key];
-        if (ratio && imageSize) setCrop((c) => applyAspectToCrop(c, ratio));
+        if (ratio && imageSize) setCrop((c) => applyAspectToCropForImage(c, ratio, "center"));
     };
 
     const handleSocialPreset = (key) => {
@@ -389,7 +465,7 @@ export default function CropResizeTool() {
         setMode("both");
         setLockAspect(true);
         setAspectKey("freeform");
-        setCrop((c) => applyAspectToCrop(c, preset.ratio));
+        setCrop((c) => applyAspectToCropForImage(c, preset.ratio, "center"));
         setOutWidth(String(preset.width));
         setOutHeight(String(preset.height));
     };
