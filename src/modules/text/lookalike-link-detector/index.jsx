@@ -22,18 +22,76 @@ function LookalikeLinkDetector() {
             leading={<BackButton />}
             privacySensitive
         >
-            <div className="text-tool-panel">
-                <label className="text-tool-label" htmlFor="lookalike-link-input">
-                    URL or hostname
-                </label>
-                <textarea
-                    id="lookalike-link-input"
-                    className="text-tool-textarea"
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    spellCheck={false}
-                    placeholder="Paste a link or hostname to analyze"
-                />
+            <div className="text-tool-split">
+                <div className="text-tool-panel text-tool-split__panel">
+                    <label className="text-tool-label" htmlFor="lookalike-link-input">
+                        URL or hostname
+                    </label>
+                    <textarea
+                        id="lookalike-link-input"
+                        className="text-tool-textarea"
+                        value={input}
+                        onChange={(event) => setInput(event.target.value)}
+                        spellCheck={false}
+                        placeholder="Paste a link or hostname to analyze"
+                    />
+                </div>
+
+                <div className="text-tool-panel text-tool-split__panel">
+                    <div className="text-tool-output-header">
+                        <h2 className="text-tool-section-title">Analysis</h2>
+                        <CopyButton text={report} disabled={!report} label="Copy report" />
+                    </div>
+                    {analysis.empty ? (
+                        <p className="text-tool-empty">Paste a link to check it against the trusted registry.</p>
+                    ) : (
+                        <div className="text-tool-result-grid">
+                            {analysis.results.map((result) => (
+                                <article
+                                    key={`${result.input}-${result.hostname}`}
+                                    className={`text-tool-result-card lookalike-result lookalike-result--${result.verdict.id}`}
+                                >
+                                    <div className="text-tool-result-card__header">
+                                        <span className="text-tool-result-card__label">Verdict</span>
+                                        <span className={`lookalike-verdict lookalike-verdict--${result.verdict.id}`}>
+                                            {result.verdict.label}
+                                        </span>
+                                    </div>
+                                    <p className="lookalike-result__summary">{result.verdict.summary}</p>
+                                    <div className="text-tool-info-grid">
+                                        <InfoRow
+                                            label="Trap type"
+                                            value={result.trapTypes.join(", ")}
+                                        />
+                                        <InfoRow label="Input" value={result.input} />
+                                        {result.hostname ? <InfoRow label="Hostname" value={result.hostname} /> : null}
+                                        {result.unicodeHost && result.unicodeHost !== result.hostname ? (
+                                            <InfoRow label="Unicode host" value={result.unicodeHost} />
+                                        ) : null}
+                                        {result.registrableDomain ? (
+                                            <InfoRow label="Registrable domain" value={result.registrableDomain} />
+                                        ) : null}
+                                        {result.matchedBrand ? (
+                                            <InfoRow
+                                                label="Closest brand"
+                                                value={`${result.matchedBrand.name} (${result.matchedBrand.category})`}
+                                            />
+                                        ) : null}
+                                    </div>
+                                    {result.signals.length > 0 ? (
+                                        <ul className="lookalike-signal-list">
+                                            {result.signals.map((signal) => (
+                                                <li key={`${signal.title}-${signal.detail}`}>
+                                                    <strong>{signal.title}.</strong> {signal.detail}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : null}
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="text-tool-panel">
@@ -54,62 +112,6 @@ function LookalikeLinkDetector() {
                 <p className="text-tool-hint" style={{ marginTop: "0.85rem", marginBottom: 0 }}>
                     The trusted registry is local data, not a live blocklist. Contact us to add to the registry.
                 </p>
-            </div>
-
-            <div className="text-tool-panel">
-                <div className="text-tool-output-header">
-                    <h2 className="text-tool-section-title">Analysis</h2>
-                    <CopyButton text={report} disabled={!report} label="Copy report" />
-                </div>
-                {analysis.empty ? (
-                    <p className="text-tool-empty">Paste a link to check it against the trusted registry.</p>
-                ) : (
-                    <div className="text-tool-result-grid">
-                        {analysis.results.map((result) => (
-                            <article
-                                key={`${result.input}-${result.hostname}`}
-                                className={`text-tool-result-card lookalike-result lookalike-result--${result.verdict.id}`}
-                            >
-                                <div className="text-tool-result-card__header">
-                                    <span className="text-tool-result-card__label">Verdict</span>
-                                    <span className={`lookalike-verdict lookalike-verdict--${result.verdict.id}`}>
-                                        {result.verdict.label}
-                                    </span>
-                                </div>
-                                <p className="lookalike-result__summary">{result.verdict.summary}</p>
-                                <div className="text-tool-info-grid">
-                                    <InfoRow
-                                        label="Trap type"
-                                        value={result.trapTypes.join(", ")}
-                                    />
-                                    <InfoRow label="Input" value={result.input} />
-                                    {result.hostname ? <InfoRow label="Hostname" value={result.hostname} /> : null}
-                                    {result.unicodeHost && result.unicodeHost !== result.hostname ? (
-                                        <InfoRow label="Unicode host" value={result.unicodeHost} />
-                                    ) : null}
-                                    {result.registrableDomain ? (
-                                        <InfoRow label="Registrable domain" value={result.registrableDomain} />
-                                    ) : null}
-                                    {result.matchedBrand ? (
-                                        <InfoRow
-                                            label="Closest brand"
-                                            value={`${result.matchedBrand.name} (${result.matchedBrand.category})`}
-                                        />
-                                    ) : null}
-                                </div>
-                                {result.signals.length > 0 ? (
-                                    <ul className="lookalike-signal-list">
-                                        {result.signals.map((signal) => (
-                                            <li key={`${signal.title}-${signal.detail}`}>
-                                                <strong>{signal.title}.</strong> {signal.detail}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : null}
-                            </article>
-                        ))}
-                    </div>
-                )}
             </div>
         </TextToolShell>
     );

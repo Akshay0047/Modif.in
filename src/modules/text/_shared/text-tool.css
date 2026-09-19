@@ -258,6 +258,10 @@
   gap: 1rem;
 }
 
+.text-tool-split + .text-tool-panel {
+  margin-top: 1rem;
+}
+
 .text-tool-section-title {
   margin: 0 0 0.75rem;
   color: #f8fafc;
