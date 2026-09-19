@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {MB,
     canvasToBlob,
     copyBlobToClipboard,
@@ -435,24 +436,18 @@ function SvgToPngJpg() {
             </div>
 
             {format !== "png" && (
-                <div>
-                    <label className="img-tool__label" htmlFor="svg-quality">Quality</label>
-                    <input
-                        id="svg-quality"
-                        className="img-tool__range"
-                        type="range"
-                        min={1}
-                        max={100}
-                        value={quality}
-                        disabled={isProcessing}
-                        onChange={(e) => setQuality(Number(e.target.value))}
-                    />
-                    <div className="img-tool__range-meta">
-                        <span>Low</span>
-                        <span className="img-tool__range-value">{quality}%</span>
-                        <span>High</span>
-                    </div>
-                </div>
+                <ImageToolRange
+                    id="svg-quality"
+                    label="Quality"
+                    min={1}
+                    max={100}
+                    value={quality}
+                    disabled={isProcessing}
+                    onChange={setQuality}
+                    unit="%"
+                    lowLabel="Low"
+                    highLabel="High"
+                />
             )}
 
             <div className="img-tool__actions">

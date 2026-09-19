@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {canvasToBlob,
     copyTextToClipboard,
     drawRoundedIcon,
@@ -386,23 +387,17 @@ function FaviconGenerator() {
                 </div>
             </div>
 
-            <div>
-                <span className="img-tool__label">Corner rounding</span>
-                <input
-                    type="range"
-                    className="img-tool__range"
-                    min={0}
-                    max={50}
-                    value={rounding}
-                    onChange={(e) => setRounding(Number(e.target.value))}
-                    disabled={!canRender}
-                />
-                <div className="img-tool__range-meta">
-                    <span>Square</span>
-                    <span className="img-tool__range-value">{rounding}%</span>
-                    <span>Round</span>
-                </div>
-            </div>
+            <ImageToolRange
+                label="Corner rounding"
+                min={0}
+                max={50}
+                value={rounding}
+                onChange={setRounding}
+                disabled={!canRender}
+                unit="%"
+                lowLabel="Square"
+                highLabel="Round"
+            />
 
             {sourceMode === "upload" && (
                 <label className="img-tool__checkbox-row">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {
     IMAGE_ACCEPT,
     canvasToBlob,
@@ -525,24 +526,18 @@ function MemeGenerator() {
                             ))}
                         </select>
                     </div>
-                    <div>
-                        <label className="img-tool__label" htmlFor="meme-size">Font size</label>
-                        <input
-                            id="meme-size"
-                            className="img-tool__range"
-                            type="range"
-                            min={16}
-                            max={120}
-                            value={selectedText.fontSize}
-                            disabled={!hasImage}
-                            onChange={(e) => updateTextLayer(selectedText.id, { fontSize: Number(e.target.value) })}
-                        />
-                        <div className="img-tool__range-meta">
-                            <span>16px</span>
-                            <span className="img-tool__range-value">{selectedText.fontSize}px</span>
-                            <span>120px</span>
-                        </div>
-                    </div>
+                    <ImageToolRange
+                        id="meme-size"
+                        label="Font size"
+                        min={16}
+                        max={120}
+                        value={selectedText.fontSize}
+                        disabled={!hasImage}
+                        onChange={(val) => updateTextLayer(selectedText.id, { fontSize: val })}
+                        unit="px"
+                        lowLabel="16px"
+                        highLabel="120px"
+                    />
                     <div className="img-tool__field-row">
                         <div className="img-tool__color-row">
                             <input
@@ -567,24 +562,18 @@ function MemeGenerator() {
                             <span className="img-tool__hint">Stroke</span>
                         </div>
                     </div>
-                    <div>
-                        <label className="img-tool__label" htmlFor="meme-shadow">Text shadow</label>
-                        <input
-                            id="meme-shadow"
-                            className="img-tool__range"
-                            type="range"
-                            min={0}
-                            max={30}
-                            value={selectedText.shadowBlur}
-                            disabled={!hasImage}
-                            onChange={(e) => updateTextLayer(selectedText.id, { shadowBlur: Number(e.target.value) })}
-                        />
-                        <div className="img-tool__range-meta">
-                            <span>None</span>
-                            <span className="img-tool__range-value">{selectedText.shadowBlur}px</span>
-                            <span>Glow</span>
-                        </div>
-                    </div>
+                    <ImageToolRange
+                        id="meme-shadow"
+                        label="Text shadow"
+                        min={0}
+                        max={30}
+                        value={selectedText.shadowBlur}
+                        disabled={!hasImage}
+                        onChange={(val) => updateTextLayer(selectedText.id, { shadowBlur: val })}
+                        unit="px"
+                        lowLabel="None"
+                        highLabel="Glow"
+                    />
                     {selectedText.shadowBlur > 0 && (
                         <div className="img-tool__color-row">
                             <input
@@ -655,17 +644,16 @@ function MemeGenerator() {
 
             {activeSticker && (
                 <div>
-                    <label className="img-tool__label" htmlFor="meme-sticker-scale">Sticker scale</label>
-                    <input
+                    <ImageToolRange
                         id="meme-sticker-scale"
-                        className="img-tool__range"
-                        type="range"
+                        label="Sticker scale"
                         min={0.2}
                         max={3}
                         step={0.05}
                         value={activeSticker.scale}
                         disabled={!hasImage}
-                        onChange={(e) => updateStickerLayer(activeSticker.id, { scale: Number(e.target.value) })}
+                        onChange={(val) => updateStickerLayer(activeSticker.id, { scale: val })}
+                        formatDisplay={(val) => `${val.toFixed(2)}×`}
                     />
                     <button
                         type="button"
@@ -678,24 +666,18 @@ function MemeGenerator() {
                 </div>
             )}
 
-            <div>
-                <label className="img-tool__label" htmlFor="meme-padding">Background padding</label>
-                <input
-                    id="meme-padding"
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={120}
-                    value={backgroundPadding}
-                    disabled={!hasImage}
-                    onChange={(e) => setBackgroundPadding(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>None</span>
-                    <span className="img-tool__range-value">{backgroundPadding}px</span>
-                    <span>Poster</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="meme-padding"
+                label="Background padding"
+                min={0}
+                max={120}
+                value={backgroundPadding}
+                disabled={!hasImage}
+                onChange={setBackgroundPadding}
+                unit="px"
+                lowLabel="None"
+                highLabel="Poster"
+            />
             {backgroundPadding > 0 && (
                 <div className="img-tool__color-row">
                     <input

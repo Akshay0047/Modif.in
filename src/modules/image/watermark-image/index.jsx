@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {
     IMAGE_ACCEPT,
     canvasToBlob,
@@ -552,24 +553,18 @@ function WatermarkImage() {
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <label className="img-tool__label" htmlFor="wm-bg-padding">Background padding</label>
-                                <input
-                                    id="wm-bg-padding"
-                                    className="img-tool__range"
-                                    type="range"
-                                    min={2}
-                                    max={40}
-                                    value={bgPadding}
-                                    disabled={!hasImage}
-                                    onChange={(e) => setBgPadding(Number(e.target.value))}
-                                />
-                                <div className="img-tool__range-meta">
-                                    <span>2px</span>
-                                    <span className="img-tool__range-value">{bgPadding}px</span>
-                                    <span>40px</span>
-                                </div>
-                            </div>
+                            <ImageToolRange
+                                id="wm-bg-padding"
+                                label="Background padding"
+                                min={2}
+                                max={40}
+                                value={bgPadding}
+                                disabled={!hasImage}
+                                onChange={setBgPadding}
+                                unit="px"
+                                lowLabel="2px"
+                                highLabel="40px"
+                            />
                         </>
                     )}
                 </>
@@ -655,117 +650,81 @@ function WatermarkImage() {
 
             {placement === "free" && hasImage && (
                 <>
-                    <div>
-                        <label className="img-tool__label" htmlFor="wm-pos-x">Position X</label>
-                        <input
-                            id="wm-pos-x"
-                            className="img-tool__range"
-                            type="range"
-                            min={0}
-                            max={sourceImage.naturalWidth}
-                            value={positionX}
-                            onChange={(e) => setPositionX(Number(e.target.value))}
-                        />
-                        <div className="img-tool__range-meta">
-                            <span>0</span>
-                            <span className="img-tool__range-value">{positionX}px</span>
-                            <span>{sourceImage.naturalWidth}</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="img-tool__label" htmlFor="wm-pos-y">Position Y</label>
-                        <input
-                            id="wm-pos-y"
-                            className="img-tool__range"
-                            type="range"
-                            min={0}
-                            max={sourceImage.naturalHeight}
-                            value={positionY}
-                            onChange={(e) => setPositionY(Number(e.target.value))}
-                        />
-                        <div className="img-tool__range-meta">
-                            <span>0</span>
-                            <span className="img-tool__range-value">{positionY}px</span>
-                            <span>{sourceImage.naturalHeight}</span>
-                        </div>
-                    </div>
+                    <ImageToolRange
+                        id="wm-pos-x"
+                        label="Position X"
+                        min={0}
+                        max={sourceImage.naturalWidth}
+                        value={positionX}
+                        onChange={setPositionX}
+                        unit="px"
+                        lowLabel="0"
+                        highLabel={String(sourceImage.naturalWidth)}
+                    />
+                    <ImageToolRange
+                        id="wm-pos-y"
+                        label="Position Y"
+                        min={0}
+                        max={sourceImage.naturalHeight}
+                        value={positionY}
+                        onChange={setPositionY}
+                        unit="px"
+                        lowLabel="0"
+                        highLabel={String(sourceImage.naturalHeight)}
+                    />
                 </>
             )}
 
-            <div>
-                <label className="img-tool__label" htmlFor="wm-opacity">Opacity</label>
-                <input
-                    id="wm-opacity"
-                    className="img-tool__range"
-                    type="range"
-                    min={5}
-                    max={100}
-                    value={opacity}
-                    disabled={!hasImage}
-                    onChange={(e) => setOpacity(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>5%</span>
-                    <span className="img-tool__range-value">{opacity}%</span>
-                    <span>100%</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="wm-opacity"
+                label="Opacity"
+                min={5}
+                max={100}
+                value={opacity}
+                disabled={!hasImage}
+                onChange={setOpacity}
+                unit="%"
+                lowLabel="5%"
+                highLabel="100%"
+            />
 
-            <div>
-                <label className="img-tool__label" htmlFor="wm-rotation">Rotation</label>
-                <input
-                    id="wm-rotation"
-                    className="img-tool__range"
-                    type="range"
-                    min={-180}
-                    max={180}
-                    value={rotation}
-                    disabled={!hasImage}
-                    onChange={(e) => setRotation(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>-180°</span>
-                    <span className="img-tool__range-value">{rotation}°</span>
-                    <span>180°</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="wm-rotation"
+                label="Rotation"
+                min={-180}
+                max={180}
+                value={rotation}
+                disabled={!hasImage}
+                onChange={setRotation}
+                formatDisplay={(val) => `${val}°`}
+                lowLabel="-180°"
+                highLabel="180°"
+            />
 
-            <div>
-                <label className="img-tool__label" htmlFor="wm-padding">Padding</label>
-                <input
-                    id="wm-padding"
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={120}
-                    value={padding}
-                    disabled={!hasImage}
-                    onChange={(e) => setPadding(Number(e.target.value))}
-                />
-            </div>
+            <ImageToolRange
+                id="wm-padding"
+                label="Padding"
+                min={0}
+                max={120}
+                value={padding}
+                disabled={!hasImage}
+                onChange={setPadding}
+                unit="px"
+            />
 
-            <div>
-                <label className="img-tool__label" htmlFor="wm-size">
-                    {mode === "text" ? "Font size" : "Logo scale"}
-                </label>
-                <input
-                    id="wm-size"
-                    className="img-tool__range"
-                    type="range"
-                    min={mode === "text" ? 12 : 10}
-                    max={mode === "text" ? 120 : 200}
-                    value={fontSize}
-                    disabled={!hasImage}
-                    onChange={(e) => setFontSize(Number(e.target.value))}
-                />
-                {mode === "text" && (
-                    <div className="img-tool__range-meta">
-                        <span>12px</span>
-                        <span className="img-tool__range-value">{fontSize}px</span>
-                        <span>120px</span>
-                    </div>
-                )}
-            </div>
+            <ImageToolRange
+                id="wm-size"
+                label={mode === "text" ? "Font size" : "Logo scale"}
+                min={mode === "text" ? 12 : 10}
+                max={mode === "text" ? 120 : 200}
+                value={fontSize}
+                disabled={!hasImage}
+                onChange={setFontSize}
+                unit={mode === "text" ? "px" : ""}
+                lowLabel={mode === "text" ? "12px" : undefined}
+                highLabel={mode === "text" ? "120px" : undefined}
+                showMeta={mode === "text"}
+            />
 
             <div>
                 <span className="img-tool__label">Export format</span>

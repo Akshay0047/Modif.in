@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {MB,
     formatBytes,
     readFileWithProgress,
@@ -267,28 +268,18 @@ function HeicToJpg() {
                 </div>
             </div>
 
-            <div>
-                <label className="img-tool__label" htmlFor="heic-quality">
-                    Quality
-                </label>
-                <input
-                    id="heic-quality"
-                    className="img-tool__range"
-                    type="range"
-                    min={50}
-                    max={100}
-                    value={quality}
-                    disabled={isProcessing || isZipping || targetFormat === "png"}
-                    onChange={(e) => setQuality(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>50%</span>
-                    <span className="img-tool__range-value">
-                        {targetFormat === "png" ? "N/A for PNG" : `${quality}%`}
-                    </span>
-                    <span>100%</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="heic-quality"
+                label="Quality"
+                min={50}
+                max={100}
+                value={quality}
+                disabled={isProcessing || isZipping || targetFormat === "png"}
+                onChange={setQuality}
+                formatDisplay={(val) => (targetFormat === "png" ? "N/A for PNG" : `${val}%`)}
+                lowLabel="50%"
+                highLabel="100%"
+            />
 
             <p className="img-tool__hint">
                 Up to {MAX_FILES} files, {formatBytes(MAX_BYTES)} each. HEIC / HEIF only.

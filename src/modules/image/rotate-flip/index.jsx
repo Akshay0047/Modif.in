@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {MB,
     formatBytes,
     validateFile,
@@ -294,24 +295,19 @@ export default function RotateFlipTool() {
                     </button>
                 </div>
             </div>
-            <div>
-                <label className="img-tool__label">Fine rotation ({fineRotation.toFixed(1)}°)</label>
-                <input
-                    className="img-tool__range"
-                    type="range"
-                    min={-45}
-                    max={45}
-                    step={0.1}
-                    value={fineRotation}
-                    disabled={!imageSize}
-                    onChange={(e) => setFineRotation(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>-45°</span>
-                    <span className="img-tool__range-value">Total: {totalRotation.toFixed(1)}°</span>
-                    <span>+45°</span>
-                </div>
-            </div>
+            <ImageToolRange
+                label="Fine rotation"
+                min={-45}
+                max={45}
+                step={0.1}
+                value={fineRotation}
+                disabled={!imageSize}
+                onChange={setFineRotation}
+                formatDisplay={(val) => `${val.toFixed(1)}°`}
+                centerLabel={`Total: ${totalRotation.toFixed(1)}°`}
+                lowLabel="-45°"
+                highLabel="+45°"
+            />
             <div>
                 <button
                     type="button"
@@ -340,18 +336,15 @@ export default function RotateFlipTool() {
                 </div>
             </div>
             {exportFormat === "jpg" ? (
-                <div>
-                    <label className="img-tool__label">Quality ({quality}%)</label>
-                    <input
-                        className="img-tool__range"
-                        type="range"
-                        min={1}
-                        max={100}
-                        value={quality}
-                        disabled={!imageSize}
-                        onChange={(e) => setQuality(Number(e.target.value))}
-                    />
-                </div>
+                <ImageToolRange
+                    label="Quality"
+                    min={1}
+                    max={100}
+                    value={quality}
+                    disabled={!imageSize}
+                    onChange={setQuality}
+                    unit="%"
+                />
             ) : null}
             <div className="img-tool__actions">
                 <button type="button" className="img-tool__btn img-tool__btn--primary" disabled={!imageSize || isProcessing} onClick={handleDownload}>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {copyTextToClipboard,
     downsampleImageData,
     extractDominantColors,
@@ -267,23 +268,16 @@ function ColorPaletteExtractor() {
                 </div>
             ) : null}
 
-            <div>
-                <span className="img-tool__label">Dominant colors ({colorCount})</span>
-                <input
-                    type="range"
-                    className="img-tool__range"
-                    min={3}
-                    max={8}
-                    value={colorCount}
-                    onChange={(e) => setColorCount(Number(e.target.value))}
-                    disabled={!hasImage}
-                />
-                <div className="img-tool__range-meta">
-                    <span>3 colors</span>
-                    <span className="img-tool__range-value">{colorCount}</span>
-                    <span>8 colors</span>
-                </div>
-            </div>
+            <ImageToolRange
+                label="Dominant colors"
+                min={3}
+                max={8}
+                value={colorCount}
+                onChange={setColorCount}
+                disabled={!hasImage}
+                lowLabel="3 colors"
+                highLabel="8 colors"
+            />
 
             <div>
                 <span className="img-tool__label">Color format</span>

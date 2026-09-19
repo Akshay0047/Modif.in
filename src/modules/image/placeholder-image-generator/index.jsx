@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {
     canvasToBlob,
     clamp,
@@ -441,40 +442,28 @@ function PlaceholderImageGenerator() {
                 </div>
             </div>
 
-            <div>
-                <span className="img-tool__label">Font size</span>
-                <input
-                    type="range"
-                    className="img-tool__range"
-                    min={8}
-                    max={120}
-                    value={fontSize}
-                    onChange={(e) => setFontSize(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>8px</span>
-                    <span className="img-tool__range-value">{fontSize}px</span>
-                    <span>120px</span>
-                </div>
-            </div>
+            <ImageToolRange
+                label="Font size"
+                min={8}
+                max={120}
+                value={fontSize}
+                onChange={setFontSize}
+                unit="px"
+                lowLabel="8px"
+                highLabel="120px"
+            />
 
-            <div>
-                <label className="img-tool__label" htmlFor="ph-border-width">Border width</label>
-                <input
-                    id="ph-border-width"
-                    type="range"
-                    className="img-tool__range"
-                    min={0}
-                    max={24}
-                    value={borderWidth}
-                    onChange={(e) => setBorderWidth(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>0px</span>
-                    <span className="img-tool__range-value">{borderWidth}px</span>
-                    <span>24px</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="ph-border-width"
+                label="Border width"
+                min={0}
+                max={24}
+                value={borderWidth}
+                onChange={setBorderWidth}
+                unit="px"
+                lowLabel="0px"
+                highLabel="24px"
+            />
 
             {borderWidth > 0 && (
                 <>

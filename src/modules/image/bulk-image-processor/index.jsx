@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {IMAGE_ACCEPT,
     MB,
     applyNamingPattern,
@@ -237,44 +238,32 @@ function BulkImageProcessor() {
             </div>
 
             {resizeMode === "scale" && (
-                <div>
-                    <label className="img-tool__label" htmlFor="bulk-scale">Scale percent</label>
-                    <input
-                        id="bulk-scale"
-                        className="img-tool__range"
-                        type="range"
-                        min={10}
-                        max={100}
-                        value={scalePercent}
-                        disabled={isProcessing}
-                        onChange={(e) => setScalePercent(Number(e.target.value))}
-                    />
-                    <div className="img-tool__range-meta">
-                        <span>10%</span>
-                        <span className="img-tool__range-value">{scalePercent}%</span>
-                        <span>100%</span>
-                    </div>
-                </div>
+                <ImageToolRange
+                    id="bulk-scale"
+                    label="Scale percent"
+                    min={10}
+                    max={100}
+                    value={scalePercent}
+                    disabled={isProcessing}
+                    onChange={setScalePercent}
+                    unit="%"
+                    lowLabel="10%"
+                    highLabel="100%"
+                />
             )}
 
-            <div>
-                <label className="img-tool__label" htmlFor="bulk-quality">Quality</label>
-                <input
-                    id="bulk-quality"
-                    className="img-tool__range"
-                    type="range"
-                    min={1}
-                    max={100}
-                    value={quality}
-                    disabled={isProcessing}
-                    onChange={(e) => setQuality(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>Low</span>
-                    <span className="img-tool__range-value">{quality}%</span>
-                    <span>High</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="bulk-quality"
+                label="Quality"
+                min={1}
+                max={100}
+                value={quality}
+                disabled={isProcessing}
+                onChange={setQuality}
+                unit="%"
+                lowLabel="Low"
+                highLabel="High"
+            />
 
             <div>
                 <label className="img-tool__label" htmlFor="bulk-pattern">Naming pattern</label>

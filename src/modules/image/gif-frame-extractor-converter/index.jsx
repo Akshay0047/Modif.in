@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {MB,
     canvasToBlob,
     formatBytes,
@@ -438,18 +439,18 @@ function GifFrameExtractorConverter() {
                             </button>
                         </div>
 
-                        <input
-                            className="img-tool__range"
-                            type="range"
+                        <ImageToolRange
+                            label={`Frame ${currentIndex + 1} of ${frames.length}`}
                             min={0}
                             max={Math.max(0, frames.length - 1)}
                             value={currentIndex}
                             disabled={frames.length < 2}
-                            onChange={(e) => {
+                            onChange={(val) => {
                                 stopPlayback();
-                                setCurrentIndex(Number(e.target.value));
+                                setCurrentIndex(val);
                             }}
-                            aria-label={`Frame ${currentIndex + 1} of ${frames.length}`}
+                            formatDisplay={(val) => `${val + 1}`}
+                            showMeta={false}
                         />
                     </div>
 
