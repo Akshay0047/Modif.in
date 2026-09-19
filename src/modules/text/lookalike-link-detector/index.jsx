@@ -4,17 +4,11 @@ import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
 import { analyzeLookalikeInput } from "./lookalikeDetector.js";
 
-const SAMPLE_LINKS = [
-    { label: "Trusted PayPal", value: "https://www.paypal.com/signin" },
-    { label: "Digit swap", value: "https://paypa1.com/login" },
-    { label: "Homograph", value: "https://www.xn--80ak6aa92e.com/" },
-    { label: "Subdomain trap", value: "https://apple.com.account-verify.net/login" },
-    { label: "Combo-squat", value: "https://microsoft-support-login.com" },
-    { label: "Google official", value: "https://accounts.google.com" },
-];
+const DEFAULT_SAMPLE =
+    "https://apple.com.account-verify.net/login";
 
 function LookalikeLinkDetector() {
-    const [input, setInput] = useState("https://paypa1.com/signin");
+    const [input, setInput] = useState(DEFAULT_SAMPLE);
 
     const analysis = useMemo(() => analyzeLookalikeInput(input), [input]);
     const report = analysis.results
@@ -38,20 +32,8 @@ function LookalikeLinkDetector() {
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
                     spellCheck={false}
-                    placeholder="Paste one or more links, or a hostname like paypa1.com"
+                    placeholder="Paste a link or hostname to analyze"
                 />
-                <div className="text-tool-controls" style={{ marginTop: "0.85rem", marginBottom: 0 }}>
-                    {SAMPLE_LINKS.map((sample) => (
-                        <button
-                            key={sample.label}
-                            type="button"
-                            className={`text-tool-button cursor-target${input === sample.value ? " is-active" : ""}`}
-                            onClick={() => setInput(sample.value)}
-                        >
-                            {sample.label}
-                        </button>
-                    ))}
-                </div>
             </div>
 
             <div className="text-tool-panel">
@@ -96,6 +78,10 @@ function LookalikeLinkDetector() {
                                 </div>
                                 <p className="lookalike-result__summary">{result.verdict.summary}</p>
                                 <div className="text-tool-info-grid">
+                                    <InfoRow
+                                        label="Trap type"
+                                        value={result.trapTypes.join(", ")}
+                                    />
                                     <InfoRow label="Input" value={result.input} />
                                     {result.hostname ? <InfoRow label="Hostname" value={result.hostname} /> : null}
                                     {result.unicodeHost && result.unicodeHost !== result.hostname ? (
@@ -141,6 +127,7 @@ function InfoRow({ label, value }) {
 function formatReport(result) {
     const lines = [
         `Verdict: ${result.verdict.label}`,
+        `Trap type: ${result.trapTypes.join(", ")}`,
         `Input: ${result.input}`,
     ];
     if (result.hostname) lines.push(`Hostname: ${result.hostname}`);

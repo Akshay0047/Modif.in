@@ -178,9 +178,15 @@ export function analyzeLookalikeInput(text) {
 export function analyzeLookalikeLink(rawInput, index = getTrustedIndex()) {
     const parsed = parseCandidate(rawInput);
     if (!parsed.ok) {
+        const trapTypes = deriveTrapTypes(
+            [{ title: parsed.title, detail: parsed.detail }],
+            parsed.verdict,
+        );
         return {
             input: rawInput,
             verdict: VERDICTS[parsed.verdict],
+            trapTypes,
+            primaryTrapType: trapTypes[0] ?? "Unknown",
             hostname: "",
             unicodeHost: "",
             punycodeHost: "",
@@ -704,10 +710,13 @@ function finalizeResult({ rawInput, parsed, verdictId, matchedBrand, signals }) 
     const ranked = uniqueSignals(signals).sort(
         (left, right) => severityRank(right.severity) - severityRank(left.severity),
     );
+    const trapTypes = deriveTrapTypes(ranked, verdictId);
 
     return {
         input: rawInput,
         verdict: VERDICTS[verdictId] ?? VERDICTS.unknown,
+        trapTypes,
+        primaryTrapType: trapTypes[0] ?? "Unknown",
         hostname: parsed.hostname,
         unicodeHost: parsed.unicodeHost,
         punycodeHost: parsed.punycodeHost,
@@ -724,6 +733,65 @@ function highestSeverity(signals) {
             ? signal.severity
             : current;
     }, "unknown");
+}
+
+const TRAP_TYPE_BY_SIGNAL = {
+    "Trusted domain used as a subdomain": "Subdomain trap",
+    "Brand name used in a subdomain": "Subdomain trap",
+    "Homoglyph or confusable match": "Homograph",
+    "Lookalike characters": "Homograph",
+    "Trusted name with mixed scripts": "Homograph",
+    "Internationalized hostname": "Punycode (IDN)",
+    "Combo-squatting": "Combo-squat",
+    "Trusted name on a different TLD": "Wrong TLD",
+    "Brand name on a hosting platform": "Platform impersonation",
+    "Raw IP address": "IP address",
+    "Dangerous URL scheme": "Dangerous scheme",
+    "Known hosting platform": "User-hosted platform",
+    "Exact trusted domain": "None — trusted link",
+    "Subdomain of a trusted domain": "None — trusted link",
+    "No trusted-brand match": "None detected",
+    "Empty input": "Invalid input",
+    "Could not parse URL": "Invalid input",
+    "Unsupported scheme": "Invalid input",
+    "Missing hostname": "Invalid input",
+};
+
+export function deriveTrapTypes(signals, verdictId) {
+    if (verdictId === "trusted") {
+        return ["None — trusted link"];
+    }
+
+    const types = new Set();
+
+    signals.forEach((signal) => {
+        if (signal.title === "Typosquat") {
+            if (/lookalike for|['"]?[01l|]['"]?/i.test(signal.detail)) {
+                types.add("Digit swap");
+            } else {
+                types.add("Typosquat");
+            }
+            return;
+        }
+
+        const mapped = TRAP_TYPE_BY_SIGNAL[signal.title];
+        if (mapped) {
+            types.add(mapped);
+        }
+    });
+
+    if (types.size > 0) {
+        return [...types];
+    }
+
+    if (verdictId === "unknown") return ["None detected"];
+    if (verdictId === "invalid") return ["Invalid input"];
+    if (verdictId === "dangerous") return ["Dangerous scheme"];
+    if (verdictId === "platform") return ["User-hosted platform"];
+    if (verdictId === "suspicious") return ["Suspicious link"];
+    if (verdictId === "lookalike") return ["Lookalike link"];
+
+    return ["Unknown"];
 }
 
 function severityRank(id) {
