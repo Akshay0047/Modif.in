@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {
     MB,
     IMAGE_ACCEPT,
@@ -300,6 +301,22 @@ export default function BlurCensorTool() {
         [releaseSource],
     );
 
+    const applyEntireImageMask = () => {
+        if (!imageSize) return;
+        const fullMask = {
+            rect: { x: 0, y: 0, w: imageSize.width, h: imageSize.height },
+        };
+        pushHistory([...masks, fullMask]);
+        setStatus("Effect applied to entire image.");
+    };
+
+    const handleToolChange = (nextTool) => {
+        setTool(nextTool);
+        if (nextTool === "full") {
+            applyEntireImageMask();
+        }
+    };
+
     const getScale = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || !imageSize) return 1;
@@ -336,7 +353,7 @@ export default function BlurCensorTool() {
     }, [drawPreview]);
 
     const handlePointerDown = (e) => {
-        if (!imageSize || isProcessing) return;
+        if (!imageSize || isProcessing || tool === "full") return;
         const pt = toImageCoords(e.clientX, e.clientY);
         if (!pt) return;
         if (tool === "rect") {
@@ -526,7 +543,7 @@ export default function BlurCensorTool() {
                         type="button"
                         className={`img-tool__segment${tool === "rect" ? " is-active" : ""}`}
                         disabled={!imageSize}
-                        onClick={() => setTool("rect")}
+                        onClick={() => handleToolChange("rect")}
                     >
                         Rectangle
                     </button>
@@ -534,53 +551,47 @@ export default function BlurCensorTool() {
                         type="button"
                         className={`img-tool__segment${tool === "brush" ? " is-active" : ""}`}
                         disabled={!imageSize}
-                        onClick={() => setTool("brush")}
+                        onClick={() => handleToolChange("brush")}
                     >
                         Freehand
+                    </button>
+                    <button
+                        type="button"
+                        className={`img-tool__segment${tool === "full" ? " is-active" : ""}`}
+                        disabled={!imageSize}
+                        onClick={() => handleToolChange("full")}
+                    >
+                        Entire image
                     </button>
                 </div>
             </div>
             {tool === "brush" ? (
-                <div>
-                    <label className="img-tool__label" htmlFor="bc-brush-size">Brush size</label>
-                    <input
-                        id="bc-brush-size"
-                        className="img-tool__range"
-                        type="range"
-                        min={5}
-                        max={100}
-                        value={brushStrokeSize}
-                        disabled={!imageSize}
-                        onChange={(e) => setBrushStrokeSize(Number(e.target.value))}
-                    />
-                    <div className="img-tool__range-meta">
-                        <span>5px</span>
-                        <span className="img-tool__range-value">{brushStrokeSize}px</span>
-                        <span>100px</span>
-                    </div>
-                </div>
+                <ImageToolRange
+                    id="bc-brush-size"
+                    label="Brush size"
+                    min={5}
+                    max={100}
+                    value={brushStrokeSize}
+                    disabled={!imageSize}
+                    onChange={setBrushStrokeSize}
+                    unit="px"
+                    lowLabel="5px"
+                    highLabel="100px"
+                />
             ) : null}
             {effectType !== "bar" ? (
-                <div>
-                    <label className="img-tool__label" htmlFor="bc-effect-strength">
-                        {effectType === "pixelate" ? "Block size" : "Blur radius"}
-                    </label>
-                    <input
-                        id="bc-effect-strength"
-                        className="img-tool__range"
-                        type="range"
-                        min={4}
-                        max={64}
-                        value={effectStrength}
-                        disabled={!imageSize}
-                        onChange={(e) => setEffectStrength(Number(e.target.value))}
-                    />
-                    <div className="img-tool__range-meta">
-                        <span>4px</span>
-                        <span className="img-tool__range-value">{effectStrength}px</span>
-                        <span>64px</span>
-                    </div>
-                </div>
+                <ImageToolRange
+                    id="bc-effect-strength"
+                    label={effectType === "pixelate" ? "Block size" : "Blur radius"}
+                    min={4}
+                    max={64}
+                    value={effectStrength}
+                    disabled={!imageSize}
+                    onChange={setEffectStrength}
+                    unit="px"
+                    lowLabel="4px"
+                    highLabel="64px"
+                />
             ) : null}
             <div className="img-tool__actions" style={{ marginTop: 0 }}>
                 <button type="button" className="img-tool__btn" disabled={!imageSize || historyIndex <= 0} onClick={undo}>

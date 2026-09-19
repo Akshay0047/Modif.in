@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {MB,
     IMAGE_ACCEPT,
     formatBytes,
@@ -212,35 +213,7 @@ export default function ColorAdjustmentsTool() {
                     <span className="img-tool__chip">{formatBytes(file.size)}</span>
                 </div>
             ) : null}
-            {sliders.map(({ key, label, min, max }) => (
-                <div key={key}>
-                    <label className="img-tool__label">
-                        {label} ({values[key]})
-                    </label>
-                    <input
-                        className="img-tool__range"
-                        type="range"
-                        min={min}
-                        max={max}
-                        value={values[key]}
-                        disabled={!imageSize}
-                        onChange={(e) => setSlider(key, Number(e.target.value))}
-                    />
-                    <div className="img-tool__range-meta">
-                        <span>{min}</span>
-                        <button
-                            type="button"
-                            className="img-tool__btn"
-                            style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem" }}
-                            disabled={!imageSize}
-                            onClick={() => setSlider(key, 0)}
-                        >
-                            Reset
-                        </button>
-                        <span>{max}</span>
-                    </div>
-                </div>
-            ))}
+            <div className="img-tool__controls-scroll">
             <div>
                 <span className="img-tool__label">Compare view</span>
                 <div className="img-tool__segmented">
@@ -263,18 +236,39 @@ export default function ColorAdjustmentsTool() {
                 </div>
             </div>
             {viewMode === "split" && imageSize ? (
-                <div>
-                    <label className="img-tool__label">Split position ({splitPos}%)</label>
-                    <input
-                        className="img-tool__range"
-                        type="range"
-                        min={5}
-                        max={95}
-                        value={splitPos}
-                        onChange={(e) => setSplitPos(Number(e.target.value))}
-                    />
-                </div>
+                <ImageToolRange
+                    label="Split position"
+                    min={5}
+                    max={95}
+                    value={splitPos}
+                    disabled={!imageSize}
+                    onChange={setSplitPos}
+                    unit="%"
+                />
             ) : null}
+            {sliders.map(({ key, label, min, max }) => (
+                <div key={key}>
+                    <ImageToolRange
+                        label={label}
+                        min={min}
+                        max={max}
+                        value={values[key]}
+                        disabled={!imageSize}
+                        onChange={(val) => setSlider(key, val)}
+                    />
+                    <div className="img-tool__range-meta" style={{ justifyContent: "center" }}>
+                        <button
+                            type="button"
+                            className="img-tool__btn"
+                            style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem" }}
+                            disabled={!imageSize}
+                            onClick={() => setSlider(key, 0)}
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            ))}
             <div>
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
@@ -292,19 +286,17 @@ export default function ColorAdjustmentsTool() {
                 </div>
             </div>
             {exportFormat === "jpg" ? (
-                <div>
-                    <label className="img-tool__label">Quality ({quality}%)</label>
-                    <input
-                        className="img-tool__range"
-                        type="range"
-                        min={1}
-                        max={100}
-                        value={quality}
-                        disabled={!imageSize}
-                        onChange={(e) => setQuality(Number(e.target.value))}
-                    />
-                </div>
+                <ImageToolRange
+                    label="Quality"
+                    min={1}
+                    max={100}
+                    value={quality}
+                    disabled={!imageSize}
+                    onChange={setQuality}
+                    unit="%"
+                />
             ) : null}
+            </div>
             <div className="img-tool__actions">
                 <button type="button" className="img-tool__btn img-tool__btn--primary" disabled={!imageSize || isProcessing} onClick={handleDownload}>
                     Download

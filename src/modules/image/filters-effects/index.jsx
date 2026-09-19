@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {
     MB,
     formatBytes,
@@ -500,6 +501,7 @@ export default function FiltersEffectsTool() {
                 </div>
             ) : null}
 
+            <div className="img-tool__controls-scroll">
             <div>
                 <span className="img-tool__label">Filter category</span>
                 <div className="img-tool__tabs">
@@ -578,23 +580,17 @@ export default function FiltersEffectsTool() {
                 </>
             ) : null}
 
-            <div>
-                <label className="img-tool__label">Intensity ({intensity}%)</label>
-                <input
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={intensity}
-                    disabled={!imageSize}
-                    onChange={(e) => setIntensity(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>0%</span>
-                    <span className="img-tool__range-value">{intensity}%</span>
-                    <span>100%</span>
-                </div>
-            </div>
+            <ImageToolRange
+                label="Intensity"
+                min={0}
+                max={100}
+                value={intensity}
+                disabled={!imageSize}
+                onChange={setIntensity}
+                unit="%"
+                lowLabel="0%"
+                highLabel="100%"
+            />
 
             <div>
                 <span className="img-tool__label">Export format</span>
@@ -614,19 +610,17 @@ export default function FiltersEffectsTool() {
             </div>
 
             {exportFormat === "jpg" ? (
-                <div>
-                    <label className="img-tool__label">Quality ({quality}%)</label>
-                    <input
-                        className="img-tool__range"
-                        type="range"
-                        min={1}
-                        max={100}
-                        value={quality}
-                        disabled={!imageSize}
-                        onChange={(e) => setQuality(Number(e.target.value))}
-                    />
-                </div>
+                <ImageToolRange
+                    label="Quality"
+                    min={1}
+                    max={100}
+                    value={quality}
+                    disabled={!imageSize}
+                    onChange={setQuality}
+                    unit="%"
+                />
             ) : null}
+            </div>
 
             <div className="img-tool__actions">
                 <button type="button" className="img-tool__btn img-tool__btn--primary" disabled={!imageSize || isProcessing} onClick={handleDownload}>
