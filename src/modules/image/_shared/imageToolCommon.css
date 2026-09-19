@@ -59,6 +59,18 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-height: 0;
+}
+
+.img-tool__controls-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: min(72vh, 640px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+  scrollbar-gutter: stable;
 }
 
 .img-tool__preview-col {
@@ -140,6 +152,51 @@
 .img-tool__range-value {
   color: #10b981;
   font-weight: 700;
+}
+
+.img-tool__range-value--editable {
+  appearance: none;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  cursor: text;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  min-width: 3rem;
+  text-align: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.img-tool__range-value--editable:hover:not(:disabled) {
+  border-color: rgba(16, 185, 129, 0.65);
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.img-tool__range-value--editable:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.img-tool__range-input {
+  width: 4.5rem;
+  box-sizing: border-box;
+  background: rgba(15, 20, 35, 0.75);
+  border: 1px solid rgba(16, 185, 129, 0.55);
+  border-radius: 8px;
+  color: #ecfdf5;
+  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.35rem;
+  text-align: center;
+  outline: none;
+}
+
+.img-tool__range-input:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
 .img-tool__select,

@@ -199,6 +199,46 @@
   font-weight: 700;
 }
 
+.cvt-jpg-png__range-value--editable {
+  appearance: none;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  cursor: text;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.cvt-jpg-png__range-value--editable:hover:not(:disabled) {
+  border-color: rgba(16, 185, 129, 0.65);
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.cvt-jpg-png__range-value--editable:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cvt-jpg-png__range-input {
+  width: 4.5rem;
+  box-sizing: border-box;
+  background: rgba(15, 20, 35, 0.75);
+  border: 1px solid rgba(16, 185, 129, 0.55);
+  border-radius: 8px;
+  color: #ecfdf5;
+  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.35rem;
+  text-align: center;
+  outline: none;
+}
+
 .cvt-jpg-png__color-row {
   display: flex;
   align-items: center;
