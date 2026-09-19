@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {IMAGE_ACCEPT,
     MB,
     canvasToBlob,
@@ -153,6 +154,7 @@ function ImageStitcher() {
     const [titleFontSize, setTitleFontSize] = useState(32);
     const [titleColor, setTitleColor] = useState("#f8fafc");
     const [previewUrl, setPreviewUrl] = useState("");
+    const [previewRevision, setPreviewRevision] = useState(0);
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
     const [isDragging, setIsDragging] = useState(false);
@@ -245,6 +247,9 @@ function ImageStitcher() {
         setProgressLabel("Stitching images...");
         setProgress(30);
         setError("");
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPreviewUrl("");
+        setPreviewRevision((value) => value + 1);
 
         try {
             await waitFrame();
@@ -266,9 +271,9 @@ function ImageStitcher() {
             );
             setProgress(80);
             const blob = await canvasToBlob(canvas, "image/png");
-            if (previewUrl) URL.revokeObjectURL(previewUrl);
             const url = URL.createObjectURL(blob);
             setPreviewUrl(url);
+            setPreviewRevision((value) => value + 1);
             setProgress(100);
             setStatus("Stitch complete. Download or add more images.");
         } catch (err) {
@@ -325,24 +330,18 @@ function ImageStitcher() {
                 </div>
             </div>
 
-            <div>
-                <label className="img-tool__label" htmlFor="stitch-spacing">Spacing</label>
-                <input
-                    id="stitch-spacing"
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={60}
-                    value={spacing}
-                    disabled={isProcessing}
-                    onChange={(e) => setSpacing(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>0px</span>
-                    <span className="img-tool__range-value">{spacing}px</span>
-                    <span>60px</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="stitch-spacing"
+                label="Spacing"
+                min={0}
+                max={60}
+                value={spacing}
+                disabled={isProcessing}
+                onChange={setSpacing}
+                unit="px"
+                lowLabel="0px"
+                highLabel="60px"
+            />
 
             <div>
                 <span className="img-tool__label">Alignment</span>
@@ -377,43 +376,31 @@ function ImageStitcher() {
                 <span className="img-tool__hint">Gap background</span>
             </div>
 
-            <div>
-                <label className="img-tool__label" htmlFor="stitch-radius">Corner radius</label>
-                <input
-                    id="stitch-radius"
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={48}
-                    value={cornerRadius}
-                    disabled={isProcessing}
-                    onChange={(e) => setCornerRadius(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>0px</span>
-                    <span className="img-tool__range-value">{cornerRadius}px</span>
-                    <span>48px</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="stitch-radius"
+                label="Corner radius"
+                min={0}
+                max={48}
+                value={cornerRadius}
+                disabled={isProcessing}
+                onChange={setCornerRadius}
+                unit="px"
+                lowLabel="0px"
+                highLabel="48px"
+            />
 
-            <div>
-                <label className="img-tool__label" htmlFor="stitch-border">Image border width</label>
-                <input
-                    id="stitch-border"
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={12}
-                    value={borderWidth}
-                    disabled={isProcessing}
-                    onChange={(e) => setBorderWidth(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>0px</span>
-                    <span className="img-tool__range-value">{borderWidth}px</span>
-                    <span>12px</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="stitch-border"
+                label="Image border width"
+                min={0}
+                max={12}
+                value={borderWidth}
+                disabled={isProcessing}
+                onChange={setBorderWidth}
+                unit="px"
+                lowLabel="0px"
+                highLabel="12px"
+            />
 
             {borderWidth > 0 && (
                 <div className="img-tool__color-row">
@@ -458,24 +445,18 @@ function ImageStitcher() {
                             ))}
                         </select>
                     </div>
-                    <div>
-                        <label className="img-tool__label" htmlFor="stitch-title-size">Title size</label>
-                        <input
-                            id="stitch-title-size"
-                            className="img-tool__range"
-                            type="range"
-                            min={16}
-                            max={72}
-                            value={titleFontSize}
-                            disabled={isProcessing}
-                            onChange={(e) => setTitleFontSize(Number(e.target.value))}
-                        />
-                        <div className="img-tool__range-meta">
-                            <span>16px</span>
-                            <span className="img-tool__range-value">{titleFontSize}px</span>
-                            <span>72px</span>
-                        </div>
-                    </div>
+                    <ImageToolRange
+                        id="stitch-title-size"
+                        label="Title size"
+                        min={16}
+                        max={72}
+                        value={titleFontSize}
+                        disabled={isProcessing}
+                        onChange={setTitleFontSize}
+                        unit="px"
+                        lowLabel="16px"
+                        highLabel="72px"
+                    />
                     <div className="img-tool__color-row">
                         <input
                             className="img-tool__color-input"
@@ -593,7 +574,12 @@ function ImageStitcher() {
 
             <div className="img-tool__preview-frame">
                 {previewUrl ? (
-                    <img className="img-tool__preview-image" src={previewUrl} alt="Stitched preview" />
+                    <img
+                        key={previewRevision}
+                        className="img-tool__preview-image"
+                        src={previewUrl}
+                        alt="Stitched preview"
+                    />
                 ) : (
                     <p className="img-tool__preview-empty">
                         {items.length >= 2 ? "Click Stitch to preview" : "Add at least 2 images to stitch"}
