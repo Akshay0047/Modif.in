@@ -70,7 +70,7 @@ function LookalikeLinkDetector() {
                     </div>
                 </div>
                 <p className="text-tool-hint" style={{ marginTop: "0.85rem", marginBottom: 0 }}>
-                    The trusted registry is local data, not a live blocklist. Official domains can be added later without changing the detector.
+                    The trusted registry is local data, not a live blocklist. Contact us to add to the registry.
                 </p>
             </div>
 
