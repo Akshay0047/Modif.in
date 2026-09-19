@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-19T09:45:00.000Z",
+  "title": "Design System: MODIF.in",
+  "extensions": {
+    "colorMeta": {
+      "void-black": {
+        "role": "neutral",
+        "displayName": "Void Black",
+        "canonical": "#000000",
+        "tonalRamp": ["#000000", "#0a0a0a", "#141414", "#1f1f1f", "#2a2a2a", "#3d3d3d", "#525252", "#737373", "#a3a3a3", "#d4d4d4"]
+      },
+      "midnight-slate": {
+        "role": "neutral",
+        "displayName": "Midnight Slate",
+        "canonical": "rgba(15, 20, 35, 0.4)",
+        "tonalRamp": ["#070a12", "#0c101c", "#111827", "#151d2e", "#1a233a", "#222d45", "#2a3854", "#344563", "#475569", "#64748b"]
+      },
+      "snow-peak": {
+        "role": "neutral",
+        "displayName": "Snow Peak",
+        "canonical": "#f8fafc",
+        "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc"]
+      },
+      "royal-depth": {
+        "role": "primary",
+        "displayName": "Royal Depth",
+        "canonical": "#13008f",
+        "tonalRamp": ["#070033", "#0a004d", "#0d0066", "#100080", "#13008f", "#1a12a8", "#221fc2", "#2d2bdb", "#3b46f0", "#4f5dff"]
+      },
+      "signal-crimson": {
+        "role": "primary",
+        "displayName": "Signal Crimson",
+        "canonical": "#bf1c1c",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#bf1c1c", "#dc2626", "#ef4444", "#f87171", "#fca5a5", "#fecaca"]
+      },
+      "indigo-pulse": {
+        "role": "secondary",
+        "displayName": "Indigo Pulse",
+        "canonical": "#4f46e5",
+        "tonalRamp": ["#1e1b4b", "#312e81", "#3730a3", "#4338ca", "#4f46e5", "#6366f1", "#818cf8", "#a5b4fc", "#c7d2fe", "#e0e7ff"]
+      },
+      "image-emerald": {
+        "role": "tertiary",
+        "displayName": "Emerald Circuit",
+        "canonical": "#10b981",
+        "tonalRamp": ["#022c22", "#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0", "#d1fae5"]
+      },
+      "docs-amber": {
+        "role": "tertiary",
+        "displayName": "Amber Archive",
+        "canonical": "#eab308",
+        "tonalRamp": ["#422006", "#713f12", "#854d0e", "#a16207", "#ca8a04", "#eab308", "#facc15", "#fde047", "#fef08a", "#fef9c3"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Tool Display",
+        "purpose": "Georgia-serif headlines on individual tool pages."
+      },
+      "brand": {
+        "displayName": "Brand Display",
+        "purpose": "DepthText MODIF.in logotype on landing and hub headers."
+      },
+      "body": {
+        "displayName": "UI Body",
+        "purpose": "Default reading and form copy in IBM Plex Sans."
+      },
+      "label": {
+        "displayName": "Control Label",
+        "purpose": "Field labels, segmented controls, compact metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-ambient",
+        "value": "0 10px 30px rgba(0, 0, 0, 0.8)",
+        "purpose": "Resting PixelCard elevation."
+      },
+      {
+        "name": "card-hover",
+        "value": "0 20px 40px rgba(0, 0, 0, 0.9)",
+        "purpose": "Hovered hub cards and deep menus."
+      },
+      {
+        "name": "modal-stage",
+        "value": "0 30px 80px rgba(0, 0, 0, 0.65)",
+        "purpose": "Legal document modal container."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default transitions on cards and panels."
+      },
+      {
+        "name": "ease-out-quick",
+        "value": "ease-out 0.2s",
+        "purpose": "Hub button and input hover transitions."
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "700px" },
+      { "name": "tablet", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Hub Tool Button",
+      "kind": "button",
+      "refersTo": "tool-button",
+      "description": "Default dense grid button on Text/Image/Docs hub pages.",
+      "html": "<button class=\"ds-tool-button\" type=\"button\">CSV Converter</button>",
+      "css": ".ds-tool-button { appearance: none; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 70px; padding: 1rem; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; background: rgba(15, 20, 35, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #94a3b8; font-family: \"IBM Plex Sans\", sans-serif; font-size: 0.9375rem; font-weight: 400; cursor: pointer; transition: all 0.2s ease-out; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); } .ds-tool-button:hover { background: rgba(20, 28, 48, 0.6); border-color: rgba(255, 255, 255, 0.2); color: #ffffff; transform: translateY(-2px); } .ds-tool-button:focus-visible { outline: 2px solid #525c96; outline-offset: 2px; }"
+    },
+    {
+      "name": "Hub Tool Button Highlighted",
+      "kind": "button",
+      "refersTo": "tool-button-highlighted",
+      "description": "Popular tool variant with indigo glow on hub grids.",
+      "html": "<button class=\"ds-tool-button ds-tool-button--highlighted\" type=\"button\">OCR</button>",
+      "css": ".ds-tool-button--highlighted { background: rgba(10, 14, 26, 0.85); border: 1px solid rgba(99, 102, 241, 0.6); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2), inset 0 0 8px rgba(99, 102, 241, 0.1); color: #ffffff; font-weight: 500; } .ds-tool-button--highlighted:hover { background: rgba(15, 22, 40, 0.95); border-color: rgba(99, 102, 241, 0.9); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4), inset 0 0 12px rgba(99, 102, 241, 0.2); transform: translateY(-2px); }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": null,
+      "description": "Hub search field with dark inset styling.",
+      "html": "<label class=\"ds-search\"><span class=\"ds-search__label\">Search tools</span><input class=\"ds-search__input\" type=\"search\" placeholder=\"Search tools...\" /></label>",
+      "css": ".ds-search { display: block; width: min(100%, 520px); } .ds-search__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); } .ds-search__input { width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border: 1px solid #2a3347; border-radius: 10px; background: #0a0f1c; color: #f8fafc; font-family: \"IBM Plex Sans\", sans-serif; font-size: 0.9375rem; line-height: 1.4; transition: border-color 0.2s ease; } .ds-search__input::placeholder { color: #8b95a8; } .ds-search__input:focus { outline: none; border-color: #525c96; }"
+    },
+    {
+      "name": "Pixel Hub Card",
+      "kind": "card",
+      "refersTo": null,
+      "description": "Landing page module entry card with pixel hover glow.",
+      "html": "<article class=\"ds-pixel-card\"><div class=\"ds-pixel-card__content\"><h3 class=\"ds-pixel-card__title\">Text Tools</h3><p class=\"ds-pixel-card__description\">Comprehensive utilities for text analysis and formatting.</p></div></article>",
+      "css": ".ds-pixel-card { position: relative; width: min(260px, 100%); min-height: 420px; display: flex; flex-direction: column; align-items: center; padding-bottom: 2rem; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 25px; background: linear-gradient(145deg, #0f1629 0%, #050914 100%); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-family: \"IBM Plex Sans\", sans-serif; } .ds-pixel-card:hover { transform: translateY(-6px); border-color: rgba(255, 255, 255, 0.25); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9); } .ds-pixel-card__content { padding: 1.5rem 1.5rem 0; text-align: center; } .ds-pixel-card__title { margin: 0; font-size: 1.25rem; font-weight: 700; color: #ffffff; letter-spacing: -0.02em; } .ds-pixel-card__description { margin: 0.625rem 0 0; max-width: 20ch; font-size: 0.875rem; line-height: 1.45; color: #94a3b8; }"
+    },
+    {
+      "name": "Glass Tool Panel",
+      "kind": "card",
+      "refersTo": null,
+      "description": "Standard frosted container for docs and image tool workspaces.",
+      "html": "<section class=\"ds-glass-panel\"><p class=\"ds-glass-panel__copy\">Drop files here or paste content to begin.</p></section>",
+      "css": ".ds-glass-panel { background: rgba(15, 20, 35, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 1.25rem; box-sizing: border-box; } .ds-glass-panel__copy { margin: 0; color: #94a3b8; font-family: \"IBM Plex Sans\", sans-serif; font-size: 0.95rem; line-height: 1.6; }"
+    },
+    {
+      "name": "Docs Primary Button",
+      "kind": "button",
+      "refersTo": "doc-button-primary",
+      "description": "Pill action button with amber module tint for document tools.",
+      "html": "<button class=\"ds-doc-btn-primary\" type=\"button\">Convert</button>",
+      "css": ".ds-doc-btn-primary { appearance: none; border: 1px solid rgba(234, 179, 8, 0.55); border-radius: 999px; background: rgba(234, 179, 8, 0.18); color: #f8fafc; cursor: pointer; font-family: \"IBM Plex Sans\", sans-serif; font-size: 0.8125rem; font-weight: 600; padding: 0.55rem 1rem; transition: border-color 0.2s ease, background 0.2s ease; } .ds-doc-btn-primary:hover { border-color: rgba(234, 179, 8, 0.7); background: rgba(234, 179, 8, 0.28); } .ds-doc-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.12); }"
+    },
+    {
+      "name": "Image Primary Button",
+      "kind": "button",
+      "refersTo": "image-button-primary",
+      "description": "Pill action button with emerald gradient for image tools.",
+      "html": "<button class=\"ds-image-btn-primary\" type=\"button\">Download</button>",
+      "css": ".ds-image-btn-primary { appearance: none; border: 1px solid rgba(16, 185, 129, 0.55); border-radius: 999px; background: linear-gradient(180deg, #10b981 0%, #059669 100%); color: #ecfdf5; cursor: pointer; font-family: \"IBM Plex Sans\", sans-serif; font-size: 0.8125rem; font-weight: 600; padding: 0.55rem 1rem; transition: border-color 0.2s ease, background 0.2s ease; } .ds-image-btn-primary:hover { border-color: rgba(16, 185, 129, 0.85); background: linear-gradient(180deg, #34d399 0%, #059669 100%); } .ds-image-btn-primary:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }"
+    },
+    {
+      "name": "Docs Privacy Disclaimer",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Amber callout for client-side processing reassurance on docs tools.",
+      "html": "<aside class=\"ds-privacy-disclaimer\" aria-label=\"Privacy notice\"><p>100% client-side processing. Your files never leave your browser.</p></aside>",
+      "css": ".ds-privacy-disclaimer { margin: 0; padding: 0.875rem 1rem; border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 12px; background: rgba(234, 179, 8, 0.08); } .ds-privacy-disclaimer p { margin: 0; color: #fef9c3; font-family: \"IBM Plex Sans\", sans-serif; font-size: 0.875rem; line-height: 1.55; text-align: center; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Glass Midnight Console",
+    "overview": "MODIF.in reads as a dark, cinematic utility console: black canvas, animated atmospheric backgrounds, and frosted glass panels that organize dense tool catalogs without feeling like enterprise software. The brand moment is theatrical — extruded DepthText, a custom TargetCursor, and pixel-reactive hub cards — while actual tool work stays legible, module-tinted, and calm.\n\nThe system balances spectacle on entry with operational clarity inside tools. Landing and hub pages sell motion and depth; tool pages shift to Georgia-serif headlines, IBM Plex Sans controls, and tinted accents that signal which module you are in (crimson for Text, emerald for Image, amber for Docs).",
+    "keyCharacteristics": [
+      "Always-dark foundation on #000 with atmospheric WebGL/Silk backgrounds",
+      "Glass panels: semi-transparent midnight slate, 12px blur, hairline white borders",
+      "Module color coding carried through scrollbars, accents, and primary actions",
+      "Pill-shaped tool controls; squarer 8px controls on dense hub grids",
+      "Custom cursor interaction on .cursor-target elements with crimson hover state",
+      "Serif tool titles + sans UI body for hierarchy without changing the global font stack"
+    ],
+    "rules": [
+      {
+        "name": "The Module Tint Rule",
+        "body": "Accent colors belong to their module. Do not use emerald primary buttons on Docs pages or amber focus rings in Image tools unless deliberately breaking module identity for a cross-cutting brand moment.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Voice Sans Rule",
+        "body": "IBM Plex Sans is the only sans used for UI. Georgia appears only as a display headline role, never for buttons, labels, or dense control rows.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Panel Rule",
+        "body": "Tool panels do not use drop shadows at rest. Separation comes from border, blur, and tonal contrast against the animated background.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Pill Action Rule",
+        "body": "Inside tool workspaces, primary/secondary actions use pill buttons. Hub grids keep compact 8px rectangles for density.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do keep the canvas black and let module-tinted Silk backgrounds signal context on hub/tool routes.",
+      "Do use glass panels with blur(12px) and rgba(255, 255, 255, 0.08) borders for tool UI groupings.",
+      "Do apply module accent colors to primary actions, focus states, scrollbars, and disclaimers within that module.",
+      "Do use Georgia only for tool page titles; keep controls and metadata in IBM Plex Sans.",
+      "Do add cursor-target to interactive elements that should respond to TargetCursor."
+    ],
+    "donts": [
+      "Don't introduce light themes or white page backgrounds; the product is dark-first end to end.",
+      "Don't mix module accent colors arbitrarily across Docs/Image/Text tool pages.",
+      "Don't add heavy drop shadows to flat tool panels at rest; reserve shadow stacks for cards, menus, and modals.",
+      "Don't replace TargetCursor with default pointer styling on primary interactive surfaces without a deliberate accessibility-driven exception.",
+      "Don't use decorative motion on dense control rows; keep motion on brand surfaces, hovers, and background atmospherics."
+    ]
+  }
+}
