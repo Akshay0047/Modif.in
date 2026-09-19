@@ -149,6 +149,11 @@ export const textToolsData = [
             tool("url-sanitizer", "URL Sanitizer", "Web, URL & Security"),
             tool("url-parser", "URL Parser", "Web, URL & Security"),
             tool("url-validator", "URL Validator", "Web, URL & Security"),
+            tool(
+                "lookalike-link-detector",
+                "Lookalike Link Detector",
+                "Web, URL & Security",
+            ),
             tool("utm-builder-cleaner", "UTM Builder / Cleaner", "Web, URL & Security"),
             tool("meta-tag-generator", "Meta Tag Generator", "Web, URL & Security"),
             tool("robots-txt-generator", "Robots.txt Generator", "Web, URL & Security"),
