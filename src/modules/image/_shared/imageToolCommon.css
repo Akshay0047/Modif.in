@@ -1036,6 +1036,10 @@
     grid-template-columns: 1fr;
   }
 
+  .img-tool__preview-col {
+    order: -1;
+  }
+
   .img-tool__field-row {
     grid-template-columns: 1fr;
   }

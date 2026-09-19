@@ -448,6 +448,10 @@
     grid-template-columns: 1fr;
   }
 
+  .cvt-jpg-png__preview-col {
+    order: -1;
+  }
+
   .cvt-jpg-png__preview-frame {
     min-height: 160px;
     max-height: 240px;
