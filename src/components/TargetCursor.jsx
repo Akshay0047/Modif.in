@@ -35,7 +35,7 @@ const getContainingBlockOffset = (block) => {
 
 const TargetCursor = ({
     targetSelector = ".cursor-target",
-    spinDuration = 2,
+    spinDuration = 6.4,
     hideDefaultCursor = true,
     hoverDuration = 0.2,
     parallaxOn = true,
@@ -65,8 +65,8 @@ const TargetCursor = ({
 
     const constants = useMemo(
         () => ({
-            borderWidth: 3,
-            cornerSize: 12,
+            borderWidth: 2,
+            cornerSize: 8,
         }),
         [],
     );

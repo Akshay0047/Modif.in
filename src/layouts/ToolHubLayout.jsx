@@ -81,7 +81,7 @@ function ToolHubLayout({
             </div>
 
             <TargetCursor
-                spinDuration={4}
+                spinDuration={6.4}
                 hideDefaultCursor
                 parallaxOn
                 hoverDuration={0.25}
