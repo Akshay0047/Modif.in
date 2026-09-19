@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {
     COMPRESS_ACCEPT,
     createCanvas,
@@ -87,49 +88,68 @@ function sliceImage(image, rows, cols) {
     return slices;
 }
 
-function prepareImageForGrid(image, rows, cols, letterboxMode, letterboxColor) {
+function getCanvasDimensions(image, rows, cols) {
     const targetAspect = cols / rows;
     const imageAspect = image.naturalWidth / image.naturalHeight;
 
     if (Math.abs(imageAspect - targetAspect) < 0.01) {
-        return image;
+        return {
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+            needsLetterbox: false,
+        };
     }
 
-    let canvasW;
-    let canvasH;
     if (imageAspect > targetAspect) {
-        canvasH = image.naturalHeight;
-        canvasW = Math.round(canvasH * targetAspect);
-    } else {
-        canvasW = image.naturalWidth;
-        canvasH = Math.round(canvasW / targetAspect);
+        const height = image.naturalHeight;
+        return {
+            width: Math.round(height * targetAspect),
+            height,
+            needsLetterbox: true,
+        };
     }
 
+    const width = image.naturalWidth;
+    return {
+        width,
+        height: Math.round(width / targetAspect),
+        needsLetterbox: true,
+    };
+}
+
+function composeImageForGrid(image, rows, cols, options) {
+    const {
+        letterboxMode,
+        letterboxColor,
+        zoom = 1,
+        panX = 0,
+        panY = 0,
+    } = options;
+    const { width: canvasW, height: canvasH, needsLetterbox } = getCanvasDimensions(image, rows, cols);
     const { canvas, ctx } = createCanvas(canvasW, canvasH);
 
-    if (letterboxMode === "color") {
+    if (needsLetterbox && letterboxMode === "color") {
         ctx.fillStyle = letterboxColor;
         ctx.fillRect(0, 0, canvasW, canvasH);
     }
 
-    const scale = Math.min(canvasW / image.naturalWidth, canvasH / image.naturalHeight);
-    const drawW = image.naturalWidth * scale;
-    const drawH = image.naturalHeight * scale;
-    ctx.drawImage(
-        image,
-        (canvasW - drawW) / 2,
-        (canvasH - drawH) / 2,
-        drawW,
-        drawH,
-    );
+    const containScale = Math.min(canvasW / image.naturalWidth, canvasH / image.naturalHeight);
+    const drawScale = containScale * zoom;
+    const drawW = image.naturalWidth * drawScale;
+    const drawH = image.naturalHeight * drawScale;
+    const cx = canvasW / 2 + panX;
+    const cy = canvasH / 2 + panY;
+
+    ctx.drawImage(image, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
 
     return canvas;
 }
 
 function ImageSplitter() {
     const fileInputRef = useRef(null);
+    const previewCanvasRef = useRef(null);
+    const dragRef = useRef(null);
     const sourceRef = useRef(null);
-    const previewUrlRef = useRef("");
     const operationRef = useRef(0);
 
     const [file, setFile] = useState(null);
@@ -139,7 +159,6 @@ function ImageSplitter() {
     const [preset, setPreset] = useState(DEFAULT_PRESET);
     const [rows, setRows] = useState(3);
     const [cols, setCols] = useState(3);
-    const [previewUrl, setPreviewUrl] = useState("");
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
     const [isDragging, setIsDragging] = useState(false);
@@ -149,7 +168,8 @@ function ImageSplitter() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [letterboxMode, setLetterboxMode] = useState("transparent");
     const [letterboxColor, setLetterboxColor] = useState("#1e293b");
-    const [preparedPreviewUrl, setPreparedPreviewUrl] = useState("");
+    const [zoom, setZoom] = useState(1);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
 
     const presetDef = PRESETS[preset] || PRESETS[DEFAULT_PRESET];
     const isCustom = Boolean(presetDef.isCustom);
@@ -166,37 +186,33 @@ function ImageSplitter() {
         sourceRef.current = null;
     }, []);
 
-    const preparedPreviewUrlRef = useRef("");
+    const composeOptions = useMemo(
+        () => ({
+            letterboxMode,
+            letterboxColor,
+            zoom,
+            panX: pan.x,
+            panY: pan.y,
+        }),
+        [letterboxMode, letterboxColor, zoom, pan.x, pan.y],
+    );
 
-    const revokePreparedPreview = useCallback(() => {
-        if (preparedPreviewUrlRef.current) {
-            URL.revokeObjectURL(preparedPreviewUrlRef.current);
-            preparedPreviewUrlRef.current = "";
-        }
-        setPreparedPreviewUrl("");
-    }, []);
-
-    const revokePreview = useCallback(() => {
-        if (previewUrlRef.current) {
-            URL.revokeObjectURL(previewUrlRef.current);
-            previewUrlRef.current = "";
-        }
-        setPreviewUrl("");
+    const resetPlacement = useCallback(() => {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
     }, []);
 
     const resetTool = useCallback(() => {
         operationRef.current += 1;
         releaseSource();
-        revokePreview();
-        revokePreparedPreview();
+        resetPlacement();
         setFile(null);
         setSourceImage(null);
         setDimensions(null);
-        setPreviewUrl("");
         setError("");
         setStatus("");
         if (fileInputRef.current) fileInputRef.current.value = "";
-    }, [releaseSource, revokePreview, revokePreparedPreview]);
+    }, [releaseSource, resetPlacement]);
 
     const ingestFile = useCallback(
         async (nextFile) => {
@@ -208,8 +224,7 @@ function ImageSplitter() {
             const op = operationRef.current + 1;
             operationRef.current = op;
             releaseSource();
-            revokePreview();
-        revokePreparedPreview();
+            resetPlacement();
             setError("");
             setShowProgress(true);
             setProgressLabel("Loading...");
@@ -220,9 +235,6 @@ function ImageSplitter() {
                     return;
                 }
                 sourceRef.current = loaded;
-                const url = loaded.objectUrl;
-                previewUrlRef.current = url;
-                setPreviewUrl(url);
                 setFile(nextFile);
                 setSourceImage(loaded.image);
                 setDimensions({ width: loaded.width, height: loaded.height });
@@ -232,11 +244,12 @@ function ImageSplitter() {
                 setShowProgress(false);
             }
         },
-        [releaseSource, revokePreview, revokePreparedPreview],
+        [releaseSource, resetPlacement],
     );
 
     const handleCategoryChange = (categoryKey) => {
         setActiveCategory(categoryKey);
+        resetPlacement();
         const firstKey = Object.keys(PRESET_CATEGORIES[categoryKey].presets)[0];
         if (!PRESET_CATEGORIES[categoryKey].presets[preset]) {
             handlePreset(firstKey);
@@ -246,6 +259,7 @@ function ImageSplitter() {
     const handlePreset = (key) => {
         setPreset(key);
         setActiveCategory(getCategoryForPreset(key));
+        resetPlacement();
         const next = PRESETS[key];
         if (!next?.isCustom) {
             setRows(next.rows);
@@ -262,15 +276,12 @@ function ImageSplitter() {
 
         try {
             await waitFrame();
-            const sourceForSlice = needsLetterbox
-                ? prepareImageForGrid(
-                      sourceImage,
-                      effectiveRows,
-                      effectiveCols,
-                      letterboxMode,
-                      letterboxColor,
-                  )
-                : sourceImage;
+            const sourceForSlice = composeImageForGrid(
+                sourceImage,
+                effectiveRows,
+                effectiveCols,
+                composeOptions,
+            );
             const slices = sliceImage(sourceForSlice, effectiveRows, effectiveCols);
             setProgress(60);
             setProgressLabel("Building ZIP...");
@@ -301,45 +312,72 @@ function ImageSplitter() {
         () => () => {
             operationRef.current += 1;
             releaseSource();
-            revokePreview();
-            revokePreparedPreview();
         },
-        [releaseSource, revokePreview, revokePreparedPreview],
+        [releaseSource],
     );
 
-    useEffect(() => {
-        if (!sourceImage || !needsLetterbox) return undefined;
+    const drawPreview = useCallback(() => {
+        const canvas = previewCanvasRef.current;
+        if (!canvas || !sourceImage) return;
 
-        let cancelled = false;
-        const prepared = prepareImageForGrid(
+        const composed = composeImageForGrid(
             sourceImage,
             effectiveRows,
             effectiveCols,
-            letterboxMode,
-            letterboxColor,
+            composeOptions,
         );
 
-        prepared.toBlob((blob) => {
-            if (cancelled || !blob) return;
-            if (preparedPreviewUrlRef.current) {
-                URL.revokeObjectURL(preparedPreviewUrlRef.current);
-            }
-            const url = URL.createObjectURL(blob);
-            preparedPreviewUrlRef.current = url;
-            setPreparedPreviewUrl(url);
-        }, "image/png");
+        canvas.width = composed.width;
+        canvas.height = composed.height;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, composed.width, composed.height);
+        ctx.drawImage(composed, 0, 0);
 
+        const frame = canvas.parentElement?.getBoundingClientRect();
+        const displayScale = Math.min(
+            (frame?.width || 400) / composed.width,
+            (frame?.height || 300) / composed.height,
+            1,
+        );
+        canvas.style.width = `${composed.width * displayScale}px`;
+        canvas.style.height = `${composed.height * displayScale}px`;
+    }, [sourceImage, effectiveRows, effectiveCols, composeOptions]);
+
+    useEffect(() => {
+        drawPreview();
+    }, [drawPreview]);
+
+    const handlePointerDown = (e) => {
+        if (!sourceImage || isProcessing) return;
+        dragRef.current = { startX: e.clientX, startY: e.clientY, startPan: { ...pan } };
+    };
+
+    const handlePointerMove = (e) => {
+        const drag = dragRef.current;
+        const canvas = previewCanvasRef.current;
+        if (!drag || !canvas || !canvas.width) return;
+
+        const displayScale = canvas.clientWidth / canvas.width;
+        setPan({
+            x: drag.startPan.x + (e.clientX - drag.startX) / displayScale,
+            y: drag.startPan.y + (e.clientY - drag.startY) / displayScale,
+        });
+    };
+
+    const handlePointerUp = () => {
+        dragRef.current = null;
+    };
+
+    useEffect(() => {
+        const onMove = (event) => handlePointerMove(event);
+        const onUp = () => handlePointerUp();
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
         return () => {
-            cancelled = true;
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
         };
-    }, [
-        sourceImage,
-        needsLetterbox,
-        effectiveRows,
-        effectiveCols,
-        letterboxMode,
-        letterboxColor,
-    ]);
+    });
 
     const hasImage = Boolean(sourceImage);
     const gridLines = [];
@@ -467,6 +505,31 @@ function ImageSplitter() {
                 </>
             ) : null}
 
+            {hasImage ? (
+                <>
+                    <ImageToolRange
+                        label="Image zoom"
+                        min={50}
+                        max={300}
+                        value={Math.round(zoom * 100)}
+                        disabled={isProcessing}
+                        onChange={(val) => setZoom(val / 100)}
+                        unit="%"
+                        lowLabel="Zoom out"
+                        highLabel="Zoom in"
+                    />
+                    <button
+                        type="button"
+                        className="img-tool__btn"
+                        disabled={isProcessing}
+                        onClick={resetPlacement}
+                    >
+                        Reset position
+                    </button>
+                    <p className="img-tool__hint">Drag the preview to reposition the image inside the grid area.</p>
+                </>
+            ) : null}
+
             <div className="img-tool__actions">
                 <button
                     type="button"
@@ -526,12 +589,17 @@ function ImageSplitter() {
             )}
 
             <div className="img-tool__preview-frame">
-                {(needsLetterbox ? preparedPreviewUrl : previewUrl) ? (
-                    <>
-                        <img
-                            className="img-tool__preview-image"
-                            src={needsLetterbox ? preparedPreviewUrl : previewUrl}
-                            alt="Grid preview"
+                {sourceImage ? (
+                    <div
+                        className="img-tool__split-preview-wrap"
+                        style={{ position: "relative", display: "inline-block", lineHeight: 0 }}
+                    >
+                        <canvas
+                            ref={previewCanvasRef}
+                            className="img-tool__preview-canvas"
+                            style={{ cursor: "grab", touchAction: "none", display: "block" }}
+                            onPointerDown={handlePointerDown}
+                            aria-label="Grid slice preview"
                         />
                         <div className="img-tool__grid-overlay" aria-hidden="true">
                             {gridLines.map((line, i) => (
@@ -546,7 +614,7 @@ function ImageSplitter() {
                                 />
                             ))}
                         </div>
-                    </>
+                    </div>
                 ) : (
                     <p className="img-tool__preview-empty">Upload an image to preview grid cuts</p>
                 )}
