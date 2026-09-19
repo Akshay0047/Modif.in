@@ -6,7 +6,27 @@ function sortToolsPopularFirst(tools = []) {
     );
 }
 
-function buildPopularCategory(categories = []) {
+function orderPopularTools(tools = [], popularToolOrder = []) {
+    if (popularToolOrder.length === 0) return tools;
+
+    const orderMap = new Map(
+        popularToolOrder.map((toolId, index) => [toolId, index]),
+    );
+
+    return [...tools].sort((left, right) => {
+        const leftIndex = orderMap.has(left.id)
+            ? orderMap.get(left.id)
+            : Number.POSITIVE_INFINITY;
+        const rightIndex = orderMap.has(right.id)
+            ? orderMap.get(right.id)
+            : Number.POSITIVE_INFINITY;
+
+        if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+        return left.name.localeCompare(right.name);
+    });
+}
+
+function buildPopularCategory(categories = [], popularToolOrder = []) {
     const seen = new Set();
     const tools = [];
 
@@ -23,17 +43,20 @@ function buildPopularCategory(categories = []) {
     return {
         id: POPULAR_TOOLS_CATEGORY_ID,
         name: "Popular Tools",
-        tools,
+        tools: orderPopularTools(tools, popularToolOrder),
     };
 }
 
-export function prepareHubToolsData(categories = []) {
+export function prepareHubToolsData(categories = [], popularToolOrder = []) {
     const sortedCategories = categories.map((category) => ({
         ...category,
         tools: sortToolsPopularFirst(category.tools),
     }));
 
-    const popularCategory = buildPopularCategory(sortedCategories);
+    const popularCategory = buildPopularCategory(
+        sortedCategories,
+        popularToolOrder,
+    );
     if (!popularCategory) return sortedCategories;
 
     return [popularCategory, ...sortedCategories];

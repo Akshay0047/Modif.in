@@ -6,11 +6,16 @@ import ToolButton from "../components/ToolButton";
 import { prepareHubToolsData } from "../data/tools";
 import "./ToolHub.css";
 
-function ToolHub({ title, subheading, toolsData = [] }) {
+function ToolHub({
+    title,
+    subheading,
+    toolsData = [],
+    popularToolOrder = [],
+}) {
     const navigate = useNavigate();
     const displayToolsData = useMemo(
-        () => prepareHubToolsData(toolsData),
-        [toolsData],
+        () => prepareHubToolsData(toolsData, popularToolOrder),
+        [toolsData, popularToolOrder],
     );
 
     const handleToolSelect = (tool) => {

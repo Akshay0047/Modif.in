@@ -13,6 +13,7 @@ function ToolHubLayout({
     color1,
     color2,
     toolsData = [],
+    popularToolOrder = [],
 }) {
     useEffect(() => {
         const html = document.documentElement;
@@ -131,6 +132,7 @@ function ToolHubLayout({
                 title={title}
                 subheading={subheading}
                 toolsData={toolsData}
+                popularToolOrder={popularToolOrder}
             />
             <Footer />
         </main>

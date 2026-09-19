@@ -1,5 +1,5 @@
 import ToolHubLayout from "../layouts/ToolHubLayout";
-import { docToolsData } from "../data/docTools";
+import { docPopularToolOrder, docToolsData } from "../data/docTools";
 
 function DocTools() {
     return (
@@ -9,6 +9,7 @@ function DocTools() {
             color1="#1a1602"
             color2="#5c450a"
             toolsData={docToolsData}
+            popularToolOrder={docPopularToolOrder}
         />
     );
 }
