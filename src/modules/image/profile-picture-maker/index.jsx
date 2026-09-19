@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
-import {MB,
+import ImageToolRange from "../_shared/ImageToolRange";
+import {
+    MB,
     IMAGE_ACCEPT,
     formatBytes,
     validateStandardImage,
@@ -10,94 +12,83 @@ import {MB,
     copyBlobToClipboard,
     replaceExtension,
     normalizeHexColor,
-    clamp,
-    waitFrame, preventDragDefaults } from "../_shared/imageToolUtils";
-// preventDragDefaults imported below
+    waitFrame,
+    preventDragDefaults,
+} from "../_shared/imageToolUtils";
 
 const MAX_BYTES = 30 * MB;
-const BORDER_SWATCHES = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ffffff", "#000000"];
-const GRADIENTS = {
-    sunset: ["#f97316", "#ec4899"],
-    ocean: ["#0ea5e9", "#6366f1"],
-    forest: ["#22c55e", "#14b8a6"],
-};
+const SNAP_THRESHOLD = 10;
 
-function pathRoundRect(ctx, x, y, w, h, radius) {
-    const r = Math.min(radius, w / 2, h / 2);
-    if (typeof ctx.roundRect === "function") {
-        ctx.beginPath();
-        ctx.roundRect(x, y, w, h, r);
-        return;
-    }
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
+function degToRad(degrees) {
+    return (degrees * Math.PI) / 180;
 }
 
-function drawAvatar(canvas, image, options) {
+function drawPipAvatar(canvas, image, options) {
     const {
         outputSize,
-        zoom,
+        bgColor,
         panX,
         panY,
-        border,
-        borderColor,
-        cornerRadiusPercent,
-        bgType,
-        bgColor,
-        gradientKey,
+        scale,
+        rotation,
+        snapGuides,
     } = options;
+
     canvas.width = outputSize;
     canvas.height = outputSize;
     const ctx = canvas.getContext("2d");
     const center = outputSize / 2;
-    const innerSize = outputSize - border * 2;
-    const innerX = border;
-    const innerY = border;
-    const cornerRadius = (cornerRadiusPercent / 50) * (innerSize / 2);
 
-    ctx.clearRect(0, 0, outputSize, outputSize);
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, outputSize, outputSize);
 
-    if (bgType === "solid") {
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, outputSize, outputSize);
-    } else if (bgType === "gradient") {
-        const [c1, c2] = GRADIENTS[gradientKey] || GRADIENTS.sunset;
-        const grad = ctx.createLinearGradient(0, 0, outputSize, outputSize);
-        grad.addColorStop(0, c1);
-        grad.addColorStop(1, c2);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, outputSize, outputSize);
+    if (snapGuides?.vertical || snapGuides?.horizontal) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(16, 185, 129, 0.9)";
+        ctx.lineWidth = Math.max(1, outputSize / 320);
+        ctx.setLineDash([6, 4]);
+        if (snapGuides.vertical) {
+            ctx.beginPath();
+            ctx.moveTo(center, 0);
+            ctx.lineTo(center, outputSize);
+            ctx.stroke();
+        }
+        if (snapGuides.horizontal) {
+            ctx.beginPath();
+            ctx.moveTo(0, center);
+            ctx.lineTo(outputSize, center);
+            ctx.stroke();
+        }
+        ctx.restore();
     }
+
+    const containScale = Math.min(outputSize / image.width, outputSize / image.height);
+    const drawScale = containScale * scale;
+    const drawW = image.width * drawScale;
+    const drawH = image.height * drawScale;
 
     ctx.save();
-    pathRoundRect(ctx, innerX, innerY, innerSize, innerSize, cornerRadius);
-    ctx.clip();
-
-    const imgW = image.width;
-    const imgH = image.height;
-    const coverScale = Math.max(outputSize / imgW, outputSize / imgH) * zoom;
-    const drawW = imgW * coverScale;
-    const drawH = imgH * coverScale;
-    const dx = center - drawW / 2 + panX;
-    const dy = center - drawH / 2 + panY;
-    ctx.drawImage(image, dx, dy, drawW, drawH);
+    ctx.translate(center + panX, center + panY);
+    ctx.rotate(degToRad(rotation));
+    ctx.drawImage(image, -drawW / 2, -drawH / 2, drawW, drawH);
     ctx.restore();
+}
 
-    if (border > 0) {
-        pathRoundRect(ctx, border / 2, border / 2, outputSize - border, outputSize - border, cornerRadius + border / 2);
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = border;
-        ctx.stroke();
+function snapPan(pan) {
+    const guides = { vertical: false, horizontal: false };
+    let x = pan.x;
+    let y = pan.y;
+
+    if (Math.abs(x) <= SNAP_THRESHOLD) {
+        x = 0;
+        guides.vertical = true;
     }
+    if (Math.abs(y) <= SNAP_THRESHOLD) {
+        y = 0;
+        guides.horizontal = true;
+    }
+
+    return { pan: { x, y }, guides };
 }
 
 export default function ProfilePictureMakerTool() {
@@ -109,14 +100,11 @@ export default function ProfilePictureMakerTool() {
 
     const [file, setFile] = useState(null);
     const [imageSize, setImageSize] = useState(null);
-    const [zoom, setZoom] = useState(1);
-    const [pan, setPan] = useState({ x: 0, y: 0 });
-    const [border, setBorder] = useState(4);
-    const [cornerRadiusPercent, setCornerRadiusPercent] = useState(50);
-    const [borderColor, setBorderColor] = useState("#10b981");
-    const [bgType, setBgType] = useState("transparent");
     const [bgColor, setBgColor] = useState("#1e293b");
-    const [gradientKey, setGradientKey] = useState("sunset");
+    const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [scale, setScale] = useState(1);
+    const [rotation, setRotation] = useState(0);
+    const [snapGuides, setSnapGuides] = useState({ vertical: false, horizontal: false });
     const [outputSize, setOutputSize] = useState(512);
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
@@ -124,18 +112,18 @@ export default function ProfilePictureMakerTool() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    const options = {
-        outputSize: 512,
-        zoom,
-        panX: pan.x,
-        panY: pan.y,
-        border,
-        cornerRadiusPercent,
-        borderColor: normalizeHexColor(borderColor),
-        bgType,
-        bgColor: normalizeHexColor(bgColor),
-        gradientKey,
-    };
+    const options = useMemo(
+        () => ({
+            outputSize,
+            bgColor: normalizeHexColor(bgColor),
+            panX: pan.x,
+            panY: pan.y,
+            scale,
+            rotation,
+            snapGuides,
+        }),
+        [outputSize, bgColor, pan.x, pan.y, scale, rotation, snapGuides],
+    );
 
     const releaseSource = useCallback(() => {
         if (sourceRef.current?.objectUrl) URL.revokeObjectURL(sourceRef.current.objectUrl);
@@ -147,12 +135,11 @@ export default function ProfilePictureMakerTool() {
         releaseSource();
         setFile(null);
         setImageSize(null);
-        setZoom(1);
         setPan({ x: 0, y: 0 });
-        setBorder(4);
-        setCornerRadiusPercent(50);
-        setBorderColor("#10b981");
-        setBgType("transparent");
+        setScale(1);
+        setRotation(0);
+        setSnapGuides({ vertical: false, horizontal: false });
+        setBgColor("#1e293b");
         setError("");
         setStatus("");
         setProgress(0);
@@ -185,8 +172,10 @@ export default function ProfilePictureMakerTool() {
                 sourceRef.current = loaded;
                 setFile(nextFile);
                 setImageSize({ width: loaded.width, height: loaded.height });
-                setZoom(1);
                 setPan({ x: 0, y: 0 });
+                setScale(1);
+                setRotation(0);
+                setSnapGuides({ vertical: true, horizontal: true });
             } catch (e) {
                 if (operationRef.current === op) setError(e.message || "Failed to load image.");
             } finally {
@@ -203,8 +192,7 @@ export default function ProfilePictureMakerTool() {
         const canvas = previewCanvasRef.current;
         const src = sourceRef.current;
         if (!canvas || !src?.image) return;
-        const previewOpts = { ...options, outputSize: 320 };
-        drawAvatar(canvas, src.image, previewOpts);
+        drawPipAvatar(canvas, src.image, { ...options, outputSize: 320 });
         canvas.style.width = "280px";
         canvas.style.height = "280px";
     }, [options]);
@@ -221,11 +209,14 @@ export default function ProfilePictureMakerTool() {
     const handlePointerMove = (e) => {
         const d = dragRef.current;
         if (!d) return;
-        const scale = 320 / outputSize;
-        setPan({
-            x: d.startPan.x + (e.clientX - d.startX) / scale,
-            y: d.startPan.y + (e.clientY - d.startY) / scale,
-        });
+        const previewScale = 320 / outputSize;
+        const rawPan = {
+            x: d.startPan.x + (e.clientX - d.startX) / previewScale,
+            y: d.startPan.y + (e.clientY - d.startY) / previewScale,
+        };
+        const { pan: nextPan, guides } = snapPan(rawPan);
+        setPan(nextPan);
+        setSnapGuides(guides);
     };
 
     const handlePointerUp = () => {
@@ -247,7 +238,7 @@ export default function ProfilePictureMakerTool() {
         const src = sourceRef.current;
         if (!src?.image) throw new Error("Load an image first.");
         const canvas = document.createElement("canvas");
-        drawAvatar(canvas, src.image, { ...options, outputSize });
+        drawPipAvatar(canvas, src.image, { ...options, snapGuides: null });
         await waitFrame();
         return canvasToBlob(canvas, "image/png");
     };
@@ -283,6 +274,11 @@ export default function ProfilePictureMakerTool() {
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    const handleCenterImage = () => {
+        setPan({ x: 0, y: 0 });
+        setSnapGuides({ vertical: true, horizontal: true });
     };
 
     const left = (
@@ -321,159 +317,87 @@ export default function ProfilePictureMakerTool() {
                     <span className="img-tool__chip">{formatBytes(file.size)}</span>
                 </div>
             ) : null}
-            <div>
-                <label className="img-tool__label">Zoom ({zoom.toFixed(2)}×)</label>
-                <input
-                    className="img-tool__range"
-                    type="range"
-                    min={1}
+
+            <div className="img-tool__controls-scroll">
+                <div>
+                    <span className="img-tool__label">Canvas background</span>
+                    <div className="img-tool__color-row">
+                        <input
+                            type="color"
+                            className="img-tool__color-input cursor-target"
+                            value={bgColor}
+                            disabled={!imageSize}
+                            onChange={(e) => setBgColor(e.target.value)}
+                            aria-label="Canvas background color"
+                        />
+                        <input
+                            className="img-tool__input"
+                            value={bgColor}
+                            disabled={!imageSize}
+                            onChange={(e) => setBgColor(normalizeHexColor(e.target.value, bgColor))}
+                            aria-label="Canvas background hex value"
+                        />
+                    </div>
+                </div>
+
+                <ImageToolRange
+                    label="Image scale"
+                    min={0.2}
                     max={3}
                     step={0.01}
-                    value={zoom}
+                    value={scale}
                     disabled={!imageSize}
-                    onChange={(e) => setZoom(Number(e.target.value))}
+                    onChange={setScale}
+                    formatDisplay={(val) => `${val.toFixed(2)}×`}
+                    lowLabel="Smaller"
+                    highLabel="Larger"
                 />
-            </div>
-            <div>
-                <label className="img-tool__label" htmlFor="pp-corner-radius">Corner radius</label>
-                <input
-                    id="pp-corner-radius"
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={50}
-                    value={cornerRadiusPercent}
+
+                <ImageToolRange
+                    label="Rotation"
+                    min={-180}
+                    max={180}
+                    step={0.1}
+                    value={rotation}
                     disabled={!imageSize}
-                    onChange={(e) => setCornerRadiusPercent(Number(e.target.value))}
+                    onChange={setRotation}
+                    formatDisplay={(val) => `${val.toFixed(1)}°`}
+                    lowLabel="-180°"
+                    highLabel="180°"
                 />
-                <div className="img-tool__range-meta">
-                    <span>Square (0%)</span>
-                    <span className="img-tool__range-value">{cornerRadiusPercent}%</span>
-                    <span>Circle (50%)</span>
+
+                <div>
+                    <span className="img-tool__label">Output size</span>
+                    <div className="img-tool__segmented">
+                        {[512, 1024].map((s) => (
+                            <button
+                                key={s}
+                                type="button"
+                                className={`img-tool__segment${outputSize === s ? " is-active" : ""}`}
+                                disabled={!imageSize}
+                                onClick={() => setOutputSize(s)}
+                            >
+                                {s}px
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
-            <div>
-                <label className="img-tool__label">Border ({border}px)</label>
-                <input
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={24}
-                    value={border}
+
+                <button
+                    type="button"
+                    className="img-tool__btn"
                     disabled={!imageSize}
-                    onChange={(e) => setBorder(Number(e.target.value))}
-                />
+                    onClick={handleCenterImage}
+                >
+                    Center image
+                </button>
+
+                <p className="img-tool__hint">
+                    Place your photo on a 1:1 canvas. Drag to reposition — it snaps to center with guide lines.
+                    Scale and rotate to crop or straighten without cutting the image out.
+                </p>
             </div>
-            <div>
-                <span className="img-tool__label">Border color</span>
-                <div className="img-tool__segmented" style={{ flexWrap: "wrap" }}>
-                    {BORDER_SWATCHES.map((c) => (
-                        <button
-                            key={c}
-                            type="button"
-                            className={`img-tool__segment${borderColor === c ? " is-active" : ""}`}
-                            disabled={!imageSize}
-                            style={{ padding: "0.35rem 0.5rem" }}
-                            onClick={() => setBorderColor(c)}
-                        >
-                            <span
-                                style={{
-                                    display: "inline-block",
-                                    width: 16,
-                                    height: 16,
-                                    borderRadius: 999,
-                                    background: c,
-                                    border: "1px solid rgba(255,255,255,0.3)",
-                                }}
-                            />
-                        </button>
-                    ))}
-                </div>
-                <div className="img-tool__color-row" style={{ marginTop: "0.5rem" }}>
-                    <input
-                        type="color"
-                        className="img-tool__color-input"
-                        value={borderColor}
-                        disabled={!imageSize}
-                        onChange={(e) => setBorderColor(e.target.value)}
-                    />
-                    <input
-                        className="img-tool__input"
-                        value={borderColor}
-                        disabled={!imageSize}
-                        onChange={(e) => setBorderColor(normalizeHexColor(e.target.value, borderColor))}
-                    />
-                </div>
-            </div>
-            <div>
-                <span className="img-tool__label">Background</span>
-                <div className="img-tool__segmented">
-                    {[
-                        ["transparent", "Transparent"],
-                        ["solid", "Solid"],
-                        ["gradient", "Gradient"],
-                    ].map(([key, label]) => (
-                        <button
-                            key={key}
-                            type="button"
-                            className={`img-tool__segment${bgType === key ? " is-active" : ""}`}
-                            disabled={!imageSize}
-                            onClick={() => setBgType(key)}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-            {bgType === "solid" ? (
-                <div className="img-tool__color-row">
-                    <input
-                        type="color"
-                        className="img-tool__color-input"
-                        value={bgColor}
-                        disabled={!imageSize}
-                        onChange={(e) => setBgColor(e.target.value)}
-                    />
-                    <input
-                        className="img-tool__input"
-                        value={bgColor}
-                        disabled={!imageSize}
-                        onChange={(e) => setBgColor(normalizeHexColor(e.target.value, bgColor))}
-                    />
-                </div>
-            ) : null}
-            {bgType === "gradient" ? (
-                <div className="img-tool__segmented">
-                    {Object.keys(GRADIENTS).map((key) => (
-                        <button
-                            key={key}
-                            type="button"
-                            className={`img-tool__segment${gradientKey === key ? " is-active" : ""}`}
-                            disabled={!imageSize}
-                            onClick={() => setGradientKey(key)}
-                        >
-                            {key.charAt(0).toUpperCase() + key.slice(1)}
-                        </button>
-                    ))}
-                </div>
-            ) : null}
-            <div>
-                <span className="img-tool__label">Output size</span>
-                <div className="img-tool__segmented">
-                    {[512, 1024].map((s) => (
-                        <button
-                            key={s}
-                            type="button"
-                            className={`img-tool__segment${outputSize === s ? " is-active" : ""}`}
-                            disabled={!imageSize}
-                            onClick={() => setOutputSize(s)}
-                        >
-                            {s}px
-                        </button>
-                    ))}
-                </div>
-            </div>
-            <p className="img-tool__hint">Drag the preview to reposition the photo inside the frame.</p>
+
             <div className="img-tool__actions">
                 <button type="button" className="img-tool__btn img-tool__btn--primary" disabled={!imageSize || isProcessing} onClick={handleDownload}>
                     Download Avatar
@@ -498,7 +422,7 @@ export default function ProfilePictureMakerTool() {
                     onPointerDown={handlePointerDown}
                 />
             ) : (
-                <p className="img-tool__preview-empty">Upload a photo to create a profile avatar</p>
+                <p className="img-tool__preview-empty">Upload a photo to compose a 1:1 profile picture</p>
             )}
         </div>
     );

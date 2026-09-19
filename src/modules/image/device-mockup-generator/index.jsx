@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {
     IMAGE_ACCEPT,
     canvasToBlob,
@@ -248,7 +249,16 @@ function getFrameExtras(device) {
 }
 
 function renderMockup(image, options) {
-    const { deviceKey, theme, padding, shadow, backdrop, backdropColor } = options;
+    const {
+        deviceKey,
+        theme,
+        padding,
+        shadow,
+        backdrop,
+        backdropColor,
+        imageZoom = 1,
+        screenBgColor = "#000000",
+    } = options;
     const device = DEVICES[deviceKey];
     const { barOffset, chinOffset, baseOffset } = getFrameExtras(device);
     const maxW = device.maxW || 1200;
@@ -287,23 +297,22 @@ function renderMockup(image, options) {
     ctx.save();
     roundRect(ctx, sx, sy, sw, sh, Math.max(4, device.corner - 6));
     ctx.clip();
+    ctx.fillStyle = screenBgColor;
+    ctx.fillRect(sx, sy, sw, sh);
+
     const imgRatio = image.naturalWidth / image.naturalHeight;
     const areaRatio = sw / sh;
-    let dw;
-    let dh;
-    let dx;
-    let dy;
+    let baseScale;
     if (imgRatio > areaRatio) {
-        dh = sh;
-        dw = dh * imgRatio;
-        dx = sx + (sw - dw) / 2;
-        dy = sy;
+        baseScale = sh / image.naturalHeight;
     } else {
-        dw = sw;
-        dh = dw / imgRatio;
-        dx = sx;
-        dy = sy + (sh - dh) / 2;
+        baseScale = sw / image.naturalWidth;
     }
+    const drawScale = baseScale * imageZoom;
+    const dw = image.naturalWidth * drawScale;
+    const dh = image.naturalHeight * drawScale;
+    const dx = sx + (sw - dw) / 2;
+    const dy = sy + (sh - dh) / 2;
     ctx.drawImage(image, dx, dy, dw, dh);
     ctx.restore();
 
@@ -324,6 +333,8 @@ function DeviceMockupGenerator() {
     const [shadow, setShadow] = useState(60);
     const [backdrop, setBackdrop] = useState("gradient");
     const [backdropColor, setBackdropColor] = useState("#0f172a");
+    const [imageZoom, setImageZoom] = useState(1);
+    const [screenBgColor, setScreenBgColor] = useState("#000000");
     const [error, setError] = useState("");
     const [status, setStatus] = useState("");
     const [isDragging, setIsDragging] = useState(false);
@@ -386,13 +397,15 @@ function DeviceMockupGenerator() {
             shadow,
             backdrop,
             backdropColor,
+            imageZoom,
+            screenBgColor,
         });
         const display = canvasRef.current;
         display.width = canvas.width;
         display.height = canvas.height;
         const ctx = display.getContext("2d");
         ctx.drawImage(canvas, 0, 0);
-    }, [sourceImage, device, theme, padding, shadow, backdrop, backdropColor]);
+    }, [sourceImage, device, theme, padding, shadow, backdrop, backdropColor, imageZoom, screenBgColor]);
 
     useEffect(() => {
         paint();
@@ -419,6 +432,8 @@ function DeviceMockupGenerator() {
                 shadow,
                 backdrop,
                 backdropColor,
+                imageZoom,
+                screenBgColor,
             });
             const blob = await canvasToBlob(canvas, "image/png");
             const base = file?.name?.replace(/\.[^.]+$/, "") || "mockup";
@@ -471,38 +486,29 @@ function DeviceMockupGenerator() {
                 </div>
             </div>
 
-            <div>
-                <label className="img-tool__label" htmlFor="mock-padding">Padding</label>
-                <input
-                    id="mock-padding"
-                    className="img-tool__range"
-                    type="range"
-                    min={10}
-                    max={100}
-                    value={padding}
-                    disabled={!hasImage}
-                    onChange={(e) => setPadding(Number(e.target.value))}
-                />
-                <div className="img-tool__range-meta">
-                    <span>10px</span>
-                    <span className="img-tool__range-value">{padding}px</span>
-                    <span>100px</span>
-                </div>
-            </div>
+            <ImageToolRange
+                id="mock-padding"
+                label="Padding"
+                min={10}
+                max={100}
+                value={padding}
+                disabled={!hasImage}
+                onChange={setPadding}
+                unit="px"
+                lowLabel="10px"
+                highLabel="100px"
+            />
 
-            <div>
-                <label className="img-tool__label" htmlFor="mock-shadow">Shadow</label>
-                <input
-                    id="mock-shadow"
-                    className="img-tool__range"
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={shadow}
-                    disabled={!hasImage}
-                    onChange={(e) => setShadow(Number(e.target.value))}
-                />
-            </div>
+            <ImageToolRange
+                id="mock-shadow"
+                label="Shadow"
+                min={0}
+                max={100}
+                value={shadow}
+                disabled={!hasImage}
+                onChange={setShadow}
+                unit="%"
+            />
 
             <div>
                 <span className="img-tool__label">Backdrop</span>
@@ -594,6 +600,41 @@ function DeviceMockupGenerator() {
                     <p className="img-tool__preview-empty">Upload an image to preview mockup</p>
                 )}
             </div>
+
+            {hasImage ? (
+                <div className="img-tool__panel" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <span className="img-tool__label">In Screen Background</span>
+                    <div className="img-tool__color-row">
+                        <input
+                            className="img-tool__color-input cursor-target"
+                            type="color"
+                            value={screenBgColor}
+                            onChange={(e) => setScreenBgColor(e.target.value)}
+                            aria-label="In screen background color"
+                        />
+                        <input
+                            className="img-tool__input"
+                            value={screenBgColor}
+                            onChange={(e) => setScreenBgColor(e.target.value)}
+                            aria-label="In screen background hex value"
+                        />
+                    </div>
+                    <ImageToolRange
+                        id="mock-image-zoom"
+                        label="Image zoom"
+                        min={50}
+                        max={200}
+                        value={Math.round(imageZoom * 100)}
+                        onChange={(val) => setImageZoom(val / 100)}
+                        unit="%"
+                        lowLabel="Zoom out"
+                        highLabel="Zoom in"
+                    />
+                    <p className="img-tool__hint">
+                        Zoom out to reveal the in-screen background around your screenshot.
+                    </p>
+                </div>
+            ) : null}
         </>
     );
 
