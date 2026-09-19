@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
+import ImageToolRange from "../_shared/ImageToolRange";
 import {MB,
     formatBytes,
     validateFile,
@@ -93,6 +94,13 @@ export default function CropResizeTool() {
     const [resultBlob, setResultBlob] = useState(null);
 
     const smooth = interpolation === "bicubic";
+
+    const getActiveAspectRatio = useCallback(() => {
+        if (socialPreset && SOCIAL_PRESETS[socialPreset]) {
+            return SOCIAL_PRESETS[socialPreset].ratio;
+        }
+        return ASPECT_PRESETS[aspectKey];
+    }, [socialPreset, aspectKey]);
 
     const releaseSource = useCallback(() => {
         if (sourceRef.current?.objectUrl) URL.revokeObjectURL(sourceRef.current.objectUrl);
@@ -326,7 +334,7 @@ export default function CropResizeTool() {
         const dx = pt.x - drag.startPt.x;
         const dy = pt.y - drag.startPt.y;
         let next = { ...drag.startCrop };
-        const ratio = ASPECT_PRESETS[aspectKey];
+        const ratio = getActiveAspectRatio();
         if (drag.mode === "move") {
             next.x += dx;
             next.y += dy;
@@ -369,14 +377,18 @@ export default function CropResizeTool() {
     };
 
     const handleSocialPreset = (key) => {
+        if (socialPreset === key) {
+            setSocialPreset("");
+            setAspectKey("freeform");
+            return;
+        }
+
         const preset = SOCIAL_PRESETS[key];
         if (!preset || !imageSize) return;
         setSocialPreset(key);
         setMode("both");
         setLockAspect(true);
-        const ratioKey = Object.entries(ASPECT_PRESETS).find(([, r]) => r && Math.abs(r - preset.ratio) < 0.02)?.[0];
-        if (ratioKey) setAspectKey(ratioKey);
-        else setAspectKey("freeform");
+        setAspectKey("freeform");
         setCrop((c) => applyAspectToCrop(c, preset.ratio));
         setOutWidth(String(preset.width));
         setOutHeight(String(preset.height));
@@ -552,6 +564,7 @@ export default function CropResizeTool() {
                     <span className="img-tool__chip">{formatBytes(file.size)}</span>
                 </div>
             ) : null}
+            <div className="img-tool__controls-scroll">
             <div>
                 <span className="img-tool__label">Mode</span>
                 <div className="img-tool__segmented">
@@ -592,7 +605,7 @@ export default function CropResizeTool() {
             ) : null}
             {mode !== "resize" ? (
                 <div>
-                    <span className="img-tool__label">Social presets</span>
+                    <span className="img-tool__label">Social Media Presets</span>
                     <div className="img-tool__segmented" style={{ flexWrap: "wrap" }}>
                         {Object.entries(SOCIAL_PRESETS).map(([key, preset]) => (
                             <button
@@ -614,24 +627,19 @@ export default function CropResizeTool() {
                 </div>
             ) : null}
             {mode !== "resize" ? (
-                <div>
-                    <label className="img-tool__label" htmlFor="crop-straighten">Straighten</label>
-                    <input
-                        id="crop-straighten"
-                        className="img-tool__range"
-                        type="range"
-                        min={-45}
-                        max={45}
-                        value={straightenAngle}
-                        disabled={!imageSize}
-                        onChange={(e) => setStraightenAngle(Number(e.target.value))}
-                    />
-                    <div className="img-tool__range-meta">
-                        <span>-45°</span>
-                        <span className="img-tool__range-value">{straightenAngle}°</span>
-                        <span>45°</span>
-                    </div>
-                </div>
+                <ImageToolRange
+                    id="crop-straighten"
+                    label="Straighten"
+                    min={-45}
+                    max={45}
+                    step={0.1}
+                    value={straightenAngle}
+                    disabled={!imageSize}
+                    onChange={setStraightenAngle}
+                    formatDisplay={(val) => `${val}°`}
+                    lowLabel="-45°"
+                    highLabel="45°"
+                />
             ) : null}
             {(mode === "resize" || mode === "both") && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
@@ -671,18 +679,15 @@ export default function CropResizeTool() {
                     {lockAspect ? "Aspect locked" : "Aspect unlocked"}
                 </button>
             </div>
-            <div>
-                <label className="img-tool__label">Scale ({scalePct}%)</label>
-                <input
-                    className="img-tool__range"
-                    type="range"
-                    min={10}
-                    max={200}
-                    value={scalePct}
-                    disabled={!imageSize}
-                    onChange={(e) => setScalePct(Number(e.target.value))}
-                />
-            </div>
+            <ImageToolRange
+                label="Scale"
+                min={10}
+                max={200}
+                value={scalePct}
+                disabled={!imageSize}
+                onChange={setScalePct}
+                unit="%"
+            />
             <div>
                 <span className="img-tool__label">Interpolation</span>
                 <div className="img-tool__segmented">
@@ -721,24 +726,22 @@ export default function CropResizeTool() {
                 </div>
             </div>
             {exportFormat !== "png" ? (
-                <div>
-                    <label className="img-tool__label">Quality ({quality}%)</label>
-                    <input
-                        className="img-tool__range"
-                        type="range"
-                        min={1}
-                        max={100}
-                        value={quality}
-                        disabled={!imageSize}
-                        onChange={(e) => setQuality(Number(e.target.value))}
-                    />
-                </div>
+                <ImageToolRange
+                    label="Quality"
+                    min={1}
+                    max={100}
+                    value={quality}
+                    disabled={!imageSize}
+                    onChange={setQuality}
+                    unit="%"
+                />
             ) : null}
             {outDims ? (
                 <p className="img-tool__hint">
                     Output: {outDims.width}×{outDims.height}px (max {MAX_OUTPUT}px)
                 </p>
             ) : null}
+            </div>
             <div className="img-tool__actions">
                 <button
                     type="button"
