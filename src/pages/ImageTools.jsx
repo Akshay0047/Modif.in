@@ -1,5 +1,5 @@
 import ToolHubLayout from "../layouts/ToolHubLayout";
-import { imageToolsData } from "../data/imageTools";
+import { imagePopularToolOrder, imageToolsData } from "../data/imageTools";
 
 function ImageTools() {
     return (
@@ -9,6 +9,7 @@ function ImageTools() {
             color1="#021108"
             color2="#064e3b"
             toolsData={imageToolsData}
+            popularToolOrder={imagePopularToolOrder}
         />
     );
 }
