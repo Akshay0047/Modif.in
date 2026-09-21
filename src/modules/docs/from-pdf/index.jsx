@@ -6,6 +6,72 @@ import ProgressBar from "../_shared/ProgressBar";
 import { downloadBlob, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
 import { extractAllText, loadPdfWithPdfJs, renderPageToCanvas } from "../_shared/pdfUtils";
 
+function pageItemsToMarkdown(items) {
+    const sorted = [...items].sort((a, b) => {
+        const ay = a.transform?.[5] ?? 0;
+        const by = b.transform?.[5] ?? 0;
+        if (Math.abs(by - ay) > 3) return by - ay;
+        return (a.transform?.[4] ?? 0) - (b.transform?.[4] ?? 0);
+    });
+
+    const lines = [];
+    let current = [];
+    let lastY = null;
+
+    for (const item of sorted) {
+        const y = item.transform?.[5] ?? 0;
+        if (lastY != null && Math.abs(lastY - y) > Math.max(4, (item.height ?? 10) * 0.6)) {
+            lines.push(current);
+            current = [];
+        }
+        current.push(item);
+        lastY = y;
+    }
+    if (current.length) lines.push(current);
+
+    const blocks = [];
+    for (const line of lines) {
+        const text = line.map((item) => item.str).join("").replace(/\s+/g, " ").trim();
+        if (!text) continue;
+        const avgHeight = line.reduce((sum, item) => sum + (item.height || 0), 0) / line.length;
+        const indent = Math.min(...line.map((item) => item.transform?.[4] ?? 0));
+        blocks.push({ text, avgHeight, indent });
+    }
+
+    const heights = blocks.map((block) => block.avgHeight).sort((a, b) => a - b);
+    const median = heights[Math.floor(heights.length / 2)] || 12;
+
+    return blocks.map((block, index) => {
+        const { text, avgHeight, indent } = block;
+        const next = blocks[index + 1];
+        if (avgHeight >= median * 1.45 || (text === text.toUpperCase() && /[A-Z]/.test(text) && text.length < 90)) {
+            return `## ${text}`;
+        }
+        if (avgHeight >= median * 1.2 && text.length < 120) {
+            return `### ${text}`;
+        }
+        if (/^([•●○\-–—*]|(\d+[\.\)]))/.test(text)) {
+            return `- ${text.replace(/^([•●○\-–—*]|(\d+[\.\)]))\s*/, "")}`;
+        }
+        if (indent > 72 && next) {
+            return `> ${text}`;
+        }
+        return text;
+    }).join("\n\n");
+}
+
+async function extractMarkdown(pdf) {
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i += 1) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const markdown = pageItemsToMarkdown(content.items);
+        page.cleanup();
+        pages.push(`# Page ${i}\n\n${markdown || "_No extractable text on this page._"}`);
+    }
+    return pages.join("\n\n---\n\n");
+}
+
 function FromPdf() {
     const [file, setFile] = useState(null);
     const [mode, setMode] = useState("images");
@@ -32,6 +98,11 @@ function FromPdf() {
                 pdf.destroy();
                 const blob = new Blob([text], { type: "text/plain" });
                 downloadBlob(blob, `${getBaseName(file.name)}.txt`);
+            } else if (mode === "markdown") {
+                const markdown = await extractMarkdown(pdf);
+                pdf.destroy();
+                const blob = new Blob([markdown], { type: "text/markdown" });
+                downloadBlob(blob, `${getBaseName(file.name)}.md`);
             } else {
                 const mimeType = format === "jpeg" ? "image/jpeg" : "image/png";
                 for (let i = 1; i <= pdf.numPages; i += 1) {
@@ -58,7 +129,7 @@ function FromPdf() {
     return (
         <DocToolShell
             title="From PDF"
-            description="Extract text or export high-resolution page images from PDF files."
+            description="Extract text, refined Markdown, or high-resolution page images from PDF files."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
@@ -70,20 +141,20 @@ function FromPdf() {
                 />
 
                 <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
-                    <button
-                        type="button"
-                        className={`doc-tool-button cursor-target${mode === "images" ? " is-active" : ""}`}
-                        onClick={() => setMode("images")}
-                    >
-                        To Images
-                    </button>
-                    <button
-                        type="button"
-                        className={`doc-tool-button cursor-target${mode === "text" ? " is-active" : ""}`}
-                        onClick={() => setMode("text")}
-                    >
-                        To Text
-                    </button>
+                    {[
+                        ["images", "To Images"],
+                        ["text", "To Text"],
+                        ["markdown", "To Markdown"],
+                    ].map(([id, label]) => (
+                        <button
+                            key={id}
+                            type="button"
+                            className={`doc-tool-button cursor-target${mode === id ? " is-active" : ""}`}
+                            onClick={() => setMode(id)}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
 
                 {mode === "images" ? (
