@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { diffLines } from "diff";
+import { createTwoFilesPatch } from "diff";
 import { html as diff2html } from "diff2html";
 import mammoth from "mammoth";
 import BackButton from "../../../components/BackButton";
@@ -41,8 +41,13 @@ function DocumentComparison() {
                 extractText(fileA),
                 extractText(fileB),
             ]);
-            const diff = diffLines(textA, textB);
-            const html = diff2html(diff, {
+            const patch = createTwoFilesPatch(
+                fileA.name,
+                fileB.name,
+                textA ?? "",
+                textB ?? "",
+            );
+            const html = diff2html(patch, {
                 drawFileList: false,
                 matching: "lines",
                 outputFormat: "side-by-side",
