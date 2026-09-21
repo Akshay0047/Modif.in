@@ -246,7 +246,11 @@ function PdfEditor() {
     const handlePointerDown = (event) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        canvas.setPointerCapture(event.pointerId);
+        try {
+            canvas.setPointerCapture(event.pointerId);
+        } catch {
+            // Synthetic events and some browsers may reject capture.
+        }
         const point = getPoint(event, canvas);
         const pageAnns = annotations.filter((ann) => ann.page === pageNum);
 
@@ -275,15 +279,24 @@ function PdfEditor() {
                 opacity: brush === "pencil" ? Math.min(drawOpacity, 0.55) : drawOpacity,
                 brush,
             };
-            interactionRef.current = { mode: "draw" };
+            interactionRef.current = { mode: "draw", annotation: next };
             setLive(next);
             return;
         }
 
         if (tool === "highlight") {
             setSelectedId("");
-            interactionRef.current = { mode: "highlight", start: point };
-            setLive({ type: "highlight", page: pageNum, x: point.x, y: point.y, w: 0, h: 0, color: highlightColor });
+            const next = {
+                type: "highlight",
+                page: pageNum,
+                x: point.x,
+                y: point.y,
+                w: 0,
+                h: 0,
+                color: highlightColor,
+            };
+            interactionRef.current = { mode: "highlight", start: point, annotation: next };
+            setLive(next);
             return;
         }
 
@@ -297,12 +310,13 @@ function PdfEditor() {
         const point = getPoint(event, canvas);
 
         if (interaction.mode === "draw") {
-            setLive((prev) => prev ? { ...prev, points: [...prev.points, point] } : prev);
+            interaction.annotation.points.push(point);
+            setLive({ ...interaction.annotation, points: [...interaction.annotation.points] });
             return;
         }
         if (interaction.mode === "highlight") {
             const { start } = interaction;
-            setLive({
+            const next = {
                 type: "highlight",
                 page: pageNum,
                 x: Math.min(start.x, point.x),
@@ -310,7 +324,9 @@ function PdfEditor() {
                 w: Math.abs(point.x - start.x),
                 h: Math.abs(point.y - start.y),
                 color: highlightColor,
-            });
+            };
+            interaction.annotation = next;
+            setLive(next);
             return;
         }
         if (interaction.mode === "move") {
@@ -350,11 +366,11 @@ function PdfEditor() {
         interactionRef.current = null;
         if (!interaction) return;
 
-        if (interaction.mode === "draw" && live?.points?.length > 1) {
-            setAnnotations((prev) => [...prev, { ...live, id: nextId() }]);
+        if (interaction.mode === "draw" && interaction.annotation?.points?.length > 1) {
+            setAnnotations((prev) => [...prev, { ...interaction.annotation, id: nextId() }]);
         }
-        if (interaction.mode === "highlight" && live && live.w > 4 && live.h > 4) {
-            setAnnotations((prev) => [...prev, { ...live, id: nextId() }]);
+        if (interaction.mode === "highlight" && interaction.annotation && interaction.annotation.w > 4 && interaction.annotation.h > 4) {
+            setAnnotations((prev) => [...prev, { ...interaction.annotation, id: nextId() }]);
         }
         if (interaction.mode === "text" && !interaction.moved && tool === "text" && textInput.trim()) {
             const id = nextId();
