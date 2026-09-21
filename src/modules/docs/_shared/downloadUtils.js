@@ -8,7 +8,10 @@ export function downloadBlob(blob, filename) {
 }
 
 export function downloadBytes(bytes, filename, mimeType = "application/octet-stream") {
-    const blob = new Blob([bytes], { type: mimeType });
+    const copy = bytes instanceof Uint8Array
+        ? bytes.slice()
+        : new Uint8Array(bytes instanceof ArrayBuffer ? bytes.slice(0) : bytes);
+    const blob = new Blob([copy], { type: mimeType });
     downloadBlob(blob, filename);
 }
 

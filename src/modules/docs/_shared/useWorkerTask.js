@@ -23,29 +23,45 @@ export function useWorkerTask(workerUrl) {
                     return;
                 }
 
+                const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
                 setRunning(true);
                 setProgress(0);
                 setError("");
 
                 const handleMessage = (event) => {
-                    const { type, result, error: workerError, progress: pct } = event.data ?? {};
-                    if (type === "progress") {
-                        setProgress(pct ?? 0);
+                    const data = event.data ?? {};
+                    if (data.requestId != null && data.requestId !== requestId) {
                         return;
                     }
+
+                    if (data.type === "progress") {
+                        setProgress(data.progress ?? 0);
+                        return;
+                    }
+
+                    if (data.type !== "done" && data.type !== "error") {
+                        return;
+                    }
+
                     worker.removeEventListener("message", handleMessage);
                     worker.removeEventListener("error", handleError);
                     setRunning(false);
-                    if (type === "error") {
-                        setError(workerError ?? "Processing failed");
-                        reject(new Error(workerError ?? "Processing failed"));
+
+                    if (data.type === "error") {
+                        const message = data.error ?? "Processing failed";
+                        setError(message);
+                        reject(new Error(message));
                         return;
                     }
-                    if (type === "done" || result !== undefined) {
-                        resolve(result);
+
+                    if (data.result === undefined || data.result === null) {
+                        const message = "Worker returned no result";
+                        setError(message);
+                        reject(new Error(message));
                         return;
                     }
-                    reject(new Error("Worker returned no result"));
+
+                    resolve(data.result);
                 };
 
                 const handleError = (event) => {
@@ -58,10 +74,10 @@ export function useWorkerTask(workerUrl) {
 
                 worker.addEventListener("message", handleMessage);
                 worker.addEventListener("error", handleError);
-                worker.postMessage(payload);
+                worker.postMessage({ ...payload, requestId });
             }),
         [],
     );
 
-    return { run, running, progress, error, setError };
+    return { run, running, progress, error, setError, setProgress };
 }

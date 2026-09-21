@@ -6,6 +6,8 @@ function FileDropZone({
     multiple = false,
     files = [],
     onFiles,
+    onPreview,
+    reorderable = false,
     label = "Drop files here or click to browse",
     hint = "All processing happens locally in your browser",
 }) {
@@ -25,6 +27,15 @@ function FileDropZone({
 
     const removeFile = (index) => {
         onFiles(files.filter((_, i) => i !== index));
+    };
+
+    const moveFile = (index, direction) => {
+        const nextIndex = index + direction;
+        if (nextIndex < 0 || nextIndex >= files.length) return;
+        const next = [...files];
+        const [item] = next.splice(index, 1);
+        next.splice(nextIndex, 0, item);
+        onFiles(next);
     };
 
     return (
@@ -66,17 +77,49 @@ function FileDropZone({
                 <ul className="doc-tool-file-list">
                     {files.map((file, index) => (
                         <li key={`${file.name}-${index}`} className="doc-tool-file-item">
+                            <span className="doc-tool-file-item__index">{index + 1}</span>
                             <span className="doc-tool-file-item__name">{file.name}</span>
                             <span className="doc-tool-file-item__size">
                                 {formatFileSize(file.size)}
                             </span>
-                            <button
-                                type="button"
-                                className="doc-tool-button cursor-target"
-                                onClick={() => removeFile(index)}
-                            >
-                                Remove
-                            </button>
+                            <div className="doc-tool-file-item__actions">
+                                {reorderable ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="doc-tool-button cursor-target"
+                                            disabled={index === 0}
+                                            onClick={() => moveFile(index, -1)}
+                                        >
+                                            Up
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="doc-tool-button cursor-target"
+                                            disabled={index === files.length - 1}
+                                            onClick={() => moveFile(index, 1)}
+                                        >
+                                            Down
+                                        </button>
+                                    </>
+                                ) : null}
+                                {onPreview ? (
+                                    <button
+                                        type="button"
+                                        className="doc-tool-button cursor-target"
+                                        onClick={() => onPreview(file, index)}
+                                    >
+                                        Preview
+                                    </button>
+                                ) : null}
+                                <button
+                                    type="button"
+                                    className="doc-tool-button cursor-target"
+                                    onClick={() => removeFile(index)}
+                                >
+                                    Remove
+                                </button>
+                            </div>
                         </li>
                     ))}
                 </ul>
