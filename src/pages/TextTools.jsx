@@ -1,13 +1,11 @@
-import ToolHubLayout from "../layouts/ToolHubLayout";
+import ToolHub from "../sections/ToolHub";
 import { textToolsData } from "../data/textTools";
 
 function TextTools() {
     return (
-        <ToolHubLayout
+        <ToolHub
             title="TEXT TOOLS"
             subheading="Comprehensive utilities for text analysis, formatting, encoding, and developer tools"
-            color1="#1a0505"
-            color2="#4a0f0f"
             toolsData={textToolsData}
         />
     );
