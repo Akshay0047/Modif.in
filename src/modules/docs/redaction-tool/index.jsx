@@ -3,7 +3,7 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { loadPdfWithPdfJs, loadPdfWithPdfLib, renderPageToCanvas, rgb } from "../_shared/pdfUtils";
+import { clonePdfBytes, loadPdfWithPdfJs, loadPdfWithPdfLib, renderPageToCanvas, rgb } from "../_shared/pdfUtils";
 
 function RedactionTool() {
     const canvasRef = useRef(null);
@@ -66,7 +66,7 @@ function RedactionTool() {
         setFile(next);
         setBoxes([]);
         setPageNum(1);
-        setBuffer(next ? await readFileAsArrayBuffer(next) : null);
+        setBuffer(next ? clonePdfBytes(await readFileAsArrayBuffer(next)) : null);
     };
 
     const getCoords = (event) => {

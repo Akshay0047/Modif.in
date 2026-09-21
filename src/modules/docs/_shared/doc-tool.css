@@ -192,6 +192,23 @@
   border-radius: 10px;
   background: rgba(15, 20, 35, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+.doc-tool-file-item__index {
+  flex-shrink: 0;
+  width: 1.5rem;
+  color: #eab308;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.doc-tool-file-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-left: auto;
 }
 
 .doc-tool-file-item__name {
@@ -385,6 +402,152 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.75rem;
+}
+
+.doc-tool-preview-frame {
+  display: block;
+  width: 100%;
+  min-height: 70vh;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: #0b1020;
+}
+
+.doc-tool-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.doc-tool-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  padding: 0;
+}
+
+.doc-tool-swatch.is-active {
+  border-color: #eab308;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25);
+}
+
+.doc-tool-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.doc-tool-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 420px;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doc-tool-sidebar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(15, 20, 35, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.doc-tool-sidebar-item.is-active {
+  border-color: rgba(234, 179, 8, 0.65);
+}
+
+.doc-tool-thumb-row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+}
+
+.doc-tool-thumb-row img,
+.doc-tool-thumb-row button {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 20, 35, 0.55);
+  color: #f8fafc;
+  cursor: pointer;
+}
+
+.doc-tool-stamp-layer {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.doc-tool-stamp {
+  position: absolute;
+  border: 1px dashed rgba(234, 179, 8, 0.7);
+  cursor: move;
+  box-sizing: border-box;
+}
+
+.doc-tool-stamp img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.doc-tool-stamp__handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #eab308;
+  border-radius: 2px;
+}
+
+.doc-tool-stamp__handle--se {
+  right: -5px;
+  bottom: -5px;
+  cursor: nwse-resize;
+}
+
+.doc-tool-stamp__handle--rotate {
+  left: 50%;
+  top: -18px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  cursor: grab;
+}
+
+.doc-tool-markdown {
+  color: #e2e8f0;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.doc-tool-markdown h1,
+.doc-tool-markdown h2,
+.doc-tool-markdown h3 {
+  color: #f8fafc;
+}
+
+.doc-tool-markdown pre,
+.doc-tool-markdown code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (max-width: 900px) {
+  .doc-tool-editor-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 700px) {

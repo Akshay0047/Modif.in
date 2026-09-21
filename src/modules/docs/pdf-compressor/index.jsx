@@ -4,41 +4,56 @@ import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import ProgressBar from "../_shared/ProgressBar";
 import { downloadBytes, formatFileSize, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
+import { compressPdf } from "../_shared/pdfUtils";
 import { useWorkerTask } from "../_shared/useWorkerTask";
 
 const WORKER_URL = new URL("../_shared/workers/docWorker.js", import.meta.url);
 
 function PdfCompressor() {
-    const [file, setFile] = useState(null);
+    const [files, setFiles] = useState([]);
     const [quality, setQuality] = useState(0.6);
     const [scale, setScale] = useState(1.2);
     const [status, setStatus] = useState("");
-    const { run, running, progress, error } = useWorkerTask(WORKER_URL);
+    const [localProgress, setLocalProgress] = useState(0);
+    const { run, running, progress, error, setProgress } = useWorkerTask(WORKER_URL);
 
-    const handleCompress = async (files) => {
-        const next = files[0] ?? null;
-        setFile(next);
-        if (!next) return;
-
-        setStatus("Compressing PDF in background worker…");
-
+    const compressOne = async (file, index, total) => {
+        const buffer = await readFileAsArrayBuffer(file);
         try {
-            const buffer = await readFileAsArrayBuffer(next);
-            const result = await run({
+            return await run({
                 task: "compress",
                 payload: { buffer, quality, scale },
             });
+        } catch {
+            return compressPdf(buffer, {
+                quality,
+                scale,
+                onProgress: (pct) => setProgress(((index + pct / 100) / total) * 100),
+            });
+        }
+    };
 
-            downloadBytes(
-                result,
-                `${getBaseName(next.name)}-compressed.pdf`,
-                "application/pdf",
-            );
+    const handleCompress = async () => {
+        if (!files.length) return;
+        setStatus("Compressing PDF…");
+        setLocalProgress(0);
 
-            const saved = ((1 - result.byteLength / next.size) * 100).toFixed(1);
-            setStatus(
-                `Compressed: ${formatFileSize(next.size)} → ${formatFileSize(result.byteLength)} (${saved}% reduction).`,
-            );
+        try {
+            for (let i = 0; i < files.length; i += 1) {
+                const file = files[i];
+                setStatus(`Compressing ${file.name} (${i + 1}/${files.length})…`);
+                const result = await compressOne(file, i, files.length);
+                downloadBytes(
+                    result,
+                    `${getBaseName(file.name)}-compressed.pdf`,
+                    "application/pdf",
+                );
+                const saved = ((1 - result.byteLength / file.size) * 100).toFixed(1);
+                setLocalProgress(((i + 1) / files.length) * 100);
+                setStatus(
+                    `Compressed ${file.name}: ${formatFileSize(file.size)} → ${formatFileSize(result.byteLength)} (${saved}% reduction).`,
+                );
+            }
         } catch (compressError) {
             setStatus(compressError?.message ?? "Compression failed.");
         }
@@ -47,16 +62,17 @@ function PdfCompressor() {
     return (
         <DocToolShell
             title="PDF Compressor"
-            description="Re-encode embedded images at reduced quality to shrink PDF file size."
+            description="Re-encode PDF pages at reduced quality to shrink file size. Drop one or more PDFs, then compress."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
                 <FileDropZone
                     accept=".pdf,application/pdf"
-                    files={file ? [file] : []}
-                    onFiles={handleCompress}
-                    label="Drop a PDF file"
-                    hint="Heavy processing runs in a Web Worker"
+                    multiple
+                    files={files}
+                    onFiles={setFiles}
+                    label="Drop PDF file(s)"
+                    hint="Compression starts only when you click Compress"
                 />
 
                 <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
@@ -87,6 +103,21 @@ function PdfCompressor() {
                 </div>
 
                 {running ? <ProgressBar value={progress} label="Compressing pages…" /> : null}
+                {!running && localProgress > 0 && localProgress < 100 ? (
+                    <ProgressBar value={localProgress} label="Compressing files…" />
+                ) : null}
+
+                <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
+                    <button
+                        type="button"
+                        className="doc-tool-button doc-tool-button--primary cursor-target"
+                        onClick={handleCompress}
+                        disabled={running || !files.length}
+                    >
+                        Compress & Download
+                    </button>
+                </div>
+
                 {error ? <p className="doc-tool-status doc-tool-status--error">{error}</p> : null}
                 {status && !running ? <p className="doc-tool-status doc-tool-status--success">{status}</p> : null}
             </div>

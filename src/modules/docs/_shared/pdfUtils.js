@@ -6,15 +6,43 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).href;
 
+export function clonePdfBytes(input) {
+    if (input == null) {
+        throw new Error("Missing PDF data.");
+    }
+
+    if (input instanceof Uint8Array) {
+        const { buffer, byteOffset, byteLength } = input;
+        if (buffer instanceof ArrayBuffer && buffer.detached) {
+            throw new Error("PDF data is no longer available. Re-add the file and try again.");
+        }
+        return Uint8Array.from(input.subarray(0, byteLength));
+    }
+
+    if (input instanceof ArrayBuffer) {
+        if (input.detached) {
+            throw new Error("PDF data is no longer available. Re-add the file and try again.");
+        }
+        return new Uint8Array(input.slice(0));
+    }
+
+    return Uint8Array.from(input);
+}
+
 export async function loadPdfWithPdfLib(arrayBuffer, options = {}) {
-    return PDFDocument.load(arrayBuffer, { ignoreEncryption: true, ...options });
+    return PDFDocument.load(clonePdfBytes(arrayBuffer), {
+        ignoreEncryption: true,
+        ...options,
+    });
 }
 
 export async function loadPdfWithPdfJs(arrayBuffer) {
-    const data = arrayBuffer instanceof Uint8Array
-        ? arrayBuffer
-        : new Uint8Array(arrayBuffer);
-    const loadingTask = pdfjs.getDocument({ data });
+    const data = clonePdfBytes(arrayBuffer);
+    const loadingTask = pdfjs.getDocument({
+        data,
+        isEvalSupported: false,
+        useSystemFonts: true,
+    });
     return loadingTask.promise;
 }
 
@@ -29,10 +57,10 @@ export async function renderPageToCanvas(pdf, pageNumber, scale = 1.5) {
     const page = await pdf.getPage(pageNumber);
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    await page.render({ canvasContext: context, viewport }).promise;
+    const context = canvas.getContext("2d", { alpha: false });
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    await page.render({ canvasContext: context, viewport, canvas }).promise;
     page.cleanup();
     return canvas;
 }
@@ -64,7 +92,9 @@ export async function extractAllText(pdf) {
 export async function mergePdfBuffers(buffers) {
     const merged = await PDFDocument.create();
     for (const buffer of buffers) {
-        const source = await PDFDocument.load(buffer, { ignoreEncryption: true });
+        const source = await PDFDocument.load(clonePdfBytes(buffer), {
+            ignoreEncryption: true,
+        });
         const indices = source.getPageIndices();
         const pages = await merged.copyPages(source, indices);
         pages.forEach((page) => merged.addPage(page));
@@ -72,8 +102,40 @@ export async function mergePdfBuffers(buffers) {
     return merged.save();
 }
 
+export async function compressPdf(buffer, options = {}) {
+    const { quality = 0.6, scale = 1.2, onProgress } = options;
+    const pdf = await loadPdfWithPdfJs(buffer);
+    const output = await PDFDocument.create();
+
+    for (let i = 1; i <= pdf.numPages; i += 1) {
+        const canvas = await renderPageToCanvas(pdf, i, scale);
+        const blob = await new Promise((resolve, reject) => {
+            canvas.toBlob(
+                (next) => (next ? resolve(next) : reject(new Error("Failed to encode page."))),
+                "image/jpeg",
+                quality,
+            );
+        });
+        const imageBytes = new Uint8Array(await blob.arrayBuffer());
+        const image = await output.embedJpg(imageBytes);
+        const pdfPage = output.addPage([canvas.width, canvas.height]);
+        pdfPage.drawImage(image, {
+            x: 0,
+            y: 0,
+            width: canvas.width,
+            height: canvas.height,
+        });
+        canvas.width = 0;
+        canvas.height = 0;
+        onProgress?.((i / pdf.numPages) * 100);
+    }
+
+    pdf.destroy();
+    return output.save();
+}
+
 export async function extractPages(buffer, pageIndices) {
-    const source = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const source = await loadPdfWithPdfLib(buffer);
     const output = await PDFDocument.create();
     const pages = await output.copyPages(source, pageIndices);
     pages.forEach((page) => output.addPage(page));
@@ -81,7 +143,7 @@ export async function extractPages(buffer, pageIndices) {
 }
 
 export async function reorderPages(buffer, order, rotations = {}) {
-    const source = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const source = await loadPdfWithPdfLib(buffer);
     const output = await PDFDocument.create();
     const allPages = await output.copyPages(source, source.getPageIndices());
 
@@ -117,7 +179,7 @@ export async function addWatermark(buffer, options) {
         tile = false,
     } = options;
 
-    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const pdf = await loadPdfWithPdfLib(buffer);
     const font = await pdf.embedFont(StandardFonts.HelveticaBold);
     const pages = pdf.getPages();
 
@@ -155,7 +217,7 @@ export async function addWatermark(buffer, options) {
 }
 
 export async function stripMetadata(buffer) {
-    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const pdf = await loadPdfWithPdfLib(buffer);
     pdf.setTitle("");
     pdf.setAuthor("");
     pdf.setSubject("");
@@ -168,7 +230,7 @@ export async function stripMetadata(buffer) {
 }
 
 export async function flattenPdf(buffer) {
-    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const pdf = await loadPdfWithPdfLib(buffer);
     const form = pdf.getForm();
     try {
         form.flatten();
@@ -185,7 +247,7 @@ export async function addPageNumbers(buffer, options = {}) {
         margin = 30,
     } = options;
 
-    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
+    const pdf = await loadPdfWithPdfLib(buffer);
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const pages = pdf.getPages();
     const total = pages.length;
@@ -210,8 +272,7 @@ export async function addPageNumbers(buffer, options = {}) {
 
 export async function repairPdf(buffer) {
     try {
-        const pdf = await PDFDocument.load(buffer, {
-            ignoreEncryption: true,
+        const pdf = await loadPdfWithPdfLib(buffer, {
             throwOnInvalidObject: false,
         });
         return pdf.save();
@@ -225,6 +286,81 @@ export async function repairPdf(buffer) {
         });
         return pdf.save();
     }
+}
+
+export async function extractPdfPageImages(pdf, pageNumber) {
+    const page = await pdf.getPage(pageNumber);
+    const ops = await page.getOperatorList();
+    const images = [];
+    const seen = new Set();
+
+    for (let i = 0; i < ops.fnArray.length; i += 1) {
+        const fn = ops.fnArray[i];
+        if (
+            fn !== pdfjs.OPS.paintImageXObject &&
+            fn !== pdfjs.OPS.paintInlineImageXObject &&
+            fn !== pdfjs.OPS.paintJpegXObject
+        ) {
+            continue;
+        }
+
+        const name = ops.argsArray[i]?.[0];
+        if (typeof name !== "string" || seen.has(name)) continue;
+        seen.add(name);
+
+        const img = await new Promise((resolve) => {
+            try {
+                page.objs.get(name, (value) => resolve(value));
+            } catch {
+                resolve(null);
+            }
+        });
+        if (!img) continue;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width || 1;
+        canvas.height = img.height || 1;
+        const ctx = canvas.getContext("2d");
+        if (img.bitmap) {
+            ctx.drawImage(img.bitmap, 0, 0);
+        } else if (img.data) {
+            const imageData = ctx.createImageData(canvas.width, canvas.height);
+            const src = img.data;
+            const kind = img.kind;
+            if (kind === 3 || src.length === canvas.width * canvas.height * 4) {
+                imageData.data.set(src);
+            } else if (kind === 2 || src.length === canvas.width * canvas.height * 3) {
+                let di = 0;
+                for (let si = 0; si < src.length; si += 3) {
+                    imageData.data[di++] = src[si];
+                    imageData.data[di++] = src[si + 1];
+                    imageData.data[di++] = src[si + 2];
+                    imageData.data[di++] = 255;
+                }
+            } else {
+                for (let si = 0; si < src.length; si += 1) {
+                    const value = src[si];
+                    imageData.data[si * 4] = value;
+                    imageData.data[si * 4 + 1] = value;
+                    imageData.data[si * 4 + 2] = value;
+                    imageData.data[si * 4 + 3] = 255;
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        } else {
+            continue;
+        }
+
+        images.push({
+            id: name,
+            dataUrl: canvas.toDataURL("image/png"),
+            width: canvas.width,
+            height: canvas.height,
+        });
+    }
+
+    page.cleanup();
+    return images;
 }
 
 export { PDFDocument, degrees, rgb, StandardFonts, pdfjs };

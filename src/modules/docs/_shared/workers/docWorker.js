@@ -6,28 +6,52 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).href;
 
+function cloneBytes(input) {
+    if (input instanceof Uint8Array) {
+        return Uint8Array.from(input);
+    }
+    if (input instanceof ArrayBuffer) {
+        return new Uint8Array(input.slice(0));
+    }
+    return Uint8Array.from(input ?? []);
+}
+
+function reply(requestId, message) {
+    self.postMessage({ requestId, ...message });
+}
+
 self.addEventListener("message", async (event) => {
-    const { task, payload } = event.data ?? {};
+    const { task, payload, requestId } = event.data ?? {};
 
     try {
         if (task === "merge") {
             const merged = await PDFDocument.create();
             const total = payload.buffers.length;
             for (let i = 0; i < total; i += 1) {
-                const source = await PDFDocument.load(payload.buffers[i], {
+                const source = await PDFDocument.load(cloneBytes(payload.buffers[i]), {
                     ignoreEncryption: true,
                 });
                 const pages = await merged.copyPages(source, source.getPageIndices());
                 pages.forEach((page) => merged.addPage(page));
-                self.postMessage({ type: "progress", progress: ((i + 1) / total) * 100 });
+                reply(requestId, { type: "progress", progress: ((i + 1) / total) * 100 });
             }
             const result = await merged.save();
-            self.postMessage({ type: "done", result });
+            reply(requestId, { type: "done", result });
             return;
         }
 
         if (task === "compress") {
-            const pdf = await pdfjs.getDocument({ data: payload.buffer }).promise;
+            if (typeof OffscreenCanvas !== "function") {
+                throw new Error("OffscreenCanvas is not available in this browser.");
+            }
+
+            const data = cloneBytes(payload.buffer);
+            const pdf = await pdfjs.getDocument({
+                data,
+                disableFontFace: true,
+                isEvalSupported: false,
+                useSystemFonts: false,
+            }).promise;
             const output = await PDFDocument.create();
             const quality = payload.quality ?? 0.6;
             const scale = payload.scale ?? 1.2;
@@ -35,9 +59,16 @@ self.addEventListener("message", async (event) => {
             for (let i = 1; i <= pdf.numPages; i += 1) {
                 const page = await pdf.getPage(i);
                 const viewport = page.getViewport({ scale });
-                const canvas = new OffscreenCanvas(viewport.width, viewport.height);
+                const canvas = new OffscreenCanvas(
+                    Math.ceil(viewport.width),
+                    Math.ceil(viewport.height),
+                );
                 const ctx = canvas.getContext("2d");
-                await page.render({ canvasContext: ctx, viewport }).promise;
+                await page.render({
+                    canvasContext: ctx,
+                    viewport,
+                    canvas,
+                }).promise;
                 page.cleanup();
 
                 const blob = await canvas.convertToBlob({
@@ -54,7 +85,7 @@ self.addEventListener("message", async (event) => {
                     height: viewport.height,
                 });
 
-                self.postMessage({
+                reply(requestId, {
                     type: "progress",
                     progress: (i / pdf.numPages) * 100,
                 });
@@ -62,22 +93,35 @@ self.addEventListener("message", async (event) => {
 
             pdf.destroy();
             const result = await output.save();
-            self.postMessage({ type: "done", result });
+            reply(requestId, { type: "done", result });
             return;
         }
 
         if (task === "ocr") {
             const { createWorker } = await import("tesseract.js");
-            const worker = await createWorker(payload.lang ?? "eng");
+            const worker = await createWorker(payload.lang ?? "eng", 1, {
+                logger: (message) => {
+                    if (message.status === "recognizing text") {
+                        reply(requestId, {
+                            type: "progress",
+                            progress: Math.round((message.progress ?? 0) * 100),
+                        });
+                    }
+                },
+            });
+            await worker.setParameters({
+                tessedit_pageseg_mode: "1",
+                preserve_interword_spaces: "1",
+            });
             const result = await worker.recognize(payload.imageData);
             await worker.terminate();
-            self.postMessage({ type: "done", result: result.data });
+            reply(requestId, { type: "done", result: result.data });
             return;
         }
 
-        self.postMessage({ type: "error", error: `Unknown task: ${task}` });
+        reply(requestId, { type: "error", error: `Unknown task: ${task}` });
     } catch (error) {
-        self.postMessage({
+        reply(requestId, {
             type: "error",
             error: error?.message ?? "Worker processing failed",
         });

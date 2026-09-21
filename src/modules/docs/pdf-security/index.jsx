@@ -3,7 +3,7 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { loadPdfWithPdfLib } from "../_shared/pdfUtils";
+import { clonePdfBytes } from "../_shared/pdfUtils";
 
 function PdfSecurity() {
     const [file, setFile] = useState(null);
@@ -15,32 +15,42 @@ function PdfSecurity() {
     const handleFile = async (files) => {
         const next = files[0] ?? null;
         setFile(next);
-        setBuffer(next ? await readFileAsArrayBuffer(next) : null);
+        setBuffer(next ? clonePdfBytes(await readFileAsArrayBuffer(next)) : null);
     };
 
     const handleProtect = async () => {
         if (!buffer || !file) return;
-        setStatus("Applying security settings…");
+        if (!userPassword && !ownerPassword) {
+            setStatus("Enter a user password or owner password first.");
+            return;
+        }
+        setStatus("Encrypting PDF…");
 
         try {
-            const pdf = await loadPdfWithPdfLib(buffer, {
-                password: userPassword || undefined,
+            const { PDFDocument } = await import("@cantoo/pdf-lib");
+            const pdf = await PDFDocument.load(clonePdfBytes(buffer), {
+                ignoreEncryption: true,
             });
-
-            if (ownerPassword || userPassword) {
-                pdf.setTitle(pdf.getTitle() || "Protected Document");
-                pdf.setProducer("Modif.in — Client-Side PDF Security");
-            }
-
+            pdf.encrypt({
+                userPassword: userPassword || ownerPassword,
+                ownerPassword: ownerPassword || userPassword,
+                permissions: {
+                    printing: "lowResolution",
+                    modifying: false,
+                    copying: false,
+                    annotating: false,
+                    fillingForms: true,
+                    contentAccessibility: true,
+                    documentAssembly: false,
+                },
+            });
             const result = await pdf.save();
             downloadBytes(
                 result,
                 `${getBaseName(file.name)}-protected.pdf`,
                 "application/pdf",
             );
-            setStatus(
-                "PDF saved with updated security metadata. Note: full AES encryption requires server-side tooling; metadata and permissions flags have been applied.",
-            );
+            setStatus("Password protection applied. The downloaded PDF requires the user password to open.");
         } catch (error) {
             setStatus(error?.message ?? "Protection failed. Check if the PDF is already encrypted.");
         }
@@ -51,9 +61,10 @@ function PdfSecurity() {
         setStatus("Attempting to unlock…");
 
         try {
-            const pdf = await loadPdfWithPdfLib(buffer, {
-                password: userPassword || undefined,
-                ignoreEncryption: true,
+            const { PDFDocument } = await import("@cantoo/pdf-lib");
+            const pdf = await PDFDocument.load(clonePdfBytes(buffer), {
+                password: userPassword || ownerPassword || undefined,
+                ignoreEncryption: !userPassword && !ownerPassword,
             });
             const result = await pdf.save();
             downloadBytes(
@@ -89,7 +100,7 @@ function PdfSecurity() {
                             className="doc-tool-input cursor-target"
                             value={userPassword}
                             onChange={(e) => setUserPassword(e.target.value)}
-                            placeholder="Open password"
+                            placeholder="Required to open the PDF"
                         />
                     </div>
                     <div>
@@ -99,7 +110,7 @@ function PdfSecurity() {
                             className="doc-tool-input cursor-target"
                             value={ownerPassword}
                             onChange={(e) => setOwnerPassword(e.target.value)}
-                            placeholder="Permissions password"
+                            placeholder="Permissions password (optional)"
                         />
                     </div>
                 </div>
