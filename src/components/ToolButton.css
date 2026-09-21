@@ -4,6 +4,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   /* 1. REDUCE SIZE AND PADDING */
   padding: 1rem; 
   min-height: 70px; /* Shorter buttons */
@@ -20,6 +21,45 @@
   border-radius: 8px !important;
   cursor: pointer;
   width: 100%;
+}
+
+.tool-button__title {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tool-button__title-track {
+  display: inline-flex;
+  min-width: 100%;
+  justify-content: center;
+}
+
+.tool-button__title-track > span {
+  flex: 0 0 auto;
+}
+
+.tool-button__title.is-overflowing {
+  text-align: left;
+}
+
+.tool-button__title.is-overflowing .tool-button__title-track {
+  justify-content: flex-start;
+  gap: 3rem;
+  animation: tool-button-title-marquee 12s ease-in-out infinite alternate;
+}
+
+@keyframes tool-button-title-marquee {
+  0%,
+  18% {
+    transform: translateX(0);
+  }
+
+  82%,
+  100% {
+    transform: translateX(calc(-50% - 1.5rem));
+  }
 }
 
 .tool-button:hover {
