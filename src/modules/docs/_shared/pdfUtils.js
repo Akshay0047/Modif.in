@@ -288,4 +288,79 @@ export async function repairPdf(buffer) {
     }
 }
 
+export async function extractPdfPageImages(pdf, pageNumber) {
+    const page = await pdf.getPage(pageNumber);
+    const ops = await page.getOperatorList();
+    const images = [];
+    const seen = new Set();
+
+    for (let i = 0; i < ops.fnArray.length; i += 1) {
+        const fn = ops.fnArray[i];
+        if (
+            fn !== pdfjs.OPS.paintImageXObject &&
+            fn !== pdfjs.OPS.paintInlineImageXObject &&
+            fn !== pdfjs.OPS.paintJpegXObject
+        ) {
+            continue;
+        }
+
+        const name = ops.argsArray[i]?.[0];
+        if (typeof name !== "string" || seen.has(name)) continue;
+        seen.add(name);
+
+        const img = await new Promise((resolve) => {
+            try {
+                page.objs.get(name, (value) => resolve(value));
+            } catch {
+                resolve(null);
+            }
+        });
+        if (!img) continue;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width || 1;
+        canvas.height = img.height || 1;
+        const ctx = canvas.getContext("2d");
+        if (img.bitmap) {
+            ctx.drawImage(img.bitmap, 0, 0);
+        } else if (img.data) {
+            const imageData = ctx.createImageData(canvas.width, canvas.height);
+            const src = img.data;
+            const kind = img.kind;
+            if (kind === 3 || src.length === canvas.width * canvas.height * 4) {
+                imageData.data.set(src);
+            } else if (kind === 2 || src.length === canvas.width * canvas.height * 3) {
+                let di = 0;
+                for (let si = 0; si < src.length; si += 3) {
+                    imageData.data[di++] = src[si];
+                    imageData.data[di++] = src[si + 1];
+                    imageData.data[di++] = src[si + 2];
+                    imageData.data[di++] = 255;
+                }
+            } else {
+                for (let si = 0; si < src.length; si += 1) {
+                    const value = src[si];
+                    imageData.data[si * 4] = value;
+                    imageData.data[si * 4 + 1] = value;
+                    imageData.data[si * 4 + 2] = value;
+                    imageData.data[si * 4 + 3] = 255;
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        } else {
+            continue;
+        }
+
+        images.push({
+            id: name,
+            dataUrl: canvas.toDataURL("image/png"),
+            width: canvas.width,
+            height: canvas.height,
+        });
+    }
+
+    page.cleanup();
+    return images;
+}
+
 export { PDFDocument, degrees, rgb, StandardFonts, pdfjs };
