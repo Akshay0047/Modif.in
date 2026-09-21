@@ -77,6 +77,10 @@
 }
 
 @media (max-width: 700px) {
+  .tool-hub-layout .app-header__logo {
+    transform: scale(0.5625) !important;
+  }
+
   .tool-hub-layout .site-footer {
     position: relative;
   }
