@@ -2,6 +2,7 @@ import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
+import PdfPreview from "../_shared/PdfPreview";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
 import { addWatermark, rgb } from "../_shared/pdfUtils";
 
@@ -12,30 +13,47 @@ function Watermarking() {
     const [fontSize, setFontSize] = useState(48);
     const [angle, setAngle] = useState(-45);
     const [tile, setTile] = useState(false);
+    const [previewBytes, setPreviewBytes] = useState(null);
     const [status, setStatus] = useState("");
     const [running, setRunning] = useState(false);
 
-    const handleApply = async (files) => {
-        const next = files[0] ?? null;
-        setFile(next);
-        if (!next) return;
+    const buildWatermarked = async () => {
+        const buffer = await readFileAsArrayBuffer(file);
+        return addWatermark(buffer, {
+            text,
+            opacity,
+            fontSize,
+            angle,
+            tile,
+            color: rgb(0.5, 0.5, 0.5),
+        });
+    };
 
+    const handlePreview = async () => {
+        if (!file) return;
         setRunning(true);
-        setStatus("Applying watermark…");
-
+        setStatus("Building watermark preview…");
         try {
-            const buffer = await readFileAsArrayBuffer(next);
-            const result = await addWatermark(buffer, {
-                text,
-                opacity,
-                fontSize,
-                angle,
-                tile,
-                color: rgb(0.5, 0.5, 0.5),
-            });
+            const result = await buildWatermarked();
+            setPreviewBytes(result);
+            setStatus("Preview ready. Edit the watermark and refresh if needed.");
+        } catch (error) {
+            setStatus(error?.message ?? "Watermarking failed.");
+        } finally {
+            setRunning(false);
+        }
+    };
+
+    const handleDownload = async () => {
+        if (!file) return;
+        setRunning(true);
+        setStatus("Saving watermarked PDF…");
+        try {
+            const result = previewBytes ?? await buildWatermarked();
+            if (!previewBytes) setPreviewBytes(result);
             downloadBytes(
                 result,
-                `${getBaseName(next.name)}-watermarked.pdf`,
+                `${getBaseName(file.name)}-watermarked.pdf`,
                 "application/pdf",
             );
             setStatus("Watermarked PDF downloaded.");
@@ -49,14 +67,17 @@ function Watermarking() {
     return (
         <DocToolShell
             title="Watermarking"
-            description="Overlay customizable text watermarks onto every page of a PDF."
+            description="Overlay customizable text watermarks onto every page of a PDF. Preview before you download."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
                 <FileDropZone
                     accept=".pdf,application/pdf"
                     files={file ? [file] : []}
-                    onFiles={handleApply}
+                    onFiles={(files) => {
+                        setFile(files[0] ?? null);
+                        setPreviewBytes(null);
+                    }}
                     label="Drop a PDF file"
                 />
 
@@ -115,16 +136,31 @@ function Watermarking() {
                     </button>
                     <button
                         type="button"
-                        className="doc-tool-button doc-tool-button--primary cursor-target"
-                        onClick={() => file && handleApply([file])}
+                        className="doc-tool-button cursor-target"
+                        onClick={handlePreview}
                         disabled={running || !file}
                     >
-                        Apply Watermark
+                        {previewBytes ? "Refresh Preview" : "Preview PDF"}
+                    </button>
+                    <button
+                        type="button"
+                        className="doc-tool-button doc-tool-button--primary cursor-target"
+                        onClick={handleDownload}
+                        disabled={running || !file}
+                    >
+                        Save & Download
                     </button>
                 </div>
 
                 {status ? <p className="doc-tool-status">{status}</p> : null}
             </div>
+
+            {previewBytes ? (
+                <div className="doc-tool-panel">
+                    <h2 className="doc-tool-section-title">Watermark preview</h2>
+                    <PdfPreview bytes={previewBytes} title="Watermarked PDF preview" />
+                </div>
+            ) : null}
         </DocToolShell>
     );
 }
