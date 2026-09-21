@@ -64,7 +64,7 @@ function Footer() {
             <span>Built by </span>
 
             <a
-              href="https://github.com/JunaidAhamed-7777"
+              href="https://junaidahamed.runs-on.dev"
               className="cursor-target footer-link"
               target = "_blank"
             >
@@ -74,7 +74,7 @@ function Footer() {
             <span> and </span>
 
             <a
-              href="https://github.com/Akshay0047"
+              href="https://akshaysuresh.runs-on.dev"
               className="cursor-target footer-link"
               target = "_blank"
             >
