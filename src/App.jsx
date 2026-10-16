@@ -5,6 +5,7 @@ import TextTools from "./pages/TextTools";
 import DocTools from "./pages/DocTools";
 import ModuleToolLayout from "./layouts/ModuleToolLayout";
 import AppShell from "./layouts/AppShell";
+import NotFoundPage from "./pages/NotFoundPage";
 
 // Auto-register every tool subpage placed under src/modules/<module>/<slug>/index.jsx.
 // The module directory name maps to the route prefix used by each tool's `path`
@@ -90,6 +91,7 @@ function App() {
                         />
                     ))}
                 </Route>
+                <Route path="*" element={<NotFoundPage />} />
             </Route>
         </Routes>
         </AppShell>
