@@ -61,7 +61,8 @@ try {
     for (const width of [1440, 390]) {
         let nextRoute = 0;
         async function worker() {
-            const page = await browser.newPage({ viewport: { width, height: width === 390 ? 844 : 1000 } });
+            const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 1000 } });
+            const page = await context.newPage();
             page.setDefaultTimeout(15000);
             while (nextRoute < routes.length) {
                 const slug = routes[nextRoute++];
@@ -104,7 +105,7 @@ try {
                     page.off("pageerror", onError);
                 }
             }
-            await page.close();
+            await context.close();
         }
         await Promise.all([worker(), worker(), worker()]);
     }
