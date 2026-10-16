@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
+import { safeExecute } from "../_shared/webSecurityUtils";
 import { generateUsername } from "../_shared/generatorUtils";
 
 const STYLES = [
@@ -17,11 +18,13 @@ function UsernameGenerator() {
     const [count, setCount] = useState(5);
     const [seed, setSeed] = useState(0);
 
-    const output = useMemo(
-        () =>
-            Array.from({ length: count }, () => generateUsername(style)).join("\n"),
+    const result = useMemo(
+        () => safeExecute("generate", () =>
+            Array.from({ length: count }, () => generateUsername(style)).join("\n")),
         [style, count, seed],
     );
+
+    const output = result.ok ? result.value : "";
 
     return (
         <TextToolShell
@@ -73,8 +76,9 @@ function UsernameGenerator() {
             <div className="text-tool-panel">
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Generated usernames</h2>
-                    <CopyButton text={output} />
+                    <CopyButton text={output} disabled={!result.ok} />
                 </div>
+                {result.error ? <p className="text-tool-empty" role="alert">{result.error}</p> : null}
                 <textarea
                     className="text-tool-textarea"
                     value={output}
