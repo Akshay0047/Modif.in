@@ -1,29 +1,27 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { safeExecute } from "../_shared/webSecurityUtils";
+import useGeneratedResult from "../_shared/useGeneratedResult";
 import {
     generateApiToken,
     generateHexToken,
     generateRandomString,
 } from "../_shared/generatorUtils";
 
+function generateToken(type, length) {
+    switch (type) {
+        case "api": return generateApiToken(length);
+        case "hex": return generateHexToken(length);
+        default: return generateRandomString(length, "alphanumeric");
+    }
+}
+
 function TokenGenerator() {
     const [type, setType] = useState("random");
     const [length, setLength] = useState(32);
-    const [seed, setSeed] = useState(0);
 
-    const result = useMemo(() => safeExecute("generate", () => {
-        switch (type) {
-            case "api":
-                return generateApiToken(length);
-            case "hex":
-                return generateHexToken(Math.max(8, Math.ceil(length / 2)));
-            default:
-                return generateRandomString(length, "alphanumeric");
-        }
-    }), [type, length, seed]);
+    const result = useGeneratedResult(generateToken, [type, length]);
 
     const output = result.ok ? result.value : "";
 
@@ -55,7 +53,7 @@ function TokenGenerator() {
                     <button
                         type="button"
                         className="text-tool-button cursor-target"
-                        onClick={() => setSeed((value) => value + 1)}
+                        onClick={result.regenerate}
                     >
                         Regenerate
                     </button>
