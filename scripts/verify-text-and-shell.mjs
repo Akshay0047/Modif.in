@@ -14,7 +14,7 @@ if (browserMode) {
     const playwright = normalize(env.PLAYWRIGHT_MODULE || fileURLToPath(import.meta.resolve("playwright")));
     const axe = normalize(env.AXE_MODULE || fileURLToPath(import.meta.resolve("@axe-core/playwright")));
     env.PLAYWRIGHT_MODULE = env.MODIF_PLAYWRIGHT_MODULE = playwright;
-    env.AXE_MODULE = env.MODIF_AXE_MODULE = axe;
+    env.AXE_MODULE = env.MODIF_AXE_MODULE = env.AXE_PLAYWRIGHT_MODULE = axe;
     env.MODIF_BASE_URL = env.MODIF_QA_URL = env.TEST_BASE_URL = env.MODIF_BASE_URL || "http://127.0.0.1:4173";
 }
 

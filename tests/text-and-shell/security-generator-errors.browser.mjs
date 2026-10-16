@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 
-const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright");
+const modulePath = process.env.PLAYWRIGHT_MODULE;
+const { chromium } = await import(modulePath ? modulePath.startsWith("file:") ? modulePath : pathToFileURL(modulePath).href : "playwright");
 const baseURL = process.env.MODIF_BASE_URL || "http://127.0.0.1:4173";
 const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || "msedge", headless: true, args: ["--disable-gpu"] });
 const routes = ["random-generator", "fake-data-generator", "username-generator", "lorem-ipsum-generator", "test-data-generator", "uuid-id-generator", "password-generator", "token-generator"];
