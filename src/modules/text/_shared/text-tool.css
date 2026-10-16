@@ -350,6 +350,16 @@
   line-height: 1.5;
 }
 
+.text-tool-hint a {
+  color: #8991ff;
+  text-underline-offset: 0.15em;
+}
+
+.text-tool-hint a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
 .text-tool-search {
   margin-bottom: 1rem;
 }
