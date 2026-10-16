@@ -22,8 +22,8 @@ function ocrToMarkdown(data) {
             if (!text) return "";
             const height = (paragraph.bbox?.y1 ?? 0) - (paragraph.bbox?.y0 ?? 0);
             if (height > 32 && text.length < 80) return `## ${text}`;
-            if (/^([•●\-–—*]|(\d+[\.\)]))/.test(text)) {
-                return `- ${text.replace(/^([•●\-–—*]|(\d+[\.\)]))\s*/, "")}`;
+            if (/^([•●\-–—*]|(\d+[.)]))/.test(text)) {
+                return `- ${text.replace(/^([•●\-–—*]|(\d+[.)]))\s*/, "")}`;
             }
             return text;
         })
