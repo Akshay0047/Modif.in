@@ -77,84 +77,19 @@ export function jsonToCsv(value) {
     return rows.join("\n");
 }
 
-export function formatJavaScript(code) {
-    let output = "";
-    let indent = 0;
-    let inString = false;
-    let stringChar = "";
-    let escaped = false;
-
-    const pushIndent = () => {
-        output += "\n" + "    ".repeat(Math.max(0, indent));
-    };
-
-    for (let index = 0; index < code.length; index += 1) {
-        const char = code[index];
-
-        if (inString) {
-            output += char;
-            if (escaped) {
-                escaped = false;
-            } else if (char === "\\") {
-                escaped = true;
-            } else if (char === stringChar) {
-                inString = false;
-            }
-            continue;
-        }
-
-        if (char === '"' || char === "'" || char === "`") {
-            inString = true;
-            stringChar = char;
-            output += char;
-            continue;
-        }
-
-        if (char === "{") {
-            output += " {";
-            indent += 1;
-            pushIndent();
-            continue;
-        }
-
-        if (char === "}") {
-            indent = Math.max(0, indent - 1);
-            pushIndent();
-            output += "}";
-            continue;
-        }
-
-        if (char === ";") {
-            output += ";";
-            pushIndent();
-            continue;
-        }
-
-        if (char === "(") {
-            output += " (";
-            continue;
-        }
-
-        if (char === ")") {
-            output = output.replace(/\s+$/, "");
-            output += ")";
-            continue;
-        }
-
-        if (char === ",") {
-            output += ", ";
-            continue;
-        }
-
-        if (/\s/.test(char)) {
-            if (!/\s$/.test(output)) output += " ";
-            continue;
-        }
-
-        output += char;
-    }
-
-    return output.replace(/\s+\n/g, "\n").trim();
+export async function formatJavaScript(code, language = "javascript") {
+    const typed = language === "typescript" || language === "tsx";
+    const [{ format }, syntax, estree] = await Promise.all([
+        import("prettier/standalone"),
+        typed ? import("prettier/plugins/typescript") : import("prettier/plugins/babel"),
+        import("prettier/plugins/estree"),
+    ]);
+    return format(code, {
+        parser: typed ? "typescript" : "babel",
+        filepath: `input.${language === "tsx" ? "tsx" : typed ? "ts" : language === "jsx" ? "jsx" : "js"}`,
+        plugins: [syntax.default, estree.default],
+        tabWidth: 4,
+    });
 }
 
 export function formatHtml(code) {
@@ -226,7 +161,7 @@ export function formatCode(code, language) {
         case "typescript":
         case "jsx":
         case "tsx":
-            return formatJavaScript(code);
+            return formatJavaScript(code, language);
         case "html":
             return formatHtml(code);
         case "css":
