@@ -263,7 +263,9 @@ export function minifyCode(code, language) {
 
 export function testRegex(pattern, flags, text) {
     const regex = new RegExp(pattern, flags);
-    const matches = [...text.matchAll(regex)].map((match) => ({
+    const first = regex.global ? null : regex.exec(text);
+    const results = regex.global ? [...text.matchAll(regex)] : first ? [first] : [];
+    const matches = results.map((match) => ({
         match: match[0],
         index: match.index,
         groups: match.slice(1),
