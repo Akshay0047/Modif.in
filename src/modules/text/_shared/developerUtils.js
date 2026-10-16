@@ -174,8 +174,11 @@ export async function minifyCode(code, language) {
     switch (language) {
         case "json":
             return minifyJson(code);
-        case "css":
-            return code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
+        case "css": {
+            const { parse, generate } = await import("css-tree");
+            const ast = parse(code, { onParseError(error) { throw error; } });
+            return generate(ast);
+        }
         case "html":
             return code.replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
         case "javascript": {
