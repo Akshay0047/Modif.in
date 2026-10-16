@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { safeExecute } from "../_shared/webSecurityUtils";
+import useGeneratedResult from "../_shared/useGeneratedResult";
 import { generateTestData } from "../_shared/generatorUtils";
 
 const TEST_DATA_TYPES = [
@@ -16,25 +16,20 @@ const TEST_DATA_TYPES = [
     { id: "status", label: "Status" },
 ];
 
+function generateValues(selectedTypes) {
+    const activeTypes = selectedTypes.length > 0 ? selectedTypes : TEST_DATA_TYPES.map((entry) => entry.id);
+    return activeTypes.map((type) => {
+        const label = TEST_DATA_TYPES.find((entry) => entry.id === type)?.label;
+        return `${label}: ${generateTestData(type)}`;
+    }).join("\n");
+}
+
 function TestDataGenerator() {
     const [selectedTypes, setSelectedTypes] = useState(
         TEST_DATA_TYPES.map((entry) => entry.id),
     );
-    const [seed, setSeed] = useState(0);
 
-    const result = useMemo(() => safeExecute("generate", () => {
-        const activeTypes =
-            selectedTypes.length > 0
-                ? selectedTypes
-                : TEST_DATA_TYPES.map((entry) => entry.id);
-
-        return activeTypes
-            .map((type) => {
-                const label = TEST_DATA_TYPES.find((entry) => entry.id === type)?.label;
-                return `${label}: ${generateTestData(type)}`;
-            })
-            .join("\n");
-    }), [selectedTypes, seed]);
+    const result = useGeneratedResult(generateValues, [selectedTypes]);
 
     const toggleType = (id) => {
         setSelectedTypes((current) =>
@@ -74,7 +69,7 @@ function TestDataGenerator() {
                     <button
                         type="button"
                         className="text-tool-button cursor-target"
-                        onClick={() => setSeed((value) => value + 1)}
+                        onClick={result.regenerate}
                     >
                         Regenerate
                     </button>
