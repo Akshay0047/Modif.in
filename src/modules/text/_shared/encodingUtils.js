@@ -241,8 +241,9 @@ export function atbashCipher(value) {
 }
 
 export function numberToRoman(value) {
-    let number = Number.parseInt(String(value).trim(), 10);
-    if (Number.isNaN(number) || number <= 0 || number > 3999) {
+    const input = String(value).trim();
+    let number = Number(input);
+    if (!/^\d+$/.test(input) || !Number.isInteger(number) || number <= 0 || number > 3999) {
         throw new Error("Roman numerals support integers from 1 to 3999.");
     }
 
@@ -258,8 +259,8 @@ export function numberToRoman(value) {
 
 export function romanToNumber(value) {
     const roman = value.trim().toUpperCase();
-    if (!/^[MDCLXVI]+$/.test(roman)) {
-        throw new Error("Invalid Roman numeral.");
+    if (!roman || !/^M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$/.test(roman)) {
+        throw new Error("Enter a canonical Roman numeral from I to MMMCMXCIX (1–3999).");
     }
 
     let total = 0;
