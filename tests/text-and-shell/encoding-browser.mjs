@@ -69,6 +69,12 @@ try {
         await page.locator("#number-base-input").fill("101010");
         await page.waitForFunction(() => [...document.querySelectorAll(".text-tool-result-card__value")].some((el) => el.textContent === "2A"));
         assert.equal(await page.getByRole("alert").count(), 0);
+        await page.getByRole("button", { name: "Decimal", exact: true }).click();
+        await page.locator("#number-base-input").fill("9007199254740993");
+        await page.waitForFunction(() => [...document.querySelectorAll(".text-tool-result-card__value")].some((el) => el.textContent === "20000000000001"));
+        await page.getByRole("button", { name: "Hexadecimal", exact: true }).click();
+        await page.locator("#number-base-input").fill("20000000000001");
+        await page.waitForFunction(() => [...document.querySelectorAll(".text-tool-result-card__value")].some((el) => el.textContent === "9007199254740993"));
         assert.deepEqual(errors, []);
         console.log(`Encoding production UI and error recovery passed at ${viewport.width}px`);
         await page.close();
