@@ -1,31 +1,28 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { safeExecute } from "../_shared/webSecurityUtils";
+import useGeneratedResult from "../_shared/useGeneratedResult";
 import {
     generateLoremParagraphs,
     generateLoremSentences,
     generateLoremWords,
 } from "../_shared/generatorUtils";
 
+function generateLorem(mode, count) {
+    switch (mode) {
+        case "words": return generateLoremWords(count);
+        case "sentences": return generateLoremSentences(count);
+        case "paragraphs": return generateLoremParagraphs(count, 4);
+        default: return "";
+    }
+}
+
 function LoremIpsumGenerator() {
     const [mode, setMode] = useState("words");
     const [count, setCount] = useState(50);
-    const [seed, setSeed] = useState(0);
 
-    const result = useMemo(() => safeExecute("generate", () => {
-        switch (mode) {
-            case "words":
-                return generateLoremWords(count);
-            case "sentences":
-                return generateLoremSentences(count);
-            case "paragraphs":
-                return generateLoremParagraphs(count, 4);
-            default:
-                return "";
-        }
-    }), [mode, count, seed]);
+    const result = useGeneratedResult(generateLorem, [mode, count]);
 
     const label =
         mode === "words"
@@ -63,7 +60,7 @@ function LoremIpsumGenerator() {
                     <button
                         type="button"
                         className="text-tool-button cursor-target"
-                        onClick={() => setSeed((value) => value + 1)}
+                        onClick={result.regenerate}
                     >
                         Regenerate
                     </button>

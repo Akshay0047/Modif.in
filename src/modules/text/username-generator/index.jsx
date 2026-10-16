@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { safeExecute } from "../_shared/webSecurityUtils";
+import useGeneratedResult from "../_shared/useGeneratedResult";
 import { generateUsername } from "../_shared/generatorUtils";
 
 const STYLES = [
@@ -13,16 +13,15 @@ const STYLES = [
     { id: "short", label: "short" },
 ];
 
+function generateUsernames(style, count) {
+    return Array.from({ length: count }, () => generateUsername(style)).join("\n");
+}
+
 function UsernameGenerator() {
     const [style, setStyle] = useState("adjective_noun");
     const [count, setCount] = useState(5);
-    const [seed, setSeed] = useState(0);
 
-    const result = useMemo(
-        () => safeExecute("generate", () =>
-            Array.from({ length: count }, () => generateUsername(style)).join("\n")),
-        [style, count, seed],
-    );
+    const result = useGeneratedResult(generateUsernames, [style, count]);
 
     const output = result.ok ? result.value : "";
 
@@ -66,7 +65,7 @@ function UsernameGenerator() {
                     <button
                         type="button"
                         className="text-tool-button cursor-target"
-                        onClick={() => setSeed((value) => value + 1)}
+                        onClick={result.regenerate}
                     >
                         Regenerate
                     </button>
