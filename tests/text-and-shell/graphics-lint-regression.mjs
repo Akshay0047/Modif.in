@@ -10,7 +10,8 @@ import { pathToFileURL } from "node:url";
 import { build } from "vite";
 import react from "@vitejs/plugin-react";
 
-const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright");
+const modulePath = process.env.PLAYWRIGHT_MODULE;
+const { chromium } = await import(modulePath ? modulePath.startsWith("file:") ? modulePath : pathToFileURL(modulePath).href : "playwright");
 const project = resolve(import.meta.dirname, "../..").replaceAll("\\", "/");
 const temporary = await mkdtemp(join(tmpdir(), "modif-graphics-regression-"));
 const imports = [
