@@ -162,10 +162,11 @@ export function toLowerCase(text) {
 }
 
 export function toTitleCase(text) {
-    return text.replace(
-        /\b(\p{L})(\p{L}*)/gu,
-        (_, first, rest) => first.toUpperCase() + rest.toLowerCase(),
-    );
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "word" });
+    return [...segmenter.segment(text)].map(({ segment, isWordLike }) => {
+        if (!isWordLike) return segment;
+        return segment.toLowerCase().replace(/\p{L}/u, (first) => first.toUpperCase());
+    }).join("");
 }
 
 export function toSentenceCase(text) {
