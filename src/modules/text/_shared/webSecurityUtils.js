@@ -711,10 +711,14 @@ function bytesToWords(bytes) {
 }
 
 function padMd5Words(words, byteLength) {
-    const padded = [...words];
+    // Every word must be initialized: adding an undefined sparse-array slot
+    // poisons a round before the bitwise conversion can coerce it to zero.
+    const blockWords = (Math.floor((byteLength + 8) / 64) + 1) * 16;
+    const padded = Array(blockWords).fill(0);
+    words.forEach((word, index) => { padded[index] = word; });
     padded[byteLength >> 2] |= 0x80 << ((byteLength % 4) * 8);
-    padded[(((byteLength + 8) >>> 6) << 4) + 14] = byteLength * 8;
-    while (padded.length % 16 !== 0) padded.push(0);
+    padded[blockWords - 2] = (byteLength * 8) >>> 0;
+    padded[blockWords - 1] = Math.floor(byteLength / 0x20000000);
     return padded;
 }
 
