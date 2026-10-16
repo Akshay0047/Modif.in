@@ -20,14 +20,17 @@ const cases = [
     ["query-string-tools", null, "query-generate-input", "{", "{}"],
     ["timestamp-converter", null, "date-input", "not-a-date", "2026-01-01T00:00:00.000Z"],
     ["regex-tester", null, "regex-pattern", "[", "[a-z]"],
-    ["xml-tools", null, "xml-tools-input", "<root>", "<root/>"],
+    ["xml-tools", "Validate", "xml-tools-input", "<root>", "<root/>"],
     ["find-replace", "Use regex", "find-replace-find", "[", "h"],
 ];
+let currentCase = "";
 
 try {
     for (const width of [1440, 390]) {
         const page = await browser.newPage({ viewport: { width, height: width === 390 ? 844 : 1000 } });
         for (const [slug, button, id, invalid, valid] of cases) {
+            currentCase = `${slug}/${id} at ${width}px`;
+            if (process.env.DEBUG_LABELS) console.log(currentCase);
             await page.goto(`${baseURL}/text/${slug}`);
             await page.locator(".text-tool-page").waitFor();
             if (button) await page.getByRole("button", { name: button, exact: true }).click();
@@ -43,6 +46,8 @@ try {
         console.log(`${cases.length} associated error/recovery cases passed at ${width}px`);
         await page.close();
     }
+} catch (error) {
+    throw new Error(`${currentCase}: ${error.message}`, { cause: error });
 } finally {
     await browser.close();
 }
