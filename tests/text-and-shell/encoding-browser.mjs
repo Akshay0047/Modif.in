@@ -49,6 +49,16 @@ try {
             assert.equal(await page.getByRole("alert").count(), 0);
             assert.equal(await input.getAttribute("aria-invalid"), "false");
         }
+        await page.goto(`${baseURL}/text/roman-numeral-converter`);
+        await page.locator("#roman-input").fill("3.5");
+        await page.getByRole("alert").waitFor();
+        assert.equal(await page.locator("#roman-input").getAttribute("aria-describedby"), "roman-error");
+        assert.equal(await page.locator("textarea[readonly]").inputValue(), "");
+        await page.getByRole("button", { name: "Roman → Number", exact: true }).click();
+        await page.locator("#roman-input").fill("IIII");
+        assert.equal(await page.locator("#roman-input").getAttribute("aria-invalid"), "true");
+        await page.locator("#roman-input").fill("IV");
+        await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "4");
         assert.deepEqual(errors, []);
         console.log(`Encoding production UI and error recovery passed at ${viewport.width}px`);
         await page.close();
