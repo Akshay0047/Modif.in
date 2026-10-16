@@ -8,8 +8,7 @@ import {copyTextToClipboard,
     normalizeImageDataUri,
     readFileAsDataURL,
     triggerDownload,
-    validateStandardImage, preventDragDefaults } from "../_shared/imageToolUtils";
-// preventDragDefaults imported below
+    validateStandardImage } from "../_shared/imageToolUtils";
 
 const MAX_BYTES = 15 * MB;
 const OUTPUT_FORMATS = [
