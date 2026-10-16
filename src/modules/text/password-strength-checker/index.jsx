@@ -14,7 +14,8 @@ function PasswordStrengthChecker() {
     return (
         <TextToolShell title="Password Strength Checker" description="Analyze password length, character variety, and overall strength." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
-                <input className="text-tool-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a password to analyze" />
+                <label className="text-tool-label" htmlFor="password-strength-input">Password to analyze</label>
+                <input id="password-strength-input" className="text-tool-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a password to analyze" />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-stat-grid">
