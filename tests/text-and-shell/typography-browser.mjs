@@ -36,6 +36,12 @@ try {
         assert.equal(await page.locator("textarea[readonly]").inputValue(), "");
         await page.locator("#find-replace-patterns").fill("hello|world");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "world");
+        await page.goto(`${baseURL}/text/case-converter`);
+        await page.locator("#case-converter-input").fill("élan über déjà");
+        await page.getByRole("button", { name: "Title Case", exact: true }).click();
+        await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "Élan Über Déjà");
+        await page.locator("#case-converter-input").fill("e\u0301LAN — ПРИВЕТ" );
+        await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "E\u0301lan — Привет");
         assert.deepEqual(errors, []);
         console.log(`Typography production UI passed at ${viewport.width}px`);
         await page.close();
