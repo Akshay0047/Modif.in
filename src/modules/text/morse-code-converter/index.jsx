@@ -23,11 +23,12 @@ function MorseCodeConverter() {
                     <button type="button" className={`text-tool-button cursor-target${mode === "text-to-morse" ? " is-active" : ""}`} onClick={() => setMode("text-to-morse")}>Text → Morse</button>
                     <button type="button" className={`text-tool-button cursor-target${mode === "morse-to-text" ? " is-active" : ""}`} onClick={() => setMode("morse-to-text")}>Morse → Text</button>
                 </div>
-                <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="morse-code-converter-input">{mode === "text-to-morse" ? "Text to encode" : "Morse code to decode"}</label>
+                <textarea aria-invalid={Boolean(output.error)} aria-describedby={output.error ? "morse-code-converter-input-error" : undefined} id="morse-code-converter-input" className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">Output</h2><CopyButton text={output.ok ? output.value : ""} disabled={!output.ok} /></div>
-                {output.error ? <p className="text-tool-empty">{output.error}</p> : <textarea className="text-tool-textarea" value={output.value} readOnly />}
+                {output.error ? <p id="morse-code-converter-input-error" className="text-tool-empty" role="alert">{output.error}</p> : <textarea aria-label="Morse conversion output" className="text-tool-textarea" value={output.value} readOnly />}
             </div>
         </TextToolShell>
     );
