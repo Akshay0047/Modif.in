@@ -17,17 +17,18 @@ function HexText() {
     );
 
     return (
-        <TextToolShell title="Hex ↔ Text" description="Convert text to hexadecimal and hex back to text or ASCII." leading={<BackButton />}>
+        <TextToolShell title="Hex ↔ Text" description="Convert text to UTF-8 hexadecimal bytes and decode UTF-8 bytes back to text. Enter pairs of hex digits, with optional spaces." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     <button type="button" className={`text-tool-button cursor-target${mode === "text-to-hex" ? " is-active" : ""}`} onClick={() => setMode("text-to-hex")}>Text → Hex</button>
                     <button type="button" className={`text-tool-button cursor-target${mode === "hex-to-text" ? " is-active" : ""}`} onClick={() => setMode("hex-to-text")}>Hex → Text</button>
                 </div>
-                <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <textarea id="hex-text-input" aria-label="Input" aria-invalid={!output.ok} aria-describedby={output.error ? "hex-text-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                {output.error && <p id="hex-text-error" className="text-tool-empty" role="alert">{output.error}</p>}
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">Output</h2><CopyButton text={output.ok ? output.value : ""} disabled={!output.ok} /></div>
-                {output.error ? <p className="text-tool-empty">{output.error}</p> : <textarea className="text-tool-textarea" value={output.value} readOnly />}
+                <textarea aria-label="Output" className="text-tool-textarea" value={output.value} readOnly />
             </div>
         </TextToolShell>
     );
