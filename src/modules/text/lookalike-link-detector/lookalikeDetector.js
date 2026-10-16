@@ -814,7 +814,7 @@ function severityRank(id) {
 }
 
 function stripTrailingPunctuation(value) {
-    return String(value).replace(/[),.;:!?]+$/g, "").replace(/^[(\["']+/g, "");
+    return String(value).replace(/[),.;:!?]+$/g, "").replace(/^[(["']+/g, "");
 }
 
 function isIpAddress(hostname) {

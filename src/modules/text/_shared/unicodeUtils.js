@@ -1,7 +1,7 @@
 import { INVISIBLE_CHARACTERS, SYMBOL_NAME_MAP } from "./symbolData";
 
 const INVISIBLE_REGEX =
-    /[\u00a0\u180e\u200b-\u200f\u202a-\u202e\u2060\u2061-\u2064\ufeff\u061c\u115f\u1160\u17b4\u17b5\u3164\uffa0]/g;
+    /[\u00a0\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u061c\u115f-\u1160\u17b4-\u17b5\u3164\uffa0]/gu;
 
 export function encodeUtf8(char) {
     const codePoint = char.codePointAt(0);
