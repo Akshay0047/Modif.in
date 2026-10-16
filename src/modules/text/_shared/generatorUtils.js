@@ -1,3 +1,5 @@
+import { PASSPHRASE_WORDS } from "./passphraseWords.js";
+
 const LOREM_WORDS = [
     "lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit",
     "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore",
@@ -146,15 +148,32 @@ export function generatePassword({
 }
 
 export function generatePassphrase({
-    wordCount = 4,
+    wordCount = 6,
     separator = "-",
     capitalize = false,
 }) {
-    const words = Array.from({ length: wordCount }, () => randomItem(NOUNS));
+    validatePassphraseWordCount(wordCount);
+    const words = Array.from({ length: wordCount }, () => randomItem(PASSPHRASE_WORDS));
     const formatted = capitalize
         ? words.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         : words;
     return formatted.join(separator);
+}
+
+function validatePassphraseWordCount(wordCount) {
+    if (!Number.isInteger(wordCount) || wordCount < 3 || wordCount > 8) {
+        throw new RangeError("Choose between 3 and 8 passphrase words.");
+    }
+}
+
+export function calculatePassphraseEntropy(wordCount, separator = "-", capitalize = false) {
+    validatePassphraseWordCount(wordCount);
+    // All words are lowercase ASCII. Nonletter separators or initial capitals
+    // preserve boundaries; arbitrary concatenation can merge distinct sequences.
+    return {
+        bits: wordCount * Math.log2(PASSPHRASE_WORDS.length),
+        boundariesPreserved: capitalize || /[^a-z]/.test(separator),
+    };
 }
 
 export function generateUsername(style = "adjective_noun") {

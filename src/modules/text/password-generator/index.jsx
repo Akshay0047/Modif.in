@@ -153,7 +153,7 @@ function PasswordGenerator() {
                         />
                         <p className="text-tool-hint" role="status">
                             Entropy: {entropy.boundariesPreserved ? "" : "at most "}
-                            {entropy.bits.toFixed(1)} bits from 7,776 possible words.
+                            {entropy.bits.toFixed(1)} bits from 7,772 possible words.
                             {wordCount < 6 ? " Use six or more words for at least 77.5 bits." : " Six words provide about 77.5 bits."}
                             {!entropy.boundariesPreserved ? " Use a separator containing a number, space or punctuation, or capitalize words to preserve word boundaries." : " Fixed separators and capitalization add no random bits."}
                         </p>
