@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { minifyCode, safeExecute } from "../_shared/developerUtils";
+import useDeveloperResult from "../_shared/useDeveloperResult";
+import { minifyCode } from "../_shared/developerUtils";
 
 const LANGUAGES = [
     { id: "javascript", label: "JavaScript" },
@@ -15,10 +16,7 @@ function CodeMinifier() {
     const [language, setLanguage] = useState("javascript");
     const [input, setInput] = useState("function hello(name){ console.log('hi', name); }");
 
-    const output = useMemo(
-        () => safeExecute("minify", () => minifyCode(input, language)),
-        [input, language],
-    );
+    const output = useDeveloperResult(input, minifyCode, language);
 
     return (
         <TextToolShell
@@ -41,7 +39,11 @@ function CodeMinifier() {
                         </button>
                     ))}
                 </div>
+                <label className="text-tool-label" htmlFor="code-minifier-input">Input code</label>
                 <textarea
+                    id="code-minifier-input"
+                    aria-invalid={Boolean(output.error)}
+                    aria-describedby={output.error ? "code-minifier-error" : undefined}
                     className="text-tool-textarea"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
@@ -49,13 +51,15 @@ function CodeMinifier() {
                 />
             </div>
 
-            <div className="text-tool-panel">
+            <div className="text-tool-panel" aria-busy={output.pending}>
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Minified output</h2>
                     <CopyButton text={output.ok ? output.value : ""} disabled={!output.ok} />
                 </div>
-                {output.error ? (
-                    <p className="text-tool-empty">{output.error}</p>
+                {output.pending ? (
+                    <p className="text-tool-empty" role="status">Minifying…</p>
+                ) : output.error ? (
+                    <p id="code-minifier-error" className="text-tool-empty" role="alert">{output.error}</p>
                 ) : (
                     <textarea
                         className="text-tool-textarea"

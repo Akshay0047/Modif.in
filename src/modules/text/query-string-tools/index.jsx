@@ -27,7 +27,7 @@ function QueryStringTools() {
     return (
         <TextToolShell
             title="Query String Tools"
-            description="Parse query strings into JSON objects and generate query strings from JSON."
+            description="Parse query strings into JSON and generate query strings. Repeated keys use arrays; null values are omitted."
             leading={<BackButton />}
         >
             <div className="text-tool-grid text-tool-grid--2">

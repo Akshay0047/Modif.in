@@ -14,6 +14,7 @@
     "@cantoo/pdf-lib": "^2.11.1",
     "@react-three/fiber": "^9.7.0",
     "@react-three/postprocessing": "^3.1.1",
+    "css-tree": "^3.2.1",
     "diff": "^8.0.2",
     "diff2html": "^3.4.52",
     "epubjs": "^0.3.93",
@@ -30,13 +31,17 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.4.54",
     "postprocessing": "^6.39.5",
+    "prettier": "^3.9.10",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.3",
+    "sql-formatter": "^15.9.0",
+    "terser": "^5.51.2",
     "tesseract.js": "^6.0.1",
     "three": "^0.186.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
