@@ -26,6 +26,8 @@ function buildLetterMap(baseUpper, baseLower, baseDigit = null) {
 
 const BOLD_MAP = buildLetterMap(0x1d400, 0x1d41a, 0x1d7ce);
 const ITALIC_MAP = buildLetterMap(0x1d434, 0x1d44e);
+// Mathematical italic small h lives in Letterlike Symbols, leaving U+1D455 unassigned.
+ITALIC_MAP.set("h", "\u210e");
 const BOLD_ITALIC_MAP = buildLetterMap(0x1d468, 0x1d482);
 const CIRCLED_MAP = buildLetterMap(0x24b6, 0x24d0);
 const SQUARED_MAP = buildLetterMap(0x1f130, 0x1f130);
