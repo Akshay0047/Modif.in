@@ -2,7 +2,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
     forwardRef,
     useRef,
-    useMemo,
+    useState,
     useLayoutEffect,
     useEffect,
 } from "react";
@@ -126,7 +126,7 @@ function Silk({
 }) {
     const meshRef = useRef();
 
-    const uniforms = useMemo(
+    const [uniforms] = useState(
         () => ({
             uSpeed: { value: speed },
             uScale: { value: scale },
@@ -136,8 +136,6 @@ function Silk({
             uLightMode: { value: lightMode ? 1 : 0 },
             uTime: { value: 0 },
         }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [],
     );
 
     useEffect(() => {

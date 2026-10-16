@@ -1,7 +1,17 @@
 import { INVISIBLE_CHARACTERS, SYMBOL_NAME_MAP } from "./symbolData";
 
-const INVISIBLE_REGEX =
-    /[\u00a0\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u061c\u115f-\u1160\u17b4-\u17b5\u3164\uffa0]/gu;
+const INVISIBLE_CODE_POINTS = new Set([
+    0x00a0, 0x180e, 0xfeff, 0x061c, 0x115f, 0x1160,
+    0x17b4, 0x17b5, 0x3164, 0xffa0,
+]);
+
+function isInvisibleCodePoint(character) {
+    const point = character.codePointAt(0);
+    return INVISIBLE_CODE_POINTS.has(point)
+        || (point >= 0x200b && point <= 0x200f)
+        || (point >= 0x202a && point <= 0x202e)
+        || (point >= 0x2060 && point <= 0x2064);
+}
 
 export function encodeUtf8(char) {
     const codePoint = char.codePointAt(0);
@@ -92,8 +102,7 @@ export function findInvisibleCharacters(text) {
         const known = knownChars.get(char);
         const isStandardWhitespace =
             char === " " || char === "\n" || char === "\r" || char === "\t";
-        const matchesPattern = INVISIBLE_REGEX.test(char);
-        INVISIBLE_REGEX.lastIndex = 0;
+        const matchesPattern = isInvisibleCodePoint(char);
 
         const isInvisible =
             Boolean(known) ||
