@@ -269,7 +269,10 @@ export function formatXmlDocument(value) {
 function parseXmlDocument(value) {
     const parser = new DOMParser();
     const document = parser.parseFromString(value, "application/xml");
-    const errorNode = document.getElementsByTagNameNS("http://www.mozilla.org/newlayout/xml/parsererror.xml", "parsererror")[0];
+    const errorNode = [
+        "http://www.mozilla.org/newlayout/xml/parsererror.xml",
+        "http://www.w3.org/1999/xhtml",
+    ].map((namespace) => document.getElementsByTagNameNS(namespace, "parsererror")[0]).find(Boolean);
     if (errorNode) {
         throw new Error(errorNode.textContent || "Invalid XML.");
     }
