@@ -139,16 +139,9 @@ export function formatCss(code) {
         .join("\n");
 }
 
-export function formatSql(code) {
-    return code
-        .replace(
-            /\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|INSERT INTO|VALUES|UPDATE|SET|DELETE FROM|JOIN|LEFT JOIN|RIGHT JOIN|INNER JOIN|ON|AND|OR)\b/gi,
-            "\n$1",
-        )
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .join("\n");
+export async function formatSql(code) {
+    const { format } = await import("sql-formatter");
+    return format(code, { language: "sql" });
 }
 
 export function formatXml(code) {
