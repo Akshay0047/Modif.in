@@ -30,8 +30,27 @@ try {
             await page.locator("textarea:not([readonly])").fill("");
             await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "");
         }
+        for (const [slug, decode, invalid, valid, expected] of [
+            ["binary-text", "Binary → Text", "102abc", "01000001", "A"],
+            ["hex-text", "Hex → Text", "not-hex!", "41", "A"],
+            ["ascii-converter", "Decode", "not-a-number", "65", "A"],
+        ]) {
+            await page.goto(`${baseURL}/text/${slug}`);
+            await page.getByRole("button", { name: decode, exact: true }).click();
+            const input = page.locator("textarea:not([readonly])");
+            await input.fill(invalid);
+            await page.getByRole("alert").waitFor();
+            assert.equal(await input.getAttribute("aria-invalid"), "true");
+            assert.equal(await input.getAttribute("aria-describedby"), `${slug}-error`);
+            assert.equal(await page.getByRole("button", { name: "Copy", exact: true }).isDisabled(), true);
+            assert.equal(await page.locator("textarea[readonly]").inputValue(), "");
+            await input.fill(valid);
+            await page.waitForFunction((text) => document.querySelector("textarea[readonly]")?.value === text, expected);
+            assert.equal(await page.getByRole("alert").count(), 0);
+            assert.equal(await input.getAttribute("aria-invalid"), "false");
+        }
         assert.deepEqual(errors, []);
-        console.log(`Morse and UTF-8 production UI passed at ${viewport.width}px`);
+        console.log(`Encoding production UI and error recovery passed at ${viewport.width}px`);
         await page.close();
     }
 } finally {
