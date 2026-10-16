@@ -31,7 +31,7 @@ function RomanNumeralConverter() {
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">Output</h2><CopyButton text={output.ok ? output.value : ""} disabled={!output.ok} /></div>
-                <textarea aria-label="Output" className="text-tool-textarea" value={output.value} readOnly />
+                <textarea aria-label="Roman numeral conversion output" className="text-tool-textarea" value={output.value} readOnly />
             </div>
         </TextToolShell>
     );
