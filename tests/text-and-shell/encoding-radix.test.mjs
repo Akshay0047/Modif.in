@@ -20,3 +20,17 @@ test("valid radix vectors retain signs, case-insensitivity, and leading zeroes",
     assert.equal(convertNumberBase("z", 36, 10), "35");
     assert.equal(convertNumberBase("0", 2, 16), "0");
 });
+
+test("number-base conversion preserves arbitrary-size integers exactly", () => {
+    assert.equal(convertNumberBase("9007199254740993", 10, 16), "20000000000001");
+    assert.equal(convertNumberBase("20000000000001", 16, 10), "9007199254740993");
+    assert.equal(convertNumberBase("18446744073709551615", 10, 16), "FFFFFFFFFFFFFFFF");
+    assert.equal(convertNumberBase("-18446744073709551616", 10, 16), "-10000000000000000");
+    assert.equal(convertNumberBase("1" + "0".repeat(256), 2, 16), "1" + "0".repeat(64));
+    for (const integer of [9007199254740991n, 9007199254740992n, 9007199254740993n, (1n << 1024n) + 1n, -(1n << 256n)]) {
+        for (const radix of [2, 8, 10, 16, 36]) {
+            assert.equal(convertNumberBase(integer.toString(), 10, radix), integer.toString(radix).toUpperCase());
+            assert.equal(convertNumberBase(integer.toString(radix), radix, 10), integer.toString());
+        }
+    }
+});
