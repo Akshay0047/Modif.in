@@ -17,8 +17,21 @@ try {
         assert.equal(await page.locator("textarea[readonly]").inputValue(), "HELLO WORLD");
         await page.locator("textarea:not([readonly])").fill("... --- .../... --- ...");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "SOS SOS");
+        for (const [slug, decode, encoded] of [
+            ["binary-text", "Binary → Text", "11110000 10011111 10001100 10001101"],
+            ["hex-text", "Hex → Text", "F0 9F 8C 8D"],
+        ]) {
+            await page.goto(`${baseURL}/text/${slug}`);
+            await page.locator("textarea:not([readonly])").fill("🌍");
+            await page.waitForFunction((expected) => document.querySelector("textarea[readonly]")?.value === expected, encoded);
+            await page.getByRole("button", { name: decode, exact: true }).click();
+            await page.locator("textarea:not([readonly])").fill(encoded);
+            await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "🌍");
+            await page.locator("textarea:not([readonly])").fill("");
+            await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "");
+        }
         assert.deepEqual(errors, []);
-        console.log(`Morse production UI passed at ${viewport.width}px`);
+        console.log(`Morse and UTF-8 production UI passed at ${viewport.width}px`);
         await page.close();
     }
 } finally {
