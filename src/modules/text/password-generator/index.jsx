@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
+import { safeExecute } from "../_shared/webSecurityUtils";
 import {
     generatePassphrase,
     generatePassword,
@@ -20,7 +21,7 @@ function PasswordGenerator() {
     const [capitalizeWords, setCapitalizeWords] = useState(false);
     const [seed, setSeed] = useState(0);
 
-    const output = useMemo(() => {
+    const result = useMemo(() => safeExecute("generate", () => {
         if (mode === "passphrase") {
             return generatePassphrase({
                 wordCount,
@@ -37,7 +38,7 @@ function PasswordGenerator() {
             symbols,
             excludeAmbiguous,
         });
-    }, [
+    }), [
         mode,
         length,
         wordCount,
@@ -50,6 +51,8 @@ function PasswordGenerator() {
         capitalizeWords,
         seed,
     ]);
+
+    const output = result.ok ? result.value : "";
 
     return (
         <TextToolShell
@@ -172,8 +175,9 @@ function PasswordGenerator() {
             <div className="text-tool-panel">
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Generated output</h2>
-                    <CopyButton text={output} />
+                    <CopyButton text={output} disabled={!result.ok} />
                 </div>
+                {result.error ? <p className="text-tool-empty" role="alert">{result.error}</p> : null}
                 <textarea
                     className="text-tool-textarea"
                     value={output}
