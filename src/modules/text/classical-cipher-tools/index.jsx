@@ -32,15 +32,16 @@ function ClassicalCipherTools() {
                 </div>
                 {cipher === "caesar" ? (
                     <>
-                        <label className="text-tool-label">Shift: {shift}</label>
-                        <input className="text-tool-range" type="range" min={1} max={25} value={shift} onChange={(e) => setShift(Number(e.target.value))} />
+                        <label className="text-tool-label" htmlFor="cipher-shift">Shift: {shift}</label>
+                        <input id="cipher-shift" className="text-tool-range" type="range" min={1} max={25} value={shift} onChange={(e) => setShift(Number(e.target.value))} />
                     </>
                 ) : null}
-                <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="cipher-input">Text to transform</label>
+                <textarea id="cipher-input" className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">Output</h2><CopyButton text={output} /></div>
-                <textarea className="text-tool-textarea" value={output} readOnly />
+                <textarea aria-label="Cipher output" className="text-tool-textarea" value={output} readOnly />
             </div>
         </TextToolShell>
     );

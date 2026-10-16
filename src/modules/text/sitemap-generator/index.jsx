@@ -14,12 +14,12 @@ function SitemapGenerator() {
     return (
         <TextToolShell title="Sitemap Generator" description="Generate a sitemap.xml file from a list of page URLs." leading={<BackButton />}>
             <div className="text-tool-panel">
-                <label className="text-tool-label">URLs (one per line)</label>
-                <textarea className="text-tool-textarea" value={urls} onChange={(e) => setUrls(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="sitemap-urls">URLs (one per line)</label>
+                <textarea id="sitemap-urls" className="text-tool-textarea" value={urls} onChange={(e) => setUrls(e.target.value)} spellCheck={false} />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">sitemap.xml</h2><CopyButton text={output} /></div>
-                <textarea className="text-tool-textarea" value={output} readOnly />
+                <textarea aria-label="Generated sitemap XML" className="text-tool-textarea" value={output} readOnly />
             </div>
         </TextToolShell>
     );
