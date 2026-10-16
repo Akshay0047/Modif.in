@@ -13,7 +13,7 @@ function AnimatedList({ id, items = [], selectedIndex = -1, onActiveChange, onIt
 
     return (
         <div className="scroll-list-container">
-            <div id={id} role="listbox" aria-label="Matching tools" className="scroll-list" ref={listRef}>
+            <div id={id} role="listbox" tabIndex={-1} aria-label="Matching tools" className="scroll-list" ref={listRef}>
                 {items.map((item, index) => (
                     <motion.div
                         key={item}

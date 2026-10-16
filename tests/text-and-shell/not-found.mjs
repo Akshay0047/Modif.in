@@ -10,7 +10,7 @@ await withBrowser(async (page) => {
         await recovery.getByRole("link", { name: "Text tools", exact: true }).focus();
         await page.keyboard.press("Enter");
         await page.waitForURL(baseURL + "/text");
-        await page.getByRole("searchbox", { name: "Search tools" }).waitFor();
+        await page.getByLabel("Search tools", { exact: true }).waitFor();
         await page.goBack();
         await page.getByRole("heading", { name: "Page not found", level: 1 }).waitFor();
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);

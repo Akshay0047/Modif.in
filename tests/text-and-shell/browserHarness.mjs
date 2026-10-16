@@ -6,6 +6,12 @@ const { chromium } = await import(modulePath ? pathToFileURL(modulePath).href : 
 
 export const baseURL = process.env.MODIF_BASE_URL || "http://127.0.0.1:4173";
 
+export async function auditAccessibility(page, selector) {
+    const modulePath = process.env.AXE_MODULE;
+    const { default: AxeBuilder } = await import(modulePath ? pathToFileURL(modulePath).href : "@axe-core/playwright");
+    return new AxeBuilder({ page }).include(selector).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+}
+
 export async function withBrowser(run) {
     const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || "msedge", headless: true });
     try {

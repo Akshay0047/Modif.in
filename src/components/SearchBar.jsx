@@ -76,7 +76,7 @@ function SearchBar({ categories, onSelect }) {
                 type="search"
                 role="combobox"
                 aria-autocomplete="list"
-                aria-expanded={showResults}
+                aria-expanded={showResults && matches.length > 0}
                 aria-controls={showResults && matches.length ? listId : undefined}
                 aria-activedescendant={showResults && activeIndex >= 0 ? `${listId}-option-${activeIndex}` : undefined}
                 value={query}
