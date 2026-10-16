@@ -1,0 +1,48 @@
+.route-feedback {
+    position: relative;
+    box-sizing: border-box;
+    width: min(640px, 100%);
+    min-height: 20rem;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+    color: #f8fafc;
+    text-align: center;
+}
+
+.route-feedback h1 {
+    font-family: Georgia, serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.route-feedback p {
+    color: #cbd5e1;
+    line-height: 1.6;
+}
+
+.route-feedback nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.route-feedback a {
+    color: #8991ff;
+    text-underline-offset: 0.2em;
+}
+
+.route-feedback button {
+    padding: 0.65rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: #0a0f1c;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.route-feedback :focus-visible {
+    outline: 2px solid #8991ff;
+    outline-offset: 3px;
+}

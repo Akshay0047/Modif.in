@@ -1,18 +1,19 @@
+import { lazy } from "react";
 import { Routes, Route } from "react-router-dom";
-import LandingPage from "./pages/LandingPage";
-import ImageTools from "./pages/ImageTools";
-import TextTools from "./pages/TextTools";
-import DocTools from "./pages/DocTools";
 import ModuleToolLayout from "./layouts/ModuleToolLayout";
 import AppShell from "./layouts/AppShell";
 import NotFoundPage from "./pages/NotFoundPage";
+import RouteContent from "./layouts/RouteContent";
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const ImageTools = lazy(() => import("./pages/ImageTools"));
+const TextTools = lazy(() => import("./pages/TextTools"));
+const DocTools = lazy(() => import("./pages/DocTools"));
 
 // Auto-register every tool subpage placed under src/modules/<module>/<slug>/index.jsx.
 // The module directory name maps to the route prefix used by each tool's `path`
 // in src/data/*Tools.js (e.g. the "docs" module serves tools under the "/doc" prefix).
-const toolPageModules = import.meta.glob("./modules/*/*/index.jsx", {
-    eager: true,
-});
+const toolPageModules = import.meta.glob("./modules/*/*/index.jsx");
 
 const MODULE_PREFIX = {
     text: "text",
@@ -21,7 +22,7 @@ const MODULE_PREFIX = {
 };
 
 const toolRoutes = Object.entries(toolPageModules)
-    .map(([filePath, module]) => {
+    .map(([filePath, load]) => {
         const match = filePath.match(
             /^\.\/modules\/([^/]+)\/([^/]+)\/index\.jsx$/,
         );
@@ -35,7 +36,7 @@ const toolRoutes = Object.entries(toolPageModules)
             path: `/${prefix}/${slug}`,
             childPath: slug,
             module: prefix,
-            Component: module.default,
+            Component: lazy(load),
         };
     })
     .filter(Boolean);
@@ -56,38 +57,38 @@ function App() {
     return (
         <AppShell>
         <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<RouteContent><LandingPage /></RouteContent>} />
 
             <Route element={<ModuleToolLayout />}>
                 <Route path="image">
-                    <Route index element={<ImageTools />} />
+                    <Route index element={<RouteContent><ImageTools /></RouteContent>} />
                     {routesByModule.image.map(({ childPath, Component }) => (
                         <Route
                             key={childPath}
                             path={childPath}
-                            element={<Component />}
+                            element={<RouteContent><Component /></RouteContent>}
                         />
                     ))}
                 </Route>
 
                 <Route path="text">
-                    <Route index element={<TextTools />} />
+                    <Route index element={<RouteContent><TextTools /></RouteContent>} />
                     {routesByModule.text.map(({ childPath, Component }) => (
                         <Route
                             key={childPath}
                             path={childPath}
-                            element={<Component />}
+                            element={<RouteContent><Component /></RouteContent>}
                         />
                     ))}
                 </Route>
 
                 <Route path="doc">
-                    <Route index element={<DocTools />} />
+                    <Route index element={<RouteContent><DocTools /></RouteContent>} />
                     {routesByModule.doc.map(({ childPath, Component }) => (
                         <Route
                             key={childPath}
                             path={childPath}
-                            element={<Component />}
+                            element={<RouteContent><Component /></RouteContent>}
                         />
                     ))}
                 </Route>
