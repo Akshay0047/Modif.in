@@ -75,7 +75,7 @@ function JsonTools() {
                     <CopyButton text={result.ok ? result.value : ""} disabled={!result.ok} />
                 </div>
                 {result.pending ? (
-                    <p className="text-tool-empty" role="status">Converting…</p>
+                    <p className="text-tool-empty" role="status">Convertingâ€¦</p>
                 ) : result.error ? (
                     <p id="json-tools-error" className="text-tool-empty" role="alert">{result.error}</p>
                 ) : (
