@@ -256,7 +256,7 @@ function encodeRandom(length) {
 }
 
 export function generateUlid() {
-    return `${encodeTime(Date.now())}${encodeRandom(10)}`;
+    return `${encodeTime(Date.now())}${encodeRandom(16)}`;
 }
 
 export function generateNanoId(size = 21) {
@@ -338,3 +338,4 @@ export function generateTestData(type) {
             return "";
     }
 }
+
