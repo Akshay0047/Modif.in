@@ -59,6 +59,16 @@ try {
         assert.equal(await page.locator("#roman-input").getAttribute("aria-invalid"), "true");
         await page.locator("#roman-input").fill("IV");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "4");
+        await page.goto(`${baseURL}/text/number-base-converter`);
+        await page.getByRole("button", { name: "Binary", exact: true }).click();
+        await page.locator("#number-base-input").fill("102");
+        await page.getByRole("alert").waitFor();
+        assert.equal(await page.locator("#number-base-input").getAttribute("aria-describedby"), "number-base-error");
+        assert.equal(await page.getByRole("button", { name: "Copy to Clipboard", exact: true }).count(), 4);
+        assert.equal(await page.locator(".text-tool-result-card button:disabled").count(), 4);
+        await page.locator("#number-base-input").fill("101010");
+        await page.waitForFunction(() => [...document.querySelectorAll(".text-tool-result-card__value")].some((el) => el.textContent === "2A"));
+        assert.equal(await page.getByRole("alert").count(), 0);
         assert.deepEqual(errors, []);
         console.log(`Encoding production UI and error recovery passed at ${viewport.width}px`);
         await page.close();
