@@ -18,6 +18,7 @@ const imports = [
     ["MainDither", "src/components/Dither.jsx"],
     ["SkeletonDither", "skeleton/src/components/Dither.jsx"],
     ["SkeletonSilk", "skeleton/src/components/Silk.jsx"],
+    ["MainSilk", "src/components/Silk.jsx"],
     ["MainCursor", "src/components/TargetCursor.jsx"],
     ["SkeletonCursor", "skeleton/src/components/TargetCursor.jsx"],
 ].map(([name, path]) => `import ${name} from ${JSON.stringify(`${project}/${path}`)};`).join("\n");
@@ -32,7 +33,7 @@ let settings = { scene: "main-dither", cursor: null, props: {} };
 const root = createRoot(document.getElementById("root"));
 window.renderGraphics = (patch = {}) => {
     settings = { ...settings, ...patch };
-    const Scene = { "main-dither": MainDither, "skeleton-dither": SkeletonDither, silk: SkeletonSilk }[settings.scene];
+    const Scene = { "main-dither": MainDither, "skeleton-dither": SkeletonDither, silk: SkeletonSilk, "main-silk": MainSilk }[settings.scene];
     const Cursor = { main: MainCursor, skeleton: SkeletonCursor }[settings.cursor];
     root.render(<React.StrictMode>{Scene ? <Scene {...settings.props} /> : null}{Cursor ? <Cursor hideDefaultCursor /> : null}<button className="cursor-target" style={{position:"fixed", top:20,left:20}}>Hover target</button></React.StrictMode>);
 };
@@ -165,6 +166,34 @@ try {
         return uniforms?.uSpeed.last[0] === 2 && uniforms.uScale.last[0] === 1.7 && uniforms.uNoiseIntensity.last[0] === 0.4 && uniforms.uRotation.last[0] === 0.6 && uniforms.uLightMode.last[0] === 1 && uniforms.uColor.last.join(",") === "1,0,0";
     });
     await assertAnimated(page, "uTime");
+    await page.evaluate(() => window.renderGraphics({ scene: "main-silk", props: { speed: 5, scale: 1, color1: "#ff0000", color2: "#0000ff", lightMode: false } }));
+    await page.waitForFunction(() => {
+        const uniforms = window.graphicsSnapshot("uTime").at(-1)?.uniforms;
+        return uniforms?.uColor1?.last.join(",") === "1,0,0" && uniforms.uColor2.last.join(",") === "0,0,1" && uniforms.uLightMode.last[0] === 0;
+    });
+    const mainSilkBeforeUpdate = await assertAnimated(page, "uTime");
+    await page.evaluate(() => window.renderGraphics({ props: { speed: 3, scale: 1.4, color1: "#00ff00", color2: "#ff0000", noiseIntensity: 0.3, rotation: 0.8, lightMode: true } }));
+    await page.waitForFunction((previousTime) => {
+        const uniforms = window.graphicsSnapshot("uTime").at(-1)?.uniforms;
+        return uniforms?.uSpeed.last[0] === 3 && uniforms.uScale.last[0] === 1.4 && uniforms.uNoiseIntensity.last[0] === 0.3 && uniforms.uRotation.last[0] === 0.8 && uniforms.uLightMode.last[0] === 1
+            && uniforms.uColor1.last.join(",") === "0,1,0" && uniforms.uColor2.last.join(",") === "1,0,0" && uniforms.uTime.last[0] > previousTime;
+    }, mainSilkBeforeUpdate.uniforms.uTime.last[0]);
+    const mainSilkBeforeResize = await assertAnimated(page, "uTime");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForFunction((previousDraws) => {
+        const record = window.graphicsSnapshot("uTime").at(-1);
+        return record?.width === 390 && record.height === 844 && record.draws > previousDraws + 10;
+    }, mainSilkBeforeResize.draws);
+    await assertAnimated(page, "uTime");
+    await page.evaluate(() => window.renderGraphics({ props: { speed: 1, scale: 0.8, color1: "#0000ff", color2: "#00ff00", noiseIntensity: 0.9, rotation: 0.2, lightMode: false } }));
+    await page.waitForFunction(() => {
+        const uniforms = window.graphicsSnapshot("uTime").at(-1)?.uniforms;
+        return uniforms?.uSpeed.last[0] === 1 && uniforms.uScale.last[0] === 0.8 && uniforms.uNoiseIntensity.last[0] === 0.9 && uniforms.uRotation.last[0] === 0.2 && uniforms.uLightMode.last[0] === 0
+            && uniforms.uColor1.last.join(",") === "0,0,1" && uniforms.uColor2.last.join(",") === "0,1,0";
+    });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.waitForFunction(() => window.graphicsSnapshot("uTime").at(-1)?.width === 1440 && window.graphicsSnapshot("uTime").at(-1)?.height === 1000);
+    await assertAnimated(page, "uTime");
     for (const cursor of ["main", "skeleton"]) {
         for (let cycle = 0; cycle < 2; cycle += 1) {
             await page.evaluate((cursor) => window.renderGraphics({ scene: null, cursor }), cursor);
@@ -190,7 +219,7 @@ try {
     }
     assert.deepEqual(touchErrors, []);
     await touchContext.close();
-    console.log("Production app/skeleton WebGL pixels, animation and resizing; both Dither resolution updates; Silk material prop/time updates; both cursor cleanup cycles passed");
+    console.log("Production app/skeleton WebGL pixels, animation and resizing; both Dither resolution updates; both Silk material prop/time updates; both cursor cleanup cycles passed");
 } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));
