@@ -17,15 +17,18 @@ function FindReplace() {
     const [multiMode, setMultiMode] = useState(false);
     const [patterns, setPatterns] = useState("");
 
-    const output = useMemo(() => {
-        if (multiMode) {
-            return replaceMultiplePatterns(text, patterns, useRegex);
+    const result = useMemo(() => {
+        try {
+            const output = multiMode
+                ? replaceMultiplePatterns(text, patterns, useRegex)
+                : replaceText(text, findValue, replaceValue, { useRegex, caseSensitive });
+            const matchCount = multiMode || !findValue
+                ? null
+                : countMatches(text, findValue, { useRegex, caseSensitive });
+            return { output, matchCount, error: "" };
+        } catch (error) {
+            return { output: "", matchCount: null, error: `Invalid regular expression. ${error.message}` };
         }
-
-        return replaceText(text, findValue, replaceValue, {
-            useRegex,
-            caseSensitive,
-        });
     }, [
         text,
         findValue,
@@ -36,10 +39,7 @@ function FindReplace() {
         patterns,
     ]);
 
-    const matchCount = useMemo(() => {
-        if (multiMode || !findValue) return null;
-        return countMatches(text, findValue, { useRegex, caseSensitive });
-    }, [text, findValue, useRegex, caseSensitive, multiMode]);
+    const { output, matchCount, error } = result;
 
     return (
         <TextToolShell
@@ -116,6 +116,8 @@ function FindReplace() {
                             </label>
                             <input
                                 id="find-replace-find"
+                                aria-invalid={Boolean(error)}
+                                aria-describedby={error ? "find-replace-error" : undefined}
                                 className="text-tool-input"
                                 value={findValue}
                                 onChange={(event) =>
@@ -123,6 +125,7 @@ function FindReplace() {
                                 }
                                 placeholder="Text or regex pattern to find"
                             />
+                            {error && <p id="find-replace-error" className="text-tool-empty" role="alert">{error}</p>}
                         </div>
                         <div>
                             <label
@@ -152,12 +155,15 @@ function FindReplace() {
                         </label>
                         <textarea
                             id="find-replace-patterns"
+                            aria-invalid={Boolean(error)}
+                            aria-describedby={error ? "find-replace-error" : undefined}
                             className="text-tool-textarea"
                             value={patterns}
                             onChange={(event) => setPatterns(event.target.value)}
                             placeholder={"find|replace\nhello|world\nfoo|bar"}
                             spellCheck={false}
                         />
+                        {error && <p id="find-replace-error" className="text-tool-empty" role="alert">{error}</p>}
                         <p className="text-tool-hint">
                             Enter one pattern per line using the format{" "}
                             <code>find|replace</code>.
@@ -175,7 +181,7 @@ function FindReplace() {
             <div className="text-tool-panel">
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Result</h2>
-                    <CopyButton text={output} />
+                    <CopyButton text={output} disabled={Boolean(error)} />
                 </div>
                 <textarea
                     className="text-tool-textarea"

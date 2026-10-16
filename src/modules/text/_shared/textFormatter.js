@@ -26,6 +26,8 @@ function buildLetterMap(baseUpper, baseLower, baseDigit = null) {
 
 const BOLD_MAP = buildLetterMap(0x1d400, 0x1d41a, 0x1d7ce);
 const ITALIC_MAP = buildLetterMap(0x1d434, 0x1d44e);
+// Mathematical italic small h lives in Letterlike Symbols, leaving U+1D455 unassigned.
+ITALIC_MAP.set("h", "\u210e");
 const BOLD_ITALIC_MAP = buildLetterMap(0x1d468, 0x1d482);
 const CIRCLED_MAP = buildLetterMap(0x24b6, 0x24d0);
 const SQUARED_MAP = buildLetterMap(0x1f130, 0x1f130);
@@ -162,10 +164,11 @@ export function toLowerCase(text) {
 }
 
 export function toTitleCase(text) {
-    return text.replace(
-        /\b(\p{L})(\p{L}*)/gu,
-        (_, first, rest) => first.toUpperCase() + rest.toLowerCase(),
-    );
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "word" });
+    return [...segmenter.segment(text)].map(({ segment, isWordLike }) => {
+        if (!isWordLike) return segment;
+        return segment.toLowerCase().replace(/\p{L}/u, (first) => first.toUpperCase());
+    }).join("");
 }
 
 export function toSentenceCase(text) {
@@ -406,7 +409,8 @@ export function splitLines(text, delimiter = "\n") {
 }
 
 export function reverseEntireText(text) {
-    return [...text].reverse().join("");
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    return [...segmenter.segment(text)].map(({ segment }) => segment).reverse().join("");
 }
 
 export function reverseWords(text) {
@@ -475,11 +479,7 @@ export function replaceText(
     const flags = caseSensitive ? "g" : "gi";
 
     if (useRegex) {
-        try {
-            return text.replace(new RegExp(findValue, flags), replaceValue);
-        } catch {
-            return text;
-        }
+        return text.replace(new RegExp(findValue, flags), replaceValue);
     }
 
     if (caseSensitive) {
@@ -492,12 +492,11 @@ export function replaceText(
 
 export function replaceMultiplePatterns(text, patternText, useRegex = false) {
     let result = text;
-    const lines = patternText
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
+    const lines = patternText.split("\n");
 
-    for (const line of lines) {
+    for (const [index, rawLine] of lines.entries()) {
+        const line = rawLine.trim();
+        if (!line) continue;
         const separatorIndex = line.indexOf("|");
         if (separatorIndex === -1) continue;
 
@@ -507,8 +506,8 @@ export function replaceMultiplePatterns(text, patternText, useRegex = false) {
         if (useRegex) {
             try {
                 result = result.replace(new RegExp(findValue, "g"), replaceValue);
-            } catch {
-                result = result.split(findValue).join(replaceValue);
+            } catch (error) {
+                throw new SyntaxError(`Pattern on line ${index + 1}: ${error.message}`, { cause: error });
             }
         } else {
             result = result.split(findValue).join(replaceValue);
@@ -528,12 +527,8 @@ export function countMatches(
     const flags = caseSensitive ? "g" : "gi";
 
     if (useRegex) {
-        try {
-            const matches = text.match(new RegExp(findValue, flags));
-            return matches ? matches.length : 0;
-        } catch {
-            return 0;
-        }
+        const matches = text.match(new RegExp(findValue, flags));
+        return matches ? matches.length : 0;
     }
 
     if (caseSensitive) {
