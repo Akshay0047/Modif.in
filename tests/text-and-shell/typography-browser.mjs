@@ -42,6 +42,14 @@ try {
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "Élan Über Déjà");
         await page.locator("#case-converter-input").fill("e\u0301LAN — ПРИВЕТ" );
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "E\u0301lan — Привет");
+        await page.goto(`${baseURL}/text/fancy-text-converter`);
+        await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+        await page.locator("#fancy-text-converter-input").fill("h Hello");
+        const italic = page.locator(".text-tool-result-card").filter({ hasText: "Italic-style Unicode" });
+        await italic.waitFor();
+        assert.equal(await italic.locator(".text-tool-result-card__value").textContent(), "ℎ 𝐻𝑒𝑙𝑙𝑜");
+        await italic.getByRole("button", { name: "Copy to Clipboard", exact: true }).click();
+        assert.equal(await page.evaluate(() => navigator.clipboard.readText()), "ℎ 𝐻𝑒𝑙𝑙𝑜");
         assert.deepEqual(errors, []);
         console.log(`Typography production UI passed at ${viewport.width}px`);
         await page.close();
