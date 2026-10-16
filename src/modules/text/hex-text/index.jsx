@@ -23,7 +23,8 @@ function HexText() {
                     <button type="button" className={`text-tool-button cursor-target${mode === "text-to-hex" ? " is-active" : ""}`} onClick={() => setMode("text-to-hex")}>Text → Hex</button>
                     <button type="button" className={`text-tool-button cursor-target${mode === "hex-to-text" ? " is-active" : ""}`} onClick={() => setMode("hex-to-text")}>Hex → Text</button>
                 </div>
-                <textarea id="hex-text-input" aria-label="Input" aria-invalid={!output.ok} aria-describedby={output.error ? "hex-text-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="hex-text-input">{mode === "text-to-hex" ? "Text to encode" : "UTF-8 hexadecimal bytes"}</label>
+                <textarea id="hex-text-input" aria-invalid={!output.ok} aria-describedby={output.error ? "hex-text-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
                 {output.error && <p id="hex-text-error" className="text-tool-empty" role="alert">{output.error}</p>}
             </div>
             <div className="text-tool-panel">

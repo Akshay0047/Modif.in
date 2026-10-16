@@ -47,7 +47,8 @@ function AsciiConverter() {
                     <button type="button" className={`text-tool-button cursor-target${direction === "encode" ? " is-active" : ""}`} onClick={() => setDirection("encode")}>Encode</button>
                     <button type="button" className={`text-tool-button cursor-target${direction === "decode" ? " is-active" : ""}`} onClick={() => setDirection("decode")}>Decode</button>
                 </div>
-                <textarea id="ascii-converter-input" aria-label="Input" aria-invalid={!output.ok} aria-describedby={output.error ? "ascii-converter-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="ascii-converter-input">{direction === "encode" ? "ASCII text" : "ASCII codes to decode"}</label>
+                <textarea id="ascii-converter-input" aria-invalid={!output.ok} aria-describedby={output.error ? "ascii-converter-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
                 {output.error && <p id="ascii-converter-error" className="text-tool-empty" role="alert">{output.error}</p>}
             </div>
             <div className="text-tool-panel">
