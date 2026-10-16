@@ -240,9 +240,19 @@ export function decodeJwt(token) {
     return { header, payload, expiration, claims: payload };
 }
 
-export function timestampToDate(value) {
-    const numeric = Number(value);
-    const milliseconds = numeric > 1e12 ? numeric : numeric * 1000;
+export function timestampToDate(value, unit = "seconds") {
+    const input = String(value).trim();
+    if (!/^[+-]?\d+(?:\.\d+)?$/.test(input)) {
+        throw new Error("Enter a numeric timestamp in the selected unit.");
+    }
+    if (unit !== "seconds" && unit !== "milliseconds") {
+        throw new Error("Select seconds or milliseconds.");
+    }
+    const numeric = Number(input);
+    const milliseconds = unit === "milliseconds" ? numeric : numeric * 1000;
+    if (!Number.isSafeInteger(milliseconds)) {
+        throw new Error("Timestamp must resolve to a whole, safely represented millisecond.");
+    }
     const date = new Date(milliseconds);
     if (Number.isNaN(date.getTime())) {
         throw new Error("Invalid timestamp.");
