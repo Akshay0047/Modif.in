@@ -76,8 +76,9 @@ export function textToBinary(value, separator = " ") {
 }
 
 export function binaryToText(value) {
+    if (!value.trim()) return "";
     const chunks = value.trim().split(/\s+/);
-    return new TextDecoder("utf-8", { fatal: true }).decode(
+    return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
         Uint8Array.from(chunks, (chunk) => Number.parseInt(chunk, 2)),
     );
 }
@@ -90,7 +91,7 @@ export function textToHex(value, separator = " ") {
 
 export function hexToText(value) {
     const cleaned = value.replace(/[^0-9a-fA-F]/g, "");
-    return new TextDecoder("utf-8", { fatal: true }).decode(
+    return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
         Uint8Array.from(cleaned.match(/.{1,2}/g) ?? [], (chunk) => Number.parseInt(chunk, 16)),
     );
 }
