@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import AnimatedList from "./AnimatedList";
 import { filterTools } from "../data/tools";
 import "./SearchBar.css";
@@ -6,6 +6,9 @@ import "./SearchBar.css";
 function SearchBar({ categories, onSelect }) {
     const [query, setQuery] = useState("");
     const [isFocused, setIsFocused] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const inputId = useId();
+    const listId = `${inputId}-results`;
     const rootRef = useRef(null);
 
     const matches = useMemo(
@@ -40,33 +43,65 @@ function SearchBar({ categories, onSelect }) {
     };
 
     const showResults = isFocused && query.trim().length > 0;
+    const activeIndex = selectedIndex < matches.length ? selectedIndex : -1;
+
+    const handleKeyDown = (event) => {
+        if (event.nativeEvent.isComposing) return;
+        if (event.key === "Escape" || event.key === "Tab") {
+            setIsFocused(false);
+            setSelectedIndex(-1);
+            if (event.key === "Escape" && showResults) event.preventDefault();
+            return;
+        }
+        if (matches.length && ["ArrowDown", "ArrowUp"].includes(event.key)) {
+            event.preventDefault();
+            setIsFocused(true);
+            setSelectedIndex((previous) => event.key === "ArrowDown"
+                ? (previous + 1) % matches.length
+                : (previous <= 0 ? matches.length : previous) - 1);
+        } else if (event.key === "Enter" && showResults && activeIndex >= 0) {
+            event.preventDefault();
+            handleSelect(resultLabels[activeIndex]);
+        }
+    };
 
     return (
         <div className="search-bar" ref={rootRef}>
-            <label className="search-bar__label" htmlFor="tool-search">
+            <label className="search-bar__label" htmlFor={inputId}>
                 Search tools
             </label>
             <input
-                id="tool-search"
+                id={inputId}
                 className="search-bar__input cursor-target"
                 type="search"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={showResults}
+                aria-controls={showResults && matches.length ? listId : undefined}
+                aria-activedescendant={showResults && activeIndex >= 0 ? `${listId}-option-${activeIndex}` : undefined}
                 value={query}
                 placeholder="Search category or component…"
                 autoComplete="off"
                 spellCheck={false}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                    setQuery(event.target.value);
+                    setSelectedIndex(-1);
+                    setIsFocused(true);
+                }}
                 onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onKeyDown={handleKeyDown}
             />
             {showResults ? (
                 resultLabels.length > 0 ? (
                     <div className="search-dropdown-menu">
                         <AnimatedList
+                            id={listId}
                             itemClassName="search-bar__suggestion-item cursor-target"
                             items={resultLabels}
                             onItemSelect={handleSelect}
-                            enableArrowNavigation
-                            showGradients={false}
-                            displayScrollbar={false}
+                            selectedIndex={activeIndex}
+                            onActiveChange={setSelectedIndex}
                         />
                     </div>
                 ) : (
@@ -78,6 +113,9 @@ function SearchBar({ categories, onSelect }) {
                     </div>
                 )
             ) : null}
+            <span className="search-bar__label" role="status">
+                {showResults ? `${matches.length} matching tools` : ""}
+            </span>
         </div>
     );
 }
