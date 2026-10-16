@@ -38,7 +38,6 @@ const TargetCursor = ({
     spinDuration = 6.4,
     hideDefaultCursor = true,
     hoverDuration = 0.2,
-    parallaxOn = true,
     cursorColor = "#ffffff",
     cursorColorOnTarget,
 }) => {

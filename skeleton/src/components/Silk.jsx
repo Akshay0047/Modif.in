@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
     forwardRef,
@@ -142,13 +141,15 @@ function Silk({
     );
 
     useEffect(() => {
-        uniforms.uSpeed.value = speed;
-        uniforms.uScale.value = scale;
-        uniforms.uNoiseIntensity.value = noiseIntensity;
-        uniforms.uColor.value.setRGB(...hexToNormalizedRGB(color));
-        uniforms.uRotation.value = rotation;
-        uniforms.uLightMode.value = lightMode ? 1 : 0;
-    }, [speed, scale, noiseIntensity, color, rotation, lightMode, uniforms]);
+        const materialUniforms = meshRef.current?.material.uniforms;
+        if (!materialUniforms) return;
+        materialUniforms.uSpeed.value = speed;
+        materialUniforms.uScale.value = scale;
+        materialUniforms.uNoiseIntensity.value = noiseIntensity;
+        materialUniforms.uColor.value.setRGB(...hexToNormalizedRGB(color));
+        materialUniforms.uRotation.value = rotation;
+        materialUniforms.uLightMode.value = lightMode ? 1 : 0;
+    }, [speed, scale, noiseIntensity, color, rotation, lightMode]);
 
     return (
         <Canvas
