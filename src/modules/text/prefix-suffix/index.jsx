@@ -183,12 +183,13 @@ function PrefixSuffix() {
                         </label>
                         <input
                             id="prefix-suffix-wrapper"
+                            aria-describedby="prefix-suffix-wrapper-hint"
                             className="text-tool-input"
                             value={wrapper}
                             onChange={(event) => setWrapper(event.target.value)}
                             placeholder="[] or () or quotes"
                         />
-                        <p className="text-tool-hint">
+                        <p id="prefix-suffix-wrapper-hint" className="text-tool-hint">
                             The wrapper is split in half and placed around each
                             line.
                         </p>

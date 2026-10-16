@@ -15,7 +15,7 @@ function PasswordStrengthChecker() {
         <TextToolShell title="Password Strength Checker" description="Analyze password length, character variety, and overall strength." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
                 <label className="text-tool-label" htmlFor="password-strength-input">Password to analyze</label>
-                <input id="password-strength-input" className="text-tool-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a password to analyze" />
+                <input id="password-strength-input" aria-describedby="password-strength-feedback" className="text-tool-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a password to analyze" />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-stat-grid">
@@ -28,7 +28,7 @@ function PasswordStrengthChecker() {
                         <span className="text-tool-stat__value">{result.label}</span>
                     </div>
                 </div>
-                <ul className="text-tool-hint" style={{ marginTop: "1rem", paddingLeft: "1.25rem" }}>
+                <ul id="password-strength-feedback" className="text-tool-hint" style={{ marginTop: "1rem", paddingLeft: "1.25rem" }}>
                     {result.feedback.map((item) => (
                         <li key={item}>{item}</li>
                     ))}
