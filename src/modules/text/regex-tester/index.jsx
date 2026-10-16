@@ -41,6 +41,8 @@ function RegexTester() {
                         </label>
                         <input
                             id="regex-pattern"
+                            aria-invalid={Boolean(matchResult.error)}
+                            aria-describedby={matchResult.error ? "regex-input-error" : undefined}
                             className="text-tool-input"
                             value={pattern}
                             onChange={(event) => setPattern(event.target.value)}
@@ -52,6 +54,8 @@ function RegexTester() {
                         </label>
                         <input
                             id="regex-flags"
+                            aria-invalid={Boolean(matchResult.error)}
+                            aria-describedby={matchResult.error ? "regex-input-error" : undefined}
                             className="text-tool-input"
                             value={flags}
                             onChange={(event) => setFlags(event.target.value)}
@@ -83,7 +87,7 @@ function RegexTester() {
             <div className="text-tool-panel">
                 <h2 className="text-tool-section-title">Matches</h2>
                 {matchResult.error ? (
-                    <p className="text-tool-empty">{matchResult.error}</p>
+                    <p id="regex-input-error" className="text-tool-empty" role="alert">{matchResult.error}</p>
                 ) : (
                     <div className="text-tool-table-wrap">
                         <table className="text-tool-table">

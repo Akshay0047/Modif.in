@@ -37,6 +37,8 @@ function QueryStringTools() {
                     </label>
                     <textarea
                         id="query-parse-input"
+                        aria-invalid={Boolean(parsed.error)}
+                        aria-describedby={parsed.error ? "query-parse-error" : undefined}
                         className="text-tool-textarea"
                         value={parseInput}
                         onChange={(event) => setParseInput(event.target.value)}
@@ -50,7 +52,7 @@ function QueryStringTools() {
                         />
                     </div>
                     {parsed.error ? (
-                        <p className="text-tool-empty">{parsed.error}</p>
+                        <p id="query-parse-error" className="text-tool-empty" role="alert">{parsed.error}</p>
                     ) : (
                         <textarea
                             className="text-tool-textarea"
@@ -67,6 +69,8 @@ function QueryStringTools() {
                     </label>
                     <textarea
                         id="query-generate-input"
+                        aria-invalid={Boolean(generated.error)}
+                        aria-describedby={generated.error ? "query-generate-error" : undefined}
                         className="text-tool-textarea"
                         value={generateInput}
                         onChange={(event) => setGenerateInput(event.target.value)}
@@ -80,7 +84,7 @@ function QueryStringTools() {
                         />
                     </div>
                     {generated.error ? (
-                        <p className="text-tool-empty">{generated.error}</p>
+                        <p id="query-generate-error" className="text-tool-empty" role="alert">{generated.error}</p>
                     ) : (
                         <textarea
                             className="text-tool-textarea"
