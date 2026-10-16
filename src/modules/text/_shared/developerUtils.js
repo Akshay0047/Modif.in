@@ -256,16 +256,21 @@ export function timestampToDate(value, unit = "seconds") {
     if (unit !== "seconds" && unit !== "milliseconds") {
         throw new Error("Select seconds or milliseconds.");
     }
-    const numeric = Number(input);
-    const milliseconds = unit === "milliseconds" ? numeric : numeric * 1000;
-    if (!Number.isSafeInteger(milliseconds)) {
-        throw new Error("Timestamp must resolve to a whole, safely represented millisecond.");
+    const [, sign, whole, decimal = ""] = /^([+-]?)(\d+)(?:\.(\d+))?$/.exec(input);
+    const fraction = decimal.replace(/0+$/, "");
+    const precision = unit === "seconds" ? 3 : 0;
+    if (fraction.length > precision) {
+        throw new Error("Timestamp must resolve to a whole millisecond.");
     }
-    const date = new Date(milliseconds);
-    if (Number.isNaN(date.getTime())) {
+    // Scale decimal digits exactly: floating point multiplication can turn
+    // 1.001 seconds into 1000.9999999999999 milliseconds.
+    let milliseconds = BigInt(whole) * (unit === "seconds" ? 1000n : 1n);
+    if (fraction) milliseconds += BigInt(fraction.padEnd(precision, "0"));
+    if (sign === "-") milliseconds = -milliseconds;
+    if (milliseconds < -8640000000000000n || milliseconds > 8640000000000000n) {
         throw new Error("Invalid timestamp.");
     }
-    return date;
+    return new Date(Number(milliseconds));
 }
 
 export function dateToTimestamps(dateInput) {
