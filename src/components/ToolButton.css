@@ -1,4 +1,5 @@
 .tool-button {
+  text-decoration: none;
   position: relative;
   display: flex;
   flex-direction: column;
