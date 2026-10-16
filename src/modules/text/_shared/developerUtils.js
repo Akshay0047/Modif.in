@@ -18,12 +18,9 @@ export function sortJsonKeys(value, spaces = 2) {
             return input.map(sortDeep);
         }
         if (input && typeof input === "object") {
-            return Object.keys(input)
+            return Object.fromEntries(Object.keys(input)
                 .sort()
-                .reduce((accumulator, key) => {
-                    accumulator[key] = sortDeep(input[key]);
-                    return accumulator;
-                }, {});
+                .map((key) => [key, sortDeep(input[key])]));
         }
         return input;
     };
