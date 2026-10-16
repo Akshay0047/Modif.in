@@ -1,9 +1,8 @@
-/* eslint-disable react/no-unknown-property */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
     forwardRef,
     useRef,
-    useMemo,
+    useState,
     useLayoutEffect,
     useEffect,
 } from "react";
@@ -133,7 +132,7 @@ function Silk({
     const resolvedColor1 = color1 ?? color ?? "#7B7481";
     const resolvedColor2 = color2 ?? color1 ?? color ?? "#7B7481";
 
-    const uniforms = useMemo(
+    const [uniforms] = useState(
         () => ({
             uSpeed: { value: speed },
             uScale: { value: scale },
@@ -144,18 +143,18 @@ function Silk({
             uLightMode: { value: lightMode ? 1 : 0 },
             uTime: { value: 0 },
         }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [],
     );
 
     useEffect(() => {
-        uniforms.uSpeed.value = speed;
-        uniforms.uScale.value = scale;
-        uniforms.uNoiseIntensity.value = noiseIntensity;
-        uniforms.uColor1.value.setRGB(...hexToNormalizedRGB(resolvedColor1));
-        uniforms.uColor2.value.setRGB(...hexToNormalizedRGB(resolvedColor2));
-        uniforms.uRotation.value = rotation;
-        uniforms.uLightMode.value = lightMode ? 1 : 0;
+        const materialUniforms = meshRef.current?.material.uniforms;
+        if (!materialUniforms) return;
+        materialUniforms.uSpeed.value = speed;
+        materialUniforms.uScale.value = scale;
+        materialUniforms.uNoiseIntensity.value = noiseIntensity;
+        materialUniforms.uColor1.value.setRGB(...hexToNormalizedRGB(resolvedColor1));
+        materialUniforms.uColor2.value.setRGB(...hexToNormalizedRGB(resolvedColor2));
+        materialUniforms.uRotation.value = rotation;
+        materialUniforms.uLightMode.value = lightMode ? 1 : 0;
     }, [
         speed,
         scale,
@@ -164,7 +163,6 @@ function Silk({
         resolvedColor2,
         rotation,
         lightMode,
-        uniforms,
     ]);
 
     return (
