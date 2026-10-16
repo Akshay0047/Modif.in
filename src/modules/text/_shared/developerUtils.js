@@ -31,107 +31,30 @@ export function sortJsonKeys(value, spaces = 2) {
     return JSON.stringify(sortDeep(JSON.parse(value)), null, spaces);
 }
 
-export function jsonToYaml(value) {
-    const convert = (input, indent = 0) => {
-        const padding = "  ".repeat(indent);
-
-        if (input === null) return "null";
-        if (typeof input === "boolean" || typeof input === "number") {
-            return String(input);
-        }
-        if (typeof input === "string") {
-            return JSON.stringify(input);
-        }
-        if (Array.isArray(input)) {
-            if (input.length === 0) return "[]";
-            return input
-                .map((item) => {
-                    const rendered = convert(item, indent + 1);
-                    if (typeof item === "object" && item !== null) {
-                        return `${padding}-\n${rendered
-                            .split("\n")
-                            .map((line) => `  ${line}`)
-                            .join("\n")}`;
-                    }
-                    return `${padding}- ${rendered}`;
-                })
-                .join("\n");
-        }
-
-        const entries = Object.entries(input);
-        if (entries.length === 0) return "{}";
-
-        return entries
-            .map(([key, item]) => {
-                if (typeof item === "object" && item !== null) {
-                    return `${padding}${key}:\n${convert(item, indent + 1)}`;
-                }
-                return `${padding}${key}: ${convert(item, indent + 1)}`;
-            })
-            .join("\n");
-    };
-
-    return convert(JSON.parse(value));
+export async function jsonToYaml(value) {
+    const { stringify } = await import("yaml");
+    return stringify(JSON.parse(value));
 }
 
-export function yamlToJson(value) {
-    const lines = value.split("\n");
-    const root = {};
-    const stack = [{ indent: -1, value: root }];
-
-    for (const rawLine of lines) {
-        if (!rawLine.trim() || rawLine.trim().startsWith("#")) continue;
-
-        const indent = rawLine.match(/^\s*/)?.[0].length ?? 0;
-        const line = rawLine.trim();
-
-        while (stack.length > 1 && indent <= stack[stack.length - 1].indent) {
-            stack.pop();
+export async function yamlToJson(value) {
+    const { parseDocument } = await import("yaml");
+    const document = parseDocument(value, { stringKeys: true, intAsBigInt: true });
+    const problem = document.errors[0] ?? document.warnings[0];
+    if (problem) throw new Error(problem.message);
+    const parsed = document.toJS({ maxAliasCount: 100 });
+    return JSON.stringify(parsed, (_key, item) => {
+        if (typeof item === "bigint") {
+            const number = Number(item);
+            if (!Number.isSafeInteger(number)) {
+                throw new Error("YAML integer is outside the safe JSON number range.");
+            }
+            return number;
         }
-
-        const parent = stack[stack.length - 1].value;
-
-        if (line.startsWith("- ")) {
-            const arrayTarget = Array.isArray(parent)
-                ? parent
-                : (() => {
-                      const key = Object.keys(parent).pop();
-                      if (!Array.isArray(parent[key])) parent[key] = [];
-                      return parent[key];
-                  })();
-            arrayTarget.push(parseYamlScalar(line.slice(2).trim()));
-            continue;
+        if (typeof item === "number" && !Number.isFinite(item)) {
+            throw new Error("JSON cannot represent non-finite YAML numbers.");
         }
-
-        const separatorIndex = line.indexOf(":");
-        if (separatorIndex === -1) continue;
-
-        const key = line.slice(0, separatorIndex).trim();
-        const rawValue = line.slice(separatorIndex + 1).trim();
-
-        if (!rawValue) {
-            parent[key] = {};
-            stack.push({ indent, value: parent[key] });
-        } else {
-            parent[key] = parseYamlScalar(rawValue);
-        }
-    }
-
-    return JSON.stringify(root, null, 2);
-}
-
-function parseYamlScalar(value) {
-    if (value === "null") return null;
-    if (value === "true") return true;
-    if (value === "false") return false;
-    if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
-    if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-    ) {
-        return value.slice(1, -1);
-    }
-    return value;
+        return item;
+    }, 2);
 }
 
 export function jsonToCsv(value) {
