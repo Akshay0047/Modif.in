@@ -42,7 +42,7 @@ try {
             await page.getByRole("alert").waitFor();
             assert.equal(await input.getAttribute("aria-invalid"), "true");
             assert.equal(await input.getAttribute("aria-describedby"), `${slug}-error`);
-            assert.equal(await page.getByRole("button", { name: "Copy", exact: true }).isDisabled(), true);
+            assert.equal(await page.getByRole("button", { name: "Copy to Clipboard", exact: true }).isDisabled(), true);
             assert.equal(await page.locator("textarea[readonly]").inputValue(), "");
             await input.fill(valid);
             await page.waitForFunction((text) => document.querySelector("textarea[readonly]")?.value === text, expected);

@@ -32,7 +32,7 @@ function AsciiConverter() {
                     ? selected.encode(input)
                     : selected.decode(input),
             ),
-        [input, mode, direction, selected],
+        [input, direction, selected],
     );
 
     return (
