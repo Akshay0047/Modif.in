@@ -30,6 +30,7 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.4.54",
     "postprocessing": "^6.39.5",
+    "prettier": "^3.9.10",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
