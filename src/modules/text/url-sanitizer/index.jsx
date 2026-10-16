@@ -15,7 +15,7 @@ function UrlSanitizer() {
     );
 
     return (
-        <TextToolShell title="URL Sanitizer" description="Strip tracking, analytics, and UI filter noise so only the meaningful URL remains." leading={<BackButton />}>
+        <TextToolShell title="URL Sanitizer" description="Remove recognized tracking parameters while preserving functional query values, fragments, and paths." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
             </div>

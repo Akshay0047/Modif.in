@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
+import { safeExecute } from "../_shared/webSecurityUtils";
 import {
+    calculatePassphraseEntropy,
     generatePassphrase,
     generatePassword,
 } from "../_shared/generatorUtils";
@@ -10,7 +12,7 @@ import {
 function PasswordGenerator() {
     const [mode, setMode] = useState("password");
     const [length, setLength] = useState(16);
-    const [wordCount, setWordCount] = useState(4);
+    const [wordCount, setWordCount] = useState(6);
     const [uppercase, setUppercase] = useState(true);
     const [lowercase, setLowercase] = useState(true);
     const [numbers, setNumbers] = useState(true);
@@ -20,7 +22,7 @@ function PasswordGenerator() {
     const [capitalizeWords, setCapitalizeWords] = useState(false);
     const [seed, setSeed] = useState(0);
 
-    const output = useMemo(() => {
+    const result = useMemo(() => safeExecute("generate", () => {
         if (mode === "passphrase") {
             return generatePassphrase({
                 wordCount,
@@ -37,7 +39,7 @@ function PasswordGenerator() {
             symbols,
             excludeAmbiguous,
         });
-    }, [
+    }), [
         mode,
         length,
         wordCount,
@@ -50,6 +52,9 @@ function PasswordGenerator() {
         capitalizeWords,
         seed,
     ]);
+
+    const output = result.ok ? result.value : "";
+    const entropy = calculatePassphraseEntropy(wordCount, separator, capitalizeWords);
 
     return (
         <TextToolShell
@@ -146,6 +151,15 @@ function PasswordGenerator() {
                                 setWordCount(Number(event.target.value))
                             }
                         />
+                        <p className="text-tool-hint" role="status">
+                            Entropy: {entropy.boundariesPreserved ? "" : "at most "}
+                            {entropy.bits.toFixed(1)} bits from 7,772 possible words.
+                            {wordCount < 6 ? " Use six or more words for at least 77.5 bits." : " Six words provide about 77.5 bits."}
+                            {!entropy.boundariesPreserved ? " Use a separator containing a number, space or punctuation, or capitalize words to preserve word boundaries." : " Fixed separators and capitalization add no random bits."}
+                        </p>
+                        <p className="text-tool-hint">
+                            Word list adapted from <a className="cursor-target" href="https://www.eff.org/dice" target="_blank" rel="noreferrer">EFF</a> (CC BY 4.0).
+                        </p>
                         <label className="text-tool-label" htmlFor="passphrase-separator">
                             Separator
                         </label>
@@ -172,8 +186,9 @@ function PasswordGenerator() {
             <div className="text-tool-panel">
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Generated output</h2>
-                    <CopyButton text={output} />
+                    <CopyButton text={output} disabled={!result.ok} />
                 </div>
+                {result.error ? <p className="text-tool-empty" role="alert">{result.error}</p> : null}
                 <textarea
                     className="text-tool-textarea"
                     value={output}
