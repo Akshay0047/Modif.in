@@ -232,12 +232,20 @@ export function decodeJwt(token) {
 
     const header = decodePart(parts[0]);
     const payload = decodePart(parts[1]);
-    const expiration =
-        typeof payload.exp === "number"
-            ? new Date(payload.exp * 1000).toISOString()
+    let expiration = null;
+    let expirationError = null;
+    if (payload && typeof payload === "object" && Object.hasOwn(payload, "exp")) {
+        const date = typeof payload.exp === "number" && Number.isFinite(payload.exp)
+            ? new Date(payload.exp * 1000)
             : null;
+        if (!date || Number.isNaN(date.getTime())) {
+            expirationError = "Invalid exp claim: use numeric Unix seconds within the supported date range.";
+        } else {
+            expiration = date.toISOString();
+        }
+    }
 
-    return { header, payload, expiration, claims: payload };
+    return { header, payload, expiration, expirationError, claims: payload };
 }
 
 export function timestampToDate(value, unit = "seconds") {
