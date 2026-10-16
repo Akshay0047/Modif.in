@@ -1,7 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import DepthText from "../components/DepthText";
 import PixelCard from "../components/PixelCard";
+import { useSilkPreview } from "../contexts/SilkPreviewContext";
 import "./Hero.css";
+
+const HUB_PREVIEW_KEY = {
+    text: "text",
+    image: "image",
+    pdf: "doc",
+};
 
 const EDITOR_CARDS = [
     {
@@ -34,6 +41,7 @@ const EDITOR_CARDS = [
 
 function Hero() {
     const navigate = useNavigate();
+    const setSilkPreview = useSilkPreview();
 
     return (
         <section className="hero">
@@ -62,16 +70,24 @@ function Hero() {
             <div className="hero-editor-cards">
                 {EDITOR_CARDS.map(
                     ({ id, title, description, icon, pixelColor, path }) => (
-                        <PixelCard
+                        <div
                             key={id}
-                            variant="blue"
-                            title={title}
-                            description={description}
-                            icon={icon}
-                            pixelColor={pixelColor}
-                            className="hero-editor-card cursor-target hero-editor-card--clickable"
-                            onClick={() => navigate(path)}
-                        />
+                            className="hero-editor-card-wrap"
+                            onMouseEnter={() =>
+                                setSilkPreview?.(HUB_PREVIEW_KEY[id] ?? null)
+                            }
+                            onMouseLeave={() => setSilkPreview?.(null)}
+                        >
+                            <PixelCard
+                                variant="blue"
+                                title={title}
+                                description={description}
+                                icon={icon}
+                                pixelColor={pixelColor}
+                                className="hero-editor-card cursor-target hero-editor-card--clickable"
+                                onClick={() => navigate(path)}
+                            />
+                        </div>
                     ),
                 )}
             </div>

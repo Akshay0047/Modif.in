@@ -16,6 +16,7 @@
   height: 100vh;
   z-index: -1;
   pointer-events: none;
+  background-color: #021108;
 }
 
 .tool-hub-layout .app-header {

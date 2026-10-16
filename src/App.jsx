@@ -4,8 +4,7 @@ import ImageTools from "./pages/ImageTools";
 import TextTools from "./pages/TextTools";
 import DocTools from "./pages/DocTools";
 import ModuleToolLayout from "./layouts/ModuleToolLayout";
-import { useModuleScrollbarTheme } from "./hooks/useModuleScrollbarTheme";
-import { useGaPageViews } from "./hooks/useGaPageViews";
+import AppShell from "./layouts/AppShell";
 
 // Auto-register every tool subpage placed under src/modules/<module>/<slug>/index.jsx.
 // The module directory name maps to the route prefix used by each tool's `path`
@@ -53,46 +52,47 @@ function groupRoutesByModule(routes) {
 const routesByModule = groupRoutesByModule(toolRoutes);
 
 function App() {
-    useModuleScrollbarTheme();
-    useGaPageViews();
-
     return (
+        <AppShell>
         <Routes>
             <Route path="/" element={<LandingPage />} />
 
-            <Route path="/image" element={<ModuleToolLayout module="image" />}>
-                <Route index element={<ImageTools />} />
-                {routesByModule.image.map(({ childPath, Component }) => (
-                    <Route
-                        key={childPath}
-                        path={childPath}
-                        element={<Component />}
-                    />
-                ))}
-            </Route>
+            <Route element={<ModuleToolLayout />}>
+                <Route path="image">
+                    <Route index element={<ImageTools />} />
+                    {routesByModule.image.map(({ childPath, Component }) => (
+                        <Route
+                            key={childPath}
+                            path={childPath}
+                            element={<Component />}
+                        />
+                    ))}
+                </Route>
 
-            <Route path="/text" element={<ModuleToolLayout module="text" />}>
-                <Route index element={<TextTools />} />
-                {routesByModule.text.map(({ childPath, Component }) => (
-                    <Route
-                        key={childPath}
-                        path={childPath}
-                        element={<Component />}
-                    />
-                ))}
-            </Route>
+                <Route path="text">
+                    <Route index element={<TextTools />} />
+                    {routesByModule.text.map(({ childPath, Component }) => (
+                        <Route
+                            key={childPath}
+                            path={childPath}
+                            element={<Component />}
+                        />
+                    ))}
+                </Route>
 
-            <Route path="/doc" element={<ModuleToolLayout module="doc" />}>
-                <Route index element={<DocTools />} />
-                {routesByModule.doc.map(({ childPath, Component }) => (
-                    <Route
-                        key={childPath}
-                        path={childPath}
-                        element={<Component />}
-                    />
-                ))}
+                <Route path="doc">
+                    <Route index element={<DocTools />} />
+                    {routesByModule.doc.map(({ childPath, Component }) => (
+                        <Route
+                            key={childPath}
+                            path={childPath}
+                            element={<Component />}
+                        />
+                    ))}
+                </Route>
             </Route>
         </Routes>
+        </AppShell>
     );
 }
 

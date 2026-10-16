@@ -22,3 +22,10 @@ export function getModuleFromPathname(pathname) {
 
     return null;
 }
+
+/** Keys for `MODULE_TOOL_CONFIG` (image | text | doc). */
+export function getModuleLayoutKey(pathname) {
+    const module = getModuleFromPathname(pathname);
+    if (module === "docs") return "doc";
+    return module;
+}

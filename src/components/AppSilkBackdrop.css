@@ -1,0 +1,17 @@
+.app-silk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background-color: #021108;
+}
+
+/* Keep WebGL running on the homepage while the landing page covers it. */
+.app-silk-backdrop--warmup {
+  visibility: hidden;
+}
+
+.app-silk-backdrop--visible {
+  visibility: visible;
+}

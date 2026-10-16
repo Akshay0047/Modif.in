@@ -1,28 +1,20 @@
-import { Link, Outlet } from "react-router-dom";
-import Silk from "../components/Silk";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import DepthText from "../components/DepthText";
 import TargetCursor from "../components/TargetCursor";
 import Footer from "../sections/Footer";
 import { useToolPageScroll } from "../hooks/useToolPageScroll";
+import { getModuleLayoutKey } from "../utils/moduleTheme";
 import { MODULE_TOOL_CONFIG } from "./moduleToolConfig";
 import "./ToolHubLayout.css";
 
-function ModuleToolLayout({ module }) {
-    const config = MODULE_TOOL_CONFIG[module] ?? MODULE_TOOL_CONFIG.text;
+function ModuleToolLayout() {
+    const { pathname } = useLocation();
+    const moduleKey = getModuleLayoutKey(pathname) ?? "text";
+    const config = MODULE_TOOL_CONFIG[moduleKey] ?? MODULE_TOOL_CONFIG.text;
     useToolPageScroll();
 
     return (
         <main className="tool-hub-layout">
-            <div className="tool-hub-layout__background" aria-hidden="true">
-                <Silk
-                    speed={5}
-                    scale={1}
-                    noiseIntensity={1.5}
-                    color1={config.color1}
-                    color2={config.color2}
-                />
-            </div>
-
             <TargetCursor
                 spinDuration={6.4}
                 hideDefaultCursor
