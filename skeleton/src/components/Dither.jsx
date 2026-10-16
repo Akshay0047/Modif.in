@@ -1,5 +1,4 @@
-/* eslint-disable react/no-unknown-property */
-import { useRef, useEffect, forwardRef } from "react";
+import { useRef, useEffect, useState, forwardRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, wrapEffect } from "@react-three/postprocessing";
 import { Effect } from "postprocessing";
@@ -184,7 +183,7 @@ function DitheredWaves({
     const mouseRef = useRef(new THREE.Vector2());
     const { viewport, size, gl } = useThree();
 
-    const uniforms = useRef({
+    const [uniforms] = useState(() => ({
         time: { value: 0 },
         resolution: { value: new THREE.Vector2(0, 0) },
         waveSpeed: { value: waveSpeed },
@@ -195,14 +194,14 @@ function DitheredWaves({
         mousePos: { value: new THREE.Vector2(0, 0) },
         enableMouseInteraction: { value: enableMouseInteraction ? 1 : 0 },
         mouseRadius: { value: mouseRadius },
-    }).current;
+    }));
 
     useEffect(() => {
         const dpr = gl.getPixelRatio();
         const w = Math.floor(size.width * dpr);
         const h = Math.floor(size.height * dpr);
-        uniforms.resolution.value.set(w, h);
-    }, [size, gl, uniforms]);
+        materialRef.current?.uniforms.resolution.value.set(w, h);
+    }, [size, gl]);
 
     useFrame(({ clock }) => {
         if (!materialRef.current) return;
