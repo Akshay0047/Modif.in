@@ -43,5 +43,24 @@ await withBrowser(async (page, context) => {
         else if (slug === "lorem-ipsum-generator") assert.equal(changed.split(" ").length, expected);
         else assert.equal(changed.split("\n").length, expected);
     }
+    await page.goto(`${baseURL}/text/token-generator`);
+    const token = page.getByRole("textbox", { name: "Generated token", exact: true });
+    const length = page.locator("#token-length");
+    await token.waitFor();
+    for (const [mode, pattern, expectedLengths] of [
+        ["Hex tokens", /^[0-9a-f]+$/, [32, 34, 128, 16, 16]],
+        ["API-style tokens", /^[A-Za-z0-9_-]+$/, [32, 33, 128, 8, 9]],
+        ["Random strings", /^[A-Za-z0-9]+$/, [32, 33, 128, 8, 9]],
+    ]) {
+        // A fresh route restores the default length before each mode sweep.
+        await page.goto(`${baseURL}/text/token-generator`);
+        await page.getByRole("button", { name: mode, exact: true }).click();
+        for (const [index, key] of [null, "ArrowRight", "End", "Home", "ArrowRight"].entries()) {
+            if (key) await length.press(key);
+            const value = await token.inputValue();
+            assert.match(value, pattern, `${mode} uses its intended character set`);
+            assert.equal(value.length, expectedLengths[index], `${mode} preserves default, odd, maximum and minimum length semantics`);
+        }
+    }
     console.log("Eight generators preserve initial, setting-change, explicit-regeneration and stable-copy behavior.");
 });
