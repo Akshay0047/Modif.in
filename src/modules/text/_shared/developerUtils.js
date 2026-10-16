@@ -266,18 +266,25 @@ export function formatXmlDocument(value) {
     return formatXml(value);
 }
 
-export function validateXml(value) {
+function parseXmlDocument(value) {
     const parser = new DOMParser();
     const document = parser.parseFromString(value, "application/xml");
-    const errorNode = document.querySelector("parsererror");
+    const errorNode = document.getElementsByTagNameNS("http://www.mozilla.org/newlayout/xml/parsererror.xml", "parsererror")[0];
     if (errorNode) {
         throw new Error(errorNode.textContent || "Invalid XML.");
     }
+    return document;
+}
+
+export function validateXml(value) {
+    parseXmlDocument(value);
     return { valid: true, message: "Valid XML" };
 }
 
 export function minifyXml(value) {
-    return value.replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
+    // Without a schema, even whitespace-only text nodes can be meaningful.
+    // Let the XML serializer compact markup syntax; retain every content node.
+    return new XMLSerializer().serializeToString(parseXmlDocument(value));
 }
 
 export function encodeHtmlEntities(value) {
