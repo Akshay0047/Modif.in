@@ -26,11 +26,12 @@ function UrlParser() {
     return (
         <TextToolShell title="URL Parser" description="Break a URL into protocol, host, port, path, query, and fragment parts." leading={<BackButton />}>
             <div className="text-tool-panel">
-                <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="url-parser-input">URL to parse</label>
+                <textarea aria-invalid={Boolean(parsed.error)} aria-describedby={parsed.error ? "url-parser-input-error" : undefined} id="url-parser-input" className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
             </div>
             <div className="text-tool-panel">
                 {parsed.error ? (
-                    <p className="text-tool-empty">{parsed.error}</p>
+                    <p id="url-parser-input-error" className="text-tool-empty" role="alert">{parsed.error}</p>
                 ) : (
                     <div className="text-tool-info-grid">
                         {rows.map(([label, value]) => (

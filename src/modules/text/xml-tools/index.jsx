@@ -47,7 +47,8 @@ function XmlTools() {
                         </button>
                     ))}
                 </div>
-                <textarea
+                <label className="text-tool-label" htmlFor="xml-tools-input">XML document</label>
+                <textarea aria-invalid={Boolean(result.error)} aria-describedby={result.error ? "xml-tools-input-error" : undefined} id="xml-tools-input"
                     className="text-tool-textarea"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
@@ -61,7 +62,7 @@ function XmlTools() {
                     <CopyButton text={result.ok ? result.value : ""} disabled={!result.ok} />
                 </div>
                 {result.error ? (
-                    <p className="text-tool-empty">{result.error}</p>
+                    <p id="xml-tools-input-error" className="text-tool-empty" role="alert">{result.error}</p>
                 ) : (
                     <textarea
                         className="text-tool-textarea"

@@ -43,7 +43,8 @@ function HtmlEntityTools() {
                         Decode
                     </button>
                 </div>
-                <textarea
+                <label className="text-tool-label" htmlFor="html-entity-input">{mode === "encode" ? "Text to encode" : "HTML entities to decode"}</label>
+                <textarea id="html-entity-input"
                     className="text-tool-textarea"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}

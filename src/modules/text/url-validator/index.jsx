@@ -14,7 +14,8 @@ function UrlValidator() {
     return (
         <TextToolShell title="URL Validator" description="Check whether a URL has valid basic structure." leading={<BackButton />}>
             <div className="text-tool-panel">
-                <input className="text-tool-input" value={input} onChange={(e) => setInput(e.target.value)} />
+                <label className="text-tool-label" htmlFor="url-validator-input">URL to validate</label>
+                <input aria-invalid={Boolean(result.error)} aria-describedby="url-validation-status" id="url-validator-input" className="text-tool-input" value={input} onChange={(e) => setInput(e.target.value)} />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-stat-grid">
@@ -25,7 +26,7 @@ function UrlValidator() {
                         </span>
                     </div>
                 </div>
-                <p className="text-tool-hint" style={{ marginTop: "0.75rem" }}>
+                <p id="url-validation-status" className="text-tool-hint" style={{ marginTop: "0.75rem" }}>
                     {result.error || result.value.message}
                 </p>
             </div>
