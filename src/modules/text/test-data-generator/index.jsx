@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
+import { safeExecute } from "../_shared/webSecurityUtils";
 import { generateTestData } from "../_shared/generatorUtils";
 
 const TEST_DATA_TYPES = [
@@ -21,7 +22,7 @@ function TestDataGenerator() {
     );
     const [seed, setSeed] = useState(0);
 
-    const output = useMemo(() => {
+    const result = useMemo(() => safeExecute("generate", () => {
         const activeTypes =
             selectedTypes.length > 0
                 ? selectedTypes
@@ -33,7 +34,7 @@ function TestDataGenerator() {
                 return `${label}: ${generateTestData(type)}`;
             })
             .join("\n");
-    }, [selectedTypes, seed]);
+    }), [selectedTypes, seed]);
 
     const toggleType = (id) => {
         setSelectedTypes((current) =>
@@ -42,6 +43,8 @@ function TestDataGenerator() {
                 : [...current, id],
         );
     };
+
+    const output = result.ok ? result.value : "";
 
     return (
         <TextToolShell
@@ -81,8 +84,9 @@ function TestDataGenerator() {
             <div className="text-tool-panel">
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Generated test data</h2>
-                    <CopyButton text={output} />
+                    <CopyButton text={output} disabled={!result.ok} />
                 </div>
+                {result.error ? <p className="text-tool-empty" role="alert">{result.error}</p> : null}
                 <textarea
                     className="text-tool-textarea"
                     value={output}

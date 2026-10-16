@@ -42,9 +42,10 @@ test("integer ranges stay exact above 32 bits and reject invalid bounds", () => 
         const value = randomInt(-1000000000000, 1000000000000);
         assert.ok(Number.isSafeInteger(value) && value >= -1000000000000 && value <= 1000000000000);
     }
-    for (const range of [[1, 0], [NaN, 1], [0, Infinity], [0, Number.MAX_SAFE_INTEGER]]) {
+    for (const range of [[1, 0], [1001, 1000], [0.1, 0.9], [NaN, 1], [0, Infinity], [0, Number.MAX_SAFE_INTEGER]]) {
         assert.throws(() => randomInt(...range), /safe-integer/);
     }
+    assert.equal(randomInt(0.1, 1.9), 1);
 });
 
 test("crypto failure propagates instead of falling back to weak randomness", (t) => {

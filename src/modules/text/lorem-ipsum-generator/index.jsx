@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
+import { safeExecute } from "../_shared/webSecurityUtils";
 import {
     generateLoremParagraphs,
     generateLoremSentences,
@@ -13,7 +14,7 @@ function LoremIpsumGenerator() {
     const [count, setCount] = useState(50);
     const [seed, setSeed] = useState(0);
 
-    const output = useMemo(() => {
+    const result = useMemo(() => safeExecute("generate", () => {
         switch (mode) {
             case "words":
                 return generateLoremWords(count);
@@ -24,7 +25,7 @@ function LoremIpsumGenerator() {
             default:
                 return "";
         }
-    }, [mode, count, seed]);
+    }), [mode, count, seed]);
 
     const label =
         mode === "words"
@@ -32,6 +33,8 @@ function LoremIpsumGenerator() {
             : mode === "sentences"
               ? "Sentence count"
               : "Paragraph count";
+
+    const output = result.ok ? result.value : "";
 
     return (
         <TextToolShell
@@ -83,8 +86,9 @@ function LoremIpsumGenerator() {
             <div className="text-tool-panel">
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Generated lorem ipsum</h2>
-                    <CopyButton text={output} />
+                    <CopyButton text={output} disabled={!result.ok} />
                 </div>
+                {result.error ? <p className="text-tool-empty" role="alert">{result.error}</p> : null}
                 <textarea
                     className="text-tool-textarea"
                     value={output}
