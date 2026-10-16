@@ -406,7 +406,8 @@ export function splitLines(text, delimiter = "\n") {
 }
 
 export function reverseEntireText(text) {
-    return [...text].reverse().join("");
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    return [...segmenter.segment(text)].map(({ segment }) => segment).reverse().join("");
 }
 
 export function reverseWords(text) {
