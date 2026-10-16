@@ -170,7 +170,7 @@ export function formatCode(code, language) {
     }
 }
 
-export function minifyCode(code, language) {
+export async function minifyCode(code, language) {
     switch (language) {
         case "json":
             return minifyJson(code);
@@ -178,12 +178,16 @@ export function minifyCode(code, language) {
             return code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
         case "html":
             return code.replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
-        case "javascript":
-            return code
-                .replace(/\/\*[\s\S]*?\*\//g, "")
-                .replace(/(^|[^:])\/\/.*$/gm, "$1")
-                .replace(/\s+/g, " ")
-                .trim();
+        case "javascript": {
+            const { minify } = await import("terser");
+            const result = await minify(code, {
+                parse: { bare_returns: true },
+                compress: false,
+                mangle: false,
+                format: { comments: "some" },
+            });
+            return result.code;
+        }
         default:
             return code.replace(/\s+/g, " ").trim();
     }
