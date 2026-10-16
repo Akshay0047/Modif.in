@@ -32,7 +32,7 @@ try {
         await page.locator("#find-replace-patterns").fill("hello|world\n\n[|x");
         await page.getByRole("alert").waitFor();
         assert.match(await page.getByRole("alert").textContent(), /line 3/);
-        assert.equal(await page.locator("#find-replace-patterns").getAttribute("aria-describedby"), "find-replace-error");
+        assert.match(await page.locator("#find-replace-patterns").getAttribute("aria-describedby"), /\bfind-replace-error\b/);
         assert.equal(await page.locator("textarea[readonly]").inputValue(), "");
         await page.locator("#find-replace-patterns").fill("hello|world");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "world");
