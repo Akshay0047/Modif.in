@@ -1,13 +1,13 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
+import useDeveloperResult from "../_shared/useDeveloperResult";
 import {
     formatJson,
     jsonToCsv,
     jsonToYaml,
     minifyJson,
-    safeExecute,
     sortJsonKeys,
     validateJson,
     yamlToJson,
@@ -31,11 +31,8 @@ function JsonTools() {
     const [input, setInput] = useState('{\n  "name": "Modif",\n  "tools": ["json"]\n}');
     const [mode, setMode] = useState("format");
 
-    const result = useMemo(() => {
-        const selected = MODES.find((entry) => entry.id === mode);
-        if (!selected) return { ok: true, value: input, error: "" };
-        return safeExecute("json", () => selected.run(input));
-    }, [input, mode]);
+    const selected = MODES.find((entry) => entry.id === mode);
+    const result = useDeveloperResult(input, selected.run);
 
     return (
         <TextToolShell
@@ -63,6 +60,8 @@ function JsonTools() {
                 </label>
                 <textarea
                     id="json-tools-input"
+                    aria-invalid={Boolean(result.error)}
+                    aria-describedby={result.error ? "json-tools-error" : undefined}
                     className="text-tool-textarea"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
@@ -70,13 +69,15 @@ function JsonTools() {
                 />
             </div>
 
-            <div className="text-tool-panel">
+            <div className="text-tool-panel" aria-busy={result.pending}>
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Output</h2>
                     <CopyButton text={result.ok ? result.value : ""} disabled={!result.ok} />
                 </div>
-                {result.error ? (
-                    <p className="text-tool-empty">{result.error}</p>
+                {result.pending ? (
+                    <p className="text-tool-empty" role="status">Converting…</p>
+                ) : result.error ? (
+                    <p id="json-tools-error" className="text-tool-empty" role="alert">{result.error}</p>
                 ) : (
                     <textarea
                         className="text-tool-textarea"
