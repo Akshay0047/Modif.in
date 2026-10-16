@@ -63,14 +63,14 @@ export function jsonToCsv(value) {
     const headers = [...new Set(data.flatMap((row) => Object.keys(row)))];
     const escapeCell = (cell) => {
         const text = cell == null ? "" : String(cell);
-        if (/[",\n]/.test(text)) {
+        if (/[",\r\n]/.test(text)) {
             return `"${text.replace(/"/g, '""')}"`;
         }
         return text;
     };
 
     const rows = [
-        headers.join(","),
+        headers.map(escapeCell).join(","),
         ...data.map((row) => headers.map((header) => escapeCell(row[header])).join(",")),
     ];
 
