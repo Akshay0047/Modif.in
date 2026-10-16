@@ -334,12 +334,30 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
+  border-radius: 8px;
   color: #f8fafc;
   font-size: 0.875rem;
   cursor: pointer;
 }
 
+.text-tool-checkbox:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.text-tool-checkbox:focus-within {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
 .text-tool-checkbox input {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin: 0;
   accent-color: #10b981;
 }
 
