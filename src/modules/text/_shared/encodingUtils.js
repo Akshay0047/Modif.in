@@ -147,7 +147,8 @@ export function textToMorse(value) {
 export function morseToText(value) {
     return value
         .trim()
-        .split(/\s+\/\s+|\s+/)
+        .split(/(\/)|\s+/)
+        .filter(Boolean)
         .map((token) => {
             if (token === "/") return " ";
             const entry = Object.entries(MORSE_CODE).find(([, code]) => code === token);
