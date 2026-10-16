@@ -16,6 +16,7 @@ await withBrowser(async (page, context) => {
         ["token-generator", "#token-length", 33],
         ["uuid-id-generator", "#uuid-count", 2],
         ["test-data-generator", null, 7],
+        ["random-generator", "#random-count", 6],
     ];
     for (const [slug, setting, expected] of cases) {
         await page.goto(`${baseURL}/text/${slug}`, { waitUntil: "domcontentloaded" });
@@ -42,5 +43,5 @@ await withBrowser(async (page, context) => {
         else if (slug === "lorem-ipsum-generator") assert.equal(changed.split(" ").length, expected);
         else assert.equal(changed.split("\n").length, expected);
     }
-    console.log("Seven generators preserve initial, setting-change, explicit-regeneration and stable-copy behavior.");
+    console.log("Eight generators preserve initial, setting-change, explicit-regeneration and stable-copy behavior.");
 });
