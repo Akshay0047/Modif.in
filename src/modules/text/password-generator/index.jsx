@@ -4,6 +4,7 @@ import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
 import { safeExecute } from "../_shared/webSecurityUtils";
 import {
+    calculatePassphraseEntropy,
     generatePassphrase,
     generatePassword,
 } from "../_shared/generatorUtils";
@@ -11,7 +12,7 @@ import {
 function PasswordGenerator() {
     const [mode, setMode] = useState("password");
     const [length, setLength] = useState(16);
-    const [wordCount, setWordCount] = useState(4);
+    const [wordCount, setWordCount] = useState(6);
     const [uppercase, setUppercase] = useState(true);
     const [lowercase, setLowercase] = useState(true);
     const [numbers, setNumbers] = useState(true);
@@ -53,6 +54,7 @@ function PasswordGenerator() {
     ]);
 
     const output = result.ok ? result.value : "";
+    const entropy = calculatePassphraseEntropy(wordCount, separator, capitalizeWords);
 
     return (
         <TextToolShell
@@ -149,6 +151,15 @@ function PasswordGenerator() {
                                 setWordCount(Number(event.target.value))
                             }
                         />
+                        <p className="text-tool-hint" role="status">
+                            Entropy: {entropy.boundariesPreserved ? "" : "at most "}
+                            {entropy.bits.toFixed(1)} bits from 7,776 possible words.
+                            {wordCount < 6 ? " Use six or more words for at least 77.5 bits." : " Six words provide about 77.5 bits."}
+                            {!entropy.boundariesPreserved ? " Use a separator containing a number, space or punctuation, or capitalize words to preserve word boundaries." : " Fixed separators and capitalization add no random bits."}
+                        </p>
+                        <p className="text-tool-hint">
+                            Word list adapted from <a className="cursor-target" href="https://www.eff.org/dice" target="_blank" rel="noreferrer">EFF</a> (CC BY 4.0).
+                        </p>
                         <label className="text-tool-label" htmlFor="passphrase-separator">
                             Separator
                         </label>
