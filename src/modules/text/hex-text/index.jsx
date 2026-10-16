@@ -17,7 +17,7 @@ function HexText() {
     );
 
     return (
-        <TextToolShell title="Hex ↔ Text" description="Convert text to hexadecimal and hex back to text or ASCII." leading={<BackButton />}>
+        <TextToolShell title="Hex ↔ Text" description="Convert text to UTF-8 hexadecimal bytes and decode UTF-8 bytes back to text. Enter pairs of hex digits, with optional spaces." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     <button type="button" className={`text-tool-button cursor-target${mode === "text-to-hex" ? " is-active" : ""}`} onClick={() => setMode("text-to-hex")}>Text → Hex</button>

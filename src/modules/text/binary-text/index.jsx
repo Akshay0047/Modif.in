@@ -17,7 +17,7 @@ function BinaryText() {
     );
 
     return (
-        <TextToolShell title="Binary ↔ Text" description="Convert text to binary and binary back to text or ASCII." leading={<BackButton />}>
+        <TextToolShell title="Binary ↔ Text" description="Convert text to UTF-8 binary bytes and decode UTF-8 bytes back to text. Separate each 8-bit byte with a space." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     <button type="button" className={`text-tool-button cursor-target${mode === "text-to-binary" ? " is-active" : ""}`} onClick={() => setMode("text-to-binary")}>Text → Binary</button>
