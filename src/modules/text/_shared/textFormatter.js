@@ -504,7 +504,7 @@ export function replaceMultiplePatterns(text, patternText, useRegex = false) {
             try {
                 result = result.replace(new RegExp(findValue, "g"), replaceValue);
             } catch (error) {
-                throw new SyntaxError(`Pattern on line ${index + 1}: ${error.message}`);
+                throw new SyntaxError(`Pattern on line ${index + 1}: ${error.message}`, { cause: error });
             }
         } else {
             result = result.split(findValue).join(replaceValue);
