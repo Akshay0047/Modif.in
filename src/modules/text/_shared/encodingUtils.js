@@ -70,30 +70,29 @@ export function decodeUrl(value) {
 }
 
 export function textToBinary(value, separator = " ") {
-    return [...value]
-        .map((char) => char.charCodeAt(0).toString(2).padStart(8, "0"))
+    return [...new TextEncoder().encode(value)]
+        .map((byte) => byte.toString(2).padStart(8, "0"))
         .join(separator);
 }
 
 export function binaryToText(value) {
     const chunks = value.trim().split(/\s+/);
-    return chunks
-        .map((chunk) => String.fromCharCode(Number.parseInt(chunk, 2)))
-        .join("");
+    return new TextDecoder("utf-8", { fatal: true }).decode(
+        Uint8Array.from(chunks, (chunk) => Number.parseInt(chunk, 2)),
+    );
 }
 
 export function textToHex(value, separator = " ") {
-    return [...value]
-        .map((char) => char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0"))
+    return [...new TextEncoder().encode(value)]
+        .map((byte) => byte.toString(16).toUpperCase().padStart(2, "0"))
         .join(separator);
 }
 
 export function hexToText(value) {
     const cleaned = value.replace(/[^0-9a-fA-F]/g, "");
-    return cleaned
-        .match(/.{1,2}/g)
-        ?.map((chunk) => String.fromCharCode(Number.parseInt(chunk, 16)))
-        .join("") ?? "";
+    return new TextDecoder("utf-8", { fatal: true }).decode(
+        Uint8Array.from(cleaned.match(/.{1,2}/g) ?? [], (chunk) => Number.parseInt(chunk, 16)),
+    );
 }
 
 export function asciiToDecimal(value) {
