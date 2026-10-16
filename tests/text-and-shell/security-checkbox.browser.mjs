@@ -9,8 +9,14 @@ const browser = await chromium.launch({ channel: "msedge", headless: true, args:
 const baseUrl = process.env.MODIF_QA_URL || "http://127.0.0.1:4173";
 
 try {
-    for (const width of [1440, 390, 320]) {
-        const context = await browser.newContext({ viewport: { width, height: 1000 }, hasTouch: width < 700, isMobile: width < 700 });
+    for (const { width, inputMode } of [
+        { width: 1440, inputMode: "keyboard" },
+        { width: 390, inputMode: "keyboard" },
+        { width: 320, inputMode: "keyboard" },
+        { width: 390, inputMode: "touch" },
+        { width: 320, inputMode: "touch" },
+    ]) {
+        const context = await browser.newContext({ viewport: { width, height: 1000 }, hasTouch: inputMode === "touch", isMobile: inputMode === "touch" });
         const page = await context.newPage();
         const errors = [];
         page.on("pageerror", (error) => errors.push(error.message));
@@ -18,7 +24,11 @@ try {
             await page.goto(`${baseUrl}/text/${route}`);
             const modes = route === "password-generator" ? ["Password", "Passphrase"] : [null];
             for (const mode of modes) {
-                if (mode) await page.getByRole("button", { name: mode, exact: true }).click();
+                if (mode) {
+                    const button = page.getByRole("button", { name: mode, exact: true });
+                    if (inputMode === "touch") await button.tap();
+                    else await button.click();
+                }
                 const labels = page.locator(".text-tool-checkbox");
                 await labels.first().waitFor();
                 assert.ok(await labels.count() > 0);
@@ -31,12 +41,14 @@ try {
                     assert.ok(labelBox.height >= 44 && labelBox.width >= 44, "label has a practical touch target");
                     const before = await input.isChecked();
                     // Activate padding away from the native checkbox or text.
-                    if (width < 700) await label.tap({ position: { x: labelBox.width - 4, y: labelBox.height / 2 } });
+                    if (inputMode === "touch") await label.tap({ position: { x: labelBox.width - 4, y: labelBox.height / 2 } });
                     else await label.click({ position: { x: labelBox.width - 4, y: labelBox.height / 2 } });
                     assert.equal(await input.isChecked(), !before, "entire label activates the checkbox");
-                    await input.focus();
-                    await input.press(" ");
-                    assert.equal(await input.isChecked(), before, `native keyboard activation works: ${route}/${mode}/${width}/${index}`);
+                    if (inputMode === "keyboard") {
+                        await input.focus();
+                        await input.press("Space");
+                        assert.equal(await input.isChecked(), before, `native keyboard activation works: ${route}/${mode}/${width}/${index}`);
+                    }
                 }
                 const boxes = await labels.evaluateAll((nodes) => nodes.map((node) => {
                     const rect = node.getBoundingClientRect();
@@ -47,11 +59,12 @@ try {
                     assert.ok(first.right <= second.x || second.right <= first.x || first.bottom <= second.y || second.bottom <= first.y, "clickable labels never overlap");
                 }
                 const audit = await new AxeBuilder({ page }).withRules(["target-size"]).analyze();
-                assert.deepEqual(audit.violations, [], `${route}/${mode || "types"} at ${width}px has no axe target-size violations`);
+                assert.deepEqual(audit.violations, [], `${route}/${mode || "types"}/${inputMode} at ${width}px has no axe target-size violations`);
                 assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "no horizontal overflow");
             }
         }
         assert.deepEqual(errors, []);
+        console.log(`Passed ${inputMode} checkbox targets at ${width}px`);
         await context.close();
     }
     console.log("PASS checkbox geometry, label padding activation, keyboard Space, touch taps and axe target-size at 1440/390/320px");
