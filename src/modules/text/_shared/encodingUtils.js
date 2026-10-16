@@ -157,7 +157,12 @@ export function convertNumberBase(value, fromBase, toBase) {
     if (!/^[0-9a-z]+$/i.test(digits) || [...digits].some((digit) => Number.parseInt(digit, 36) >= fromBase)) {
         throw new Error(`Enter a whole base-${fromBase} integer using only valid digits, without a prefix.`);
     }
-    const decimal = Number.parseInt(input, fromBase);
+    let decimal = 0n;
+    const radix = BigInt(fromBase);
+    for (const digit of digits) {
+        decimal = decimal * radix + BigInt(Number.parseInt(digit, 36));
+    }
+    if (input.startsWith("-")) decimal = -decimal;
     return decimal.toString(toBase).toUpperCase();
 }
 
