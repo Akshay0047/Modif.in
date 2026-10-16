@@ -20,6 +20,7 @@ try {
             for (const mode of modes) {
                 if (mode) await page.getByRole("button", { name: mode, exact: true }).click();
                 const labels = page.locator(".text-tool-checkbox");
+                await labels.first().waitFor();
                 assert.ok(await labels.count() > 0);
                 for (let index = 0; index < await labels.count(); index += 1) {
                     const label = labels.nth(index);
