@@ -45,7 +45,7 @@ await withBrowser(async (page, context) => {
     }
     for (const route of ["ocr", "text-extractor", "table-extractor"]) {
         await page.goto(`${baseURL}/doc/${route}`);
-        await page.locator("h1").waitFor();
+        await page.locator('.doc-tool-page input[type="file"]').waitFor({ state: "attached" });
         assert.equal(await page.locator('input[type="file"]').count(), 1);
     }
     console.log(`Copy failure, manual selection, success, stale reset and docs consumers passed at ${page.viewportSize().width}px`);
