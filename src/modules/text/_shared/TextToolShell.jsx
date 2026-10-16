@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import LocalSecurityDisclaimer from "./LocalSecurityDisclaimer";
-import { insertTabAtCursor } from "./textInputUtils";
 import "./text-tool.css";
 
 function TextToolShell({
@@ -10,16 +8,6 @@ function TextToolShell({
     privacySensitive = false,
     children,
 }) {
-    useEffect(() => {
-        const handleKeyDown = (event) => {
-            if (event.key !== "Tab" || event.shiftKey) return;
-            insertTabAtCursor(event);
-        };
-
-        document.addEventListener("keydown", handleKeyDown, true);
-        return () => document.removeEventListener("keydown", handleKeyDown, true);
-    }, []);
-
     return (
         <section className="text-tool-page" aria-label={title}>
             {leading}
