@@ -12,7 +12,7 @@ import {
 function generateToken(type, length) {
     switch (type) {
         case "api": return generateApiToken(length);
-        case "hex": return generateHexToken(length);
+        case "hex": return generateHexToken(Math.max(8, Math.ceil(length / 2)));
         default: return generateRandomString(length, "alphanumeric");
     }
 }
