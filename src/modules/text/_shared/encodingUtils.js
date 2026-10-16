@@ -149,10 +149,15 @@ function asciiCodes(value) {
 }
 
 export function convertNumberBase(value, fromBase, toBase) {
-    const decimal = Number.parseInt(String(value).trim(), fromBase);
-    if (Number.isNaN(decimal)) {
-        throw new Error("Invalid number for the selected base.");
+    if (![fromBase, toBase].every((base) => Number.isInteger(base) && base >= 2 && base <= 36)) {
+        throw new Error("Choose an integer base from 2 to 36.");
     }
+    const input = String(value).trim();
+    const digits = input.replace(/^[+-]/, "");
+    if (!/^[0-9a-z]+$/i.test(digits) || [...digits].some((digit) => Number.parseInt(digit, 36) >= fromBase)) {
+        throw new Error(`Enter a whole base-${fromBase} integer using only valid digits, without a prefix.`);
+    }
+    const decimal = Number.parseInt(input, fromBase);
     return decimal.toString(toBase).toUpperCase();
 }
 
