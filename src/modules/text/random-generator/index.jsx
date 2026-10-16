@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { safeExecute } from "../_shared/webSecurityUtils";
+import useGeneratedResult from "../_shared/useGeneratedResult";
 import {
     generateRandomNameValue,
     generateRandomNumber,
@@ -10,31 +10,25 @@ import {
     generateRandomWord,
 } from "../_shared/generatorUtils";
 
+function generateValues(type, count, min, max) {
+    const generator = () => {
+        switch (type) {
+            case "word": return generateRandomWord();
+            case "number": return generateRandomNumber(min, max);
+            case "sentence": return generateRandomSentence();
+            case "name": return generateRandomNameValue();
+            default: return "";
+        }
+    };
+    return Array.from({ length: count }, generator).join("\n");
+}
+
 function RandomGenerator() {
     const [type, setType] = useState("word");
     const [count, setCount] = useState(5);
     const [min, setMin] = useState(1);
     const [max, setMax] = useState(1000);
-    const [seed, setSeed] = useState(0);
-
-    const result = useMemo(() => safeExecute("generate", () => {
-        const generator = () => {
-            switch (type) {
-                case "word":
-                    return generateRandomWord();
-                case "number":
-                    return generateRandomNumber(min, max);
-                case "sentence":
-                    return generateRandomSentence();
-                case "name":
-                    return generateRandomNameValue();
-                default:
-                    return "";
-            }
-        };
-
-        return Array.from({ length: count }, generator).join("\n");
-    }), [type, count, min, max, seed]);
+    const result = useGeneratedResult(generateValues, [type, count, min, max]);
 
     const output = result.ok ? result.value : "";
 
@@ -67,7 +61,7 @@ function RandomGenerator() {
                     <button
                         type="button"
                         className="text-tool-button cursor-target"
-                        onClick={() => setSeed((value) => value + 1)}
+                        onClick={result.regenerate}
                     >
                         Regenerate
                     </button>
