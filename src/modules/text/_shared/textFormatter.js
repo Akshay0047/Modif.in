@@ -476,11 +476,7 @@ export function replaceText(
     const flags = caseSensitive ? "g" : "gi";
 
     if (useRegex) {
-        try {
-            return text.replace(new RegExp(findValue, flags), replaceValue);
-        } catch {
-            return text;
-        }
+        return text.replace(new RegExp(findValue, flags), replaceValue);
     }
 
     if (caseSensitive) {
@@ -493,12 +489,11 @@ export function replaceText(
 
 export function replaceMultiplePatterns(text, patternText, useRegex = false) {
     let result = text;
-    const lines = patternText
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
+    const lines = patternText.split("\n");
 
-    for (const line of lines) {
+    for (const [index, rawLine] of lines.entries()) {
+        const line = rawLine.trim();
+        if (!line) continue;
         const separatorIndex = line.indexOf("|");
         if (separatorIndex === -1) continue;
 
@@ -508,8 +503,8 @@ export function replaceMultiplePatterns(text, patternText, useRegex = false) {
         if (useRegex) {
             try {
                 result = result.replace(new RegExp(findValue, "g"), replaceValue);
-            } catch {
-                result = result.split(findValue).join(replaceValue);
+            } catch (error) {
+                throw new SyntaxError(`Pattern on line ${index + 1}: ${error.message}`);
             }
         } else {
             result = result.split(findValue).join(replaceValue);
@@ -529,12 +524,8 @@ export function countMatches(
     const flags = caseSensitive ? "g" : "gi";
 
     if (useRegex) {
-        try {
-            const matches = text.match(new RegExp(findValue, flags));
-            return matches ? matches.length : 0;
-        } catch {
-            return 0;
-        }
+        const matches = text.match(new RegExp(findValue, flags));
+        return matches ? matches.length : 0;
     }
 
     if (caseSensitive) {
