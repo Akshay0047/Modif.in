@@ -317,15 +317,29 @@ export function decodeHtmlEntities(value) {
 
 export function parseQueryString(value) {
     const params = new URLSearchParams(value.startsWith("?") ? value.slice(1) : value);
-    return Object.fromEntries(params.entries());
+    const grouped = new Map();
+    for (const [key, item] of params) {
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(item);
+    }
+    return Object.fromEntries([...grouped].map(([key, items]) => [key, items.length === 1 ? items[0] : items]));
 }
 
 export function generateQueryString(value) {
     const parsed = JSON.parse(value);
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+        throw new Error("Enter a JSON object with scalar values or arrays of scalars.");
+    }
     const params = new URLSearchParams();
     Object.entries(parsed).forEach(([key, item]) => {
-        if (item == null) return;
-        params.set(key, String(item));
+        const items = Array.isArray(item) ? item : [item];
+        for (const entry of items) {
+            if (entry == null) continue;
+            if (!["string", "number", "boolean"].includes(typeof entry) || (typeof entry === "number" && !Number.isFinite(entry))) {
+                throw new Error(`Query parameter "${key}" must contain scalar values.`);
+            }
+            params.append(key, String(entry));
+        }
     });
     return params.toString();
 }
