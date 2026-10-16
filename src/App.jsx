@@ -5,6 +5,7 @@ import TextTools from "./pages/TextTools";
 import DocTools from "./pages/DocTools";
 import ModuleToolLayout from "./layouts/ModuleToolLayout";
 import { useModuleScrollbarTheme } from "./hooks/useModuleScrollbarTheme";
+import { useGaPageViews } from "./hooks/useGaPageViews";
 
 // Auto-register every tool subpage placed under src/modules/<module>/<slug>/index.jsx.
 // The module directory name maps to the route prefix used by each tool's `path`
@@ -53,6 +54,7 @@ const routesByModule = groupRoutesByModule(toolRoutes);
 
 function App() {
     useModuleScrollbarTheme();
+    useGaPageViews();
 
     return (
         <Routes>
