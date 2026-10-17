@@ -409,11 +409,9 @@ const TargetCursor = ({
 
             spinTl.current?.kill();
 
-            const originalCursor = document.body.style.cursor;
-
             if (hideDefaultCursor) {
-                document.body.style.cursor = "none";
-                document.body.classList.add("target-cursor-active");
+                document.body.style.cursor = originalCursor;
+                document.body.classList.remove("target-cursor-active");
             }
 
             isActiveRef.current = false;

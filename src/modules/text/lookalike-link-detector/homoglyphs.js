@@ -79,7 +79,7 @@ export function toSkeleton(value) {
 }
 
 export function hasNonAscii(value) {
-    return /[^\u0000-\u007F]/.test(String(value));
+    return Array.from(String(value)).some((character) => character.codePointAt(0) > 0x7f);
 }
 
 export function collectHomoglyphHits(value) {

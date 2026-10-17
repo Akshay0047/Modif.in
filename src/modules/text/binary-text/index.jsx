@@ -23,12 +23,13 @@ function BinaryText() {
                     <button type="button" className={`text-tool-button cursor-target${mode === "text-to-binary" ? " is-active" : ""}`} onClick={() => setMode("text-to-binary")}>Text → Binary</button>
                     <button type="button" className={`text-tool-button cursor-target${mode === "binary-to-text" ? " is-active" : ""}`} onClick={() => setMode("binary-to-text")}>Binary → Text</button>
                 </div>
-                <textarea id="binary-text-input" aria-label="Input" aria-invalid={!output.ok} aria-describedby={output.error ? "binary-text-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="binary-text-input">{mode === "text-to-binary" ? "Text to encode" : "UTF-8 binary bytes"}</label>
+                <textarea id="binary-text-input" aria-invalid={!output.ok} aria-describedby={output.error ? "binary-text-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
                 {output.error && <p id="binary-text-error" className="text-tool-empty" role="alert">{output.error}</p>}
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">Output</h2><CopyButton text={output.ok ? output.value : ""} disabled={!output.ok} /></div>
-                <textarea aria-label="Output" className="text-tool-textarea" value={output.value} readOnly />
+                <textarea aria-label="Binary conversion output" className="text-tool-textarea" value={output.value} readOnly />
             </div>
         </TextToolShell>
     );

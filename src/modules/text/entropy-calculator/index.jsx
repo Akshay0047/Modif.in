@@ -12,7 +12,8 @@ function EntropyCalculator() {
     return (
         <TextToolShell title="Entropy Calculator" description="Estimate password entropy based on length and character set size." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
-                <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter text or a password…" spellCheck={false} />
+                <label className="text-tool-label" htmlFor="entropy-input">Text to analyze</label>
+                <textarea id="entropy-input" className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter text or a password…" spellCheck={false} />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-stat-grid">

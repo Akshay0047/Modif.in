@@ -81,6 +81,8 @@ function TimestampConverter() {
                     </label>
                     <input
                         id="date-input"
+                        aria-invalid={Boolean(fromDate.error)}
+                        aria-describedby={fromDate.error ? "date-input-error" : undefined}
                         className="text-tool-input"
                         value={dateInput}
                         onChange={(event) => setDateInput(event.target.value)}
@@ -94,7 +96,7 @@ function TimestampConverter() {
                         />
                     </div>
                     {fromDate.error ? (
-                        <p className="text-tool-empty">{fromDate.error}</p>
+                        <p id="date-input-error" className="text-tool-empty" role="alert">{fromDate.error}</p>
                     ) : (
                         <textarea
                             className="text-tool-textarea"

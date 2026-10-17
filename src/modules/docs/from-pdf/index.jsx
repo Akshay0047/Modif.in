@@ -50,8 +50,8 @@ function pageItemsToMarkdown(items) {
         if (avgHeight >= median * 1.2 && text.length < 120) {
             return `### ${text}`;
         }
-        if (/^([•●○\-–—*]|(\d+[\.\)]))/.test(text)) {
-            return `- ${text.replace(/^([•●○\-–—*]|(\d+[\.\)]))\s*/, "")}`;
+        if (/^([•●○\-–—*]|(\d+[.)]))/.test(text)) {
+            return `- ${text.replace(/^([•●○\-–—*]|(\d+[.)]))\s*/, "")}`;
         }
         if (indent > 72 && next) {
             return `> ${text}`;

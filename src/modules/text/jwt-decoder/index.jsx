@@ -27,6 +27,8 @@ function JwtDecoder() {
                 </label>
                 <textarea
                     id="jwt-decoder-input"
+                        aria-invalid={Boolean(result.error)}
+                        aria-describedby={result.error ? "jwt-input-error" : undefined}
                     className="text-tool-textarea"
                     value={token}
                     onChange={(event) => setToken(event.target.value)}
@@ -47,7 +49,7 @@ function JwtDecoder() {
                 </div>
 
                 {result.error ? (
-                    <p className="text-tool-empty">{result.error}</p>
+                    <p id="jwt-input-error" className="text-tool-empty" role="alert">{result.error}</p>
                 ) : decoded ? (
                     <div className="text-tool-info-grid">
                         <div className="text-tool-info-row">

@@ -40,12 +40,13 @@ function UnicodeCharacterInfo() {
                 </label>
                 <input
                     id="unicode-character-info-input"
+                    aria-describedby="unicode-character-info-hint"
                     className="text-tool-input"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
                     placeholder="Type or paste a character…"
                 />
-                <p className="text-tool-hint">
+                <p id="unicode-character-info-hint" className="text-tool-hint">
                     The first character in your input is analyzed automatically.
                 </p>
             </div>

@@ -42,11 +42,12 @@ function HashGenerator() {
                         <button key={entry} type="button" className={`text-tool-button cursor-target${algorithm === entry ? " is-active" : ""}`} onClick={() => setAlgorithm(entry)}>{entry}</button>
                     ))}
                 </div>
-                <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="hash-input">Text to hash</label>
+                <textarea aria-invalid={Boolean(error)} aria-describedby={error ? "hash-input-error" : undefined} id="hash-input" className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">Hash output</h2><CopyButton text={output} disabled={!output} /></div>
-                {error ? <p className="text-tool-empty">{error}</p> : <textarea className="text-tool-textarea" value={output} readOnly />}
+                {error ? <p id="hash-input-error" className="text-tool-empty" role="alert">{error}</p> : <textarea aria-label="Hash value" className="text-tool-textarea" value={output} readOnly />}
             </div>
         </TextToolShell>
     );

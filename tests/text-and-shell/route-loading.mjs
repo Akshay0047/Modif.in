@@ -5,7 +5,8 @@ import { imageToolsData } from "../../src/data/imageTools.js";
 import { docToolsData } from "../../src/data/docTools.js";
 import { getRouteTitle } from "../../src/data/routeTitles.js";
 
-const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright");
+const modulePath = process.env.PLAYWRIGHT_MODULE;
+const { chromium } = await import(modulePath ? modulePath.startsWith("file:") ? modulePath : pathToFileURL(modulePath).href : "playwright");
 const baseURL = process.env.MODIF_BASE_URL || "http://127.0.0.1:4173";
 const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || "msedge", headless: true, args: ["--disable-gpu"] });
 const toolPaths = [...textToolsData, ...imageToolsData, ...docToolsData].flatMap((category) => category.tools.map((tool) => tool.path));

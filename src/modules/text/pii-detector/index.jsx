@@ -14,7 +14,8 @@ function PiiDetector() {
     return (
         <TextToolShell title="PII Detector" description="Find emails, URLs, phone numbers, and IP addresses in text." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
-                <textarea className="text-tool-textarea" value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
+                <label className="text-tool-label" htmlFor="pii-input">Text to inspect</label>
+                <textarea id="pii-input" className="text-tool-textarea" value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header">

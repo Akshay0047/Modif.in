@@ -138,12 +138,6 @@ function fitOutputSize(width, height, maxDim = MAX_OUTPUT) {
     };
 }
 
-function drawResizedRegion(ctx, image, sx, sy, sw, sh, dw, dh, smooth) {
-    ctx.imageSmoothingEnabled = smooth;
-    if (smooth) ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(image, sx, sy, sw, sh, 0, 0, dw, dh);
-}
-
 export default function CropResizeTool() {
     const fileInputRef = useRef(null);
     const previewCanvasRef = useRef(null);

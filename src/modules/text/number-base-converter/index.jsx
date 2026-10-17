@@ -30,13 +30,14 @@ function NumberBaseConverter() {
     return (
         <TextToolShell title="Number Base Converter" description="Convert numbers between binary, decimal, hexadecimal, and octal." leading={<BackButton />}>
             <div className="text-tool-panel">
-                <label className="text-tool-label">Input base</label>
-                <div className="text-tool-controls">
+                <span id="number-base-selection-label" className="text-tool-label">Input base</span>
+                <div className="text-tool-controls" role="group" aria-labelledby="number-base-selection-label">
                     {BASES.map((base) => (
                         <button key={base.id} type="button" className={`text-tool-button cursor-target${fromBase === base.id ? " is-active" : ""}`} onClick={() => setFromBase(base.id)}>{base.label}</button>
                     ))}
                 </div>
-                <input id="number-base-input" aria-label="Number to convert" aria-invalid={Boolean(error)} aria-describedby={error ? "number-base-error" : undefined} className="text-tool-input" value={input} onChange={(e) => setInput(e.target.value)} />
+                <label className="text-tool-label" htmlFor="number-base-input">Number to convert</label>
+                <input id="number-base-input" aria-invalid={Boolean(error)} aria-describedby={error ? "number-base-error" : undefined} className="text-tool-input" value={input} onChange={(e) => setInput(e.target.value)} />
                 {error && <p id="number-base-error" className="text-tool-empty" role="alert">{error}</p>}
             </div>
             <div className="text-tool-panel">

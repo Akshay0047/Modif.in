@@ -1,13 +1,19 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { safeExecute } from "../_shared/webSecurityUtils";
+import useGeneratedResult from "../_shared/useGeneratedResult";
 import {
     calculatePassphraseEntropy,
     generatePassphrase,
     generatePassword,
 } from "../_shared/generatorUtils";
+
+function generateCredential(mode, length, wordCount, uppercase, lowercase, numbers, symbols, excludeAmbiguous, separator, capitalizeWords) {
+    return mode === "passphrase"
+        ? generatePassphrase({ wordCount, separator, capitalize: capitalizeWords })
+        : generatePassword({ length, uppercase, lowercase, numbers, symbols, excludeAmbiguous });
+}
 
 function PasswordGenerator() {
     const [mode, setMode] = useState("password");
@@ -20,37 +26,10 @@ function PasswordGenerator() {
     const [excludeAmbiguous, setExcludeAmbiguous] = useState(false);
     const [separator, setSeparator] = useState("-");
     const [capitalizeWords, setCapitalizeWords] = useState(false);
-    const [seed, setSeed] = useState(0);
 
-    const result = useMemo(() => safeExecute("generate", () => {
-        if (mode === "passphrase") {
-            return generatePassphrase({
-                wordCount,
-                separator,
-                capitalize: capitalizeWords,
-            });
-        }
-
-        return generatePassword({
-            length,
-            uppercase,
-            lowercase,
-            numbers,
-            symbols,
-            excludeAmbiguous,
-        });
-    }), [
-        mode,
-        length,
-        wordCount,
-        uppercase,
-        lowercase,
-        numbers,
-        symbols,
-        excludeAmbiguous,
-        separator,
-        capitalizeWords,
-        seed,
+    const result = useGeneratedResult(generateCredential, [
+        mode, length, wordCount, uppercase, lowercase, numbers, symbols,
+        excludeAmbiguous, separator, capitalizeWords,
     ]);
 
     const output = result.ok ? result.value : "";
@@ -86,7 +65,7 @@ function PasswordGenerator() {
                     <button
                         type="button"
                         className="text-tool-button cursor-target"
-                        onClick={() => setSeed((value) => value + 1)}
+                        onClick={result.regenerate}
                     >
                         Regenerate
                     </button>

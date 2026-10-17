@@ -39,7 +39,7 @@ function ConvertToJpgPng() {
     const [dimensions, setDimensions] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
     const [stage, setStage] = useState(PROCESS_STAGES.IDLE);
-    const [readProgress, setReadProgress] = useState(0);
+    const [, setReadProgress] = useState(0);
     const [progress, setProgress] = useState(0);
     const [validationError, setValidationError] = useState("");
     const [status, setStatus] = useState("");

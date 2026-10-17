@@ -1,30 +1,25 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { safeExecute } from "../_shared/webSecurityUtils";
+import useGeneratedResult from "../_shared/useGeneratedResult";
 import {
     generateNanoId,
     generateUlid,
     generateUuidV4,
 } from "../_shared/generatorUtils";
 
+function generateIds(type, count, nanoSize) {
+    const generator = type === "ulid" ? generateUlid : type === "nanoid" ? () => generateNanoId(nanoSize) : generateUuidV4;
+    return Array.from({ length: count }, () => generator()).join("\n");
+}
+
 function UuidIdGenerator() {
     const [type, setType] = useState("uuid");
     const [count, setCount] = useState(1);
     const [nanoSize, setNanoSize] = useState(21);
-    const [seed, setSeed] = useState(0);
 
-    const result = useMemo(() => safeExecute("generate", () => {
-        const generator =
-            type === "ulid"
-                ? generateUlid
-                : type === "nanoid"
-                  ? () => generateNanoId(nanoSize)
-                  : generateUuidV4;
-
-        return Array.from({ length: count }, () => generator()).join("\n");
-    }), [type, count, nanoSize, seed]);
+    const result = useGeneratedResult(generateIds, [type, count, nanoSize]);
 
     const output = result.ok ? result.value : "";
 
@@ -56,7 +51,7 @@ function UuidIdGenerator() {
                     <button
                         type="button"
                         className="text-tool-button cursor-target"
-                        onClick={() => setSeed((value) => value + 1)}
+                        onClick={result.regenerate}
                     >
                         Regenerate
                     </button>

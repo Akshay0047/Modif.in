@@ -12,7 +12,7 @@ export function clonePdfBytes(input) {
     }
 
     if (input instanceof Uint8Array) {
-        const { buffer, byteOffset, byteLength } = input;
+        const { buffer, byteLength } = input;
         if (buffer instanceof ArrayBuffer && buffer.detached) {
             throw new Error("PDF data is no longer available. Re-add the file and try again.");
         }

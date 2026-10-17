@@ -156,7 +156,7 @@ function FindReplace() {
                         <textarea
                             id="find-replace-patterns"
                             aria-invalid={Boolean(error)}
-                            aria-describedby={error ? "find-replace-error" : undefined}
+                            aria-describedby={`find-replace-patterns-hint${error ? " find-replace-error" : ""}`}
                             className="text-tool-textarea"
                             value={patterns}
                             onChange={(event) => setPatterns(event.target.value)}
@@ -164,7 +164,7 @@ function FindReplace() {
                             spellCheck={false}
                         />
                         {error && <p id="find-replace-error" className="text-tool-empty" role="alert">{error}</p>}
-                        <p className="text-tool-hint">
+                        <p id="find-replace-patterns-hint" className="text-tool-hint">
                             Enter one pattern per line using the format{" "}
                             <code>find|replace</code>.
                         </p>

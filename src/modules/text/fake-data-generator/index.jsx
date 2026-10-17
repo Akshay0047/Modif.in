@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
-import { safeExecute } from "../_shared/webSecurityUtils";
+import useGeneratedResult from "../_shared/useGeneratedResult";
 import { generateFakeData } from "../_shared/generatorUtils";
 
 const DATA_TYPES = [
@@ -14,16 +14,15 @@ const DATA_TYPES = [
     { id: "date", label: "Dates" },
 ];
 
+function generateRecords(type, count) {
+    return Array.from({ length: count }, () => generateFakeData(type)).join("\n");
+}
+
 function FakeDataGenerator() {
     const [type, setType] = useState("name");
     const [count, setCount] = useState(5);
-    const [seed, setSeed] = useState(0);
 
-    const result = useMemo(
-        () => safeExecute("generate", () =>
-            Array.from({ length: count }, () => generateFakeData(type)).join("\n")),
-        [type, count, seed],
-    );
+    const result = useGeneratedResult(generateRecords, [type, count]);
 
     const output = result.ok ? result.value : "";
 
@@ -67,7 +66,7 @@ function FakeDataGenerator() {
                     <button
                         type="button"
                         className="text-tool-button cursor-target"
-                        onClick={() => setSeed((value) => value + 1)}
+                        onClick={result.regenerate}
                     >
                         Regenerate
                     </button>

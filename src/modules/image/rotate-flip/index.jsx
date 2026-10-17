@@ -29,7 +29,7 @@ function degToRad(d) {
     return (d * Math.PI) / 180;
 }
 
-function computeRotatedBounds(w, h, angleDeg, flipH, flipV) {
+function computeRotatedBounds(w, h, angleDeg) {
     const rad = degToRad(angleDeg);
     const cos = Math.abs(Math.cos(rad));
     const sin = Math.abs(Math.sin(rad));
@@ -41,7 +41,7 @@ function computeRotatedBounds(w, h, angleDeg, flipH, flipV) {
 
 function drawTransformedImage(ctx, image, w, h, angleDeg, flipH, flipV, autoCrop) {
     const rad = degToRad(angleDeg);
-    const bounds = computeRotatedBounds(w, h, angleDeg, flipH, flipV);
+    const bounds = computeRotatedBounds(w, h, angleDeg);
     const cw = autoCrop ? bounds.width : Math.max(w, bounds.width);
     const ch = autoCrop ? bounds.height : Math.max(h, bounds.height);
     ctx.clearRect(0, 0, cw, ch);
@@ -145,7 +145,7 @@ export default function RotateFlipTool() {
         const src = sourceRef.current;
         if (!canvas || !src?.image || !imageSize) return;
         const { width: w, height: h } = imageSize;
-        const bounds = computeRotatedBounds(w, h, totalRotation, flipH, flipV);
+        const bounds = computeRotatedBounds(w, h, totalRotation);
         const cw = autoCrop ? bounds.width : Math.max(w, bounds.width);
         const ch = autoCrop ? bounds.height : Math.max(h, bounds.height);
         const dpr = window.devicePixelRatio || 1;
@@ -174,7 +174,7 @@ export default function RotateFlipTool() {
         const src = sourceRef.current;
         if (!src?.image || !imageSize) throw new Error("Load an image first.");
         const { width: w, height: h } = imageSize;
-        const bounds = computeRotatedBounds(w, h, totalRotation, flipH, flipV);
+        const bounds = computeRotatedBounds(w, h, totalRotation);
         const cw = autoCrop ? bounds.width : Math.max(w, bounds.width);
         const ch = autoCrop ? bounds.height : Math.max(h, bounds.height);
         const canvas = document.createElement("canvas");

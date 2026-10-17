@@ -8,6 +8,8 @@
     "build": "node scripts/generate-sitemap.mjs && vite build",
     "sitemap": "node scripts/generate-sitemap.mjs",
     "lint": "eslint .",
+    "test": "node scripts/verify-text-and-shell.mjs",
+    "test:browser": "node scripts/verify-text-and-shell.mjs --browser",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -44,6 +46,7 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
@@ -52,6 +55,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
     "globals": "^17.12.0",
+    "playwright": "^1.64.1",
     "vite": "^8.3.0"
   }
 }

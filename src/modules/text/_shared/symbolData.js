@@ -4,7 +4,6 @@ import {
     KAOMOJI_EXTRA,
 } from "./asciiEmojiExtras.js";
 import {
-    SPECIAL_CHARACTER_CATEGORIES,
     getAllSpecialCharacterSymbols,
 } from "./specialCharacterData.js";
 

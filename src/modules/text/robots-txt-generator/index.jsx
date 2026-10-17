@@ -18,17 +18,18 @@ function RobotsTxtGenerator() {
     return (
         <TextToolShell title="Robots.txt Generator" description="Generate a robots.txt file with allow, disallow, and sitemap rules." leading={<BackButton />}>
             <div className="text-tool-panel">
-                <input className="text-tool-input" value={userAgent} onChange={(e) => setUserAgent(e.target.value)} placeholder="User-agent" />
-                <label className="text-tool-label">Allow paths (one per line)</label>
-                <textarea className="text-tool-textarea" value={allow} onChange={(e) => setAllow(e.target.value)} />
-                <label className="text-tool-label">Disallow paths (one per line)</label>
-                <textarea className="text-tool-textarea" value={disallow} onChange={(e) => setDisallow(e.target.value)} />
-                <label className="text-tool-label">Sitemap URL</label>
-                <input className="text-tool-input" value={sitemap} onChange={(e) => setSitemap(e.target.value)} />
+                <label className="text-tool-label" htmlFor="robots-user-agent">User-agent</label>
+                <input id="robots-user-agent" className="text-tool-input" value={userAgent} onChange={(e) => setUserAgent(e.target.value)} placeholder="User-agent" />
+                <label className="text-tool-label" htmlFor="robots-allow">Allow paths (one per line)</label>
+                <textarea id="robots-allow" className="text-tool-textarea" value={allow} onChange={(e) => setAllow(e.target.value)} />
+                <label className="text-tool-label" htmlFor="robots-disallow">Disallow paths (one per line)</label>
+                <textarea id="robots-disallow" className="text-tool-textarea" value={disallow} onChange={(e) => setDisallow(e.target.value)} />
+                <label className="text-tool-label" htmlFor="robots-sitemap">Sitemap URL</label>
+                <input id="robots-sitemap" className="text-tool-input" value={sitemap} onChange={(e) => setSitemap(e.target.value)} />
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">robots.txt</h2><CopyButton text={output} /></div>
-                <textarea className="text-tool-textarea" value={output} readOnly />
+                <textarea aria-label="Generated robots.txt" className="text-tool-textarea" value={output} readOnly />
             </div>
         </TextToolShell>
     );
