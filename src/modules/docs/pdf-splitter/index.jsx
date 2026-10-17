@@ -21,19 +21,28 @@ function PdfSplitter() {
 
         (async () => {
             setLoading(true);
-            const pdf = await loadPdfWithPdfJs(buffer);
-            if (cancelled) return;
-            setPageCount(pdf.numPages);
-            setSelected(new Set([0]));
-
-            const thumbs = [];
-            for (let i = 1; i <= pdf.numPages; i += 1) {
-                thumbs.push(await renderPageToDataUrl(pdf, i, 0.4));
+            try {
+                const pdf = await loadPdfWithPdfJs(buffer);
                 if (cancelled) return;
+                setPageCount(pdf.numPages);
+                setSelected(new Set([0]));
+
+                const thumbs = [];
+                for (let i = 1; i <= pdf.numPages; i += 1) {
+                    thumbs.push(await renderPageToDataUrl(pdf, i, 0.4));
+                    if (cancelled) return;
+                }
+                pdf.destroy();
+                setThumbnails(thumbs);
+                setLoading(false);
+            } catch (error) {
+                if (cancelled) return;
+                setThumbnails([]);
+                setPageCount(0);
+                setSelected(new Set());
+                setLoading(false);
+                setStatus(error?.message || "Could not read this PDF. Choose another file.");
             }
-            pdf.destroy();
-            setThumbnails(thumbs);
-            setLoading(false);
         })();
 
         return () => {

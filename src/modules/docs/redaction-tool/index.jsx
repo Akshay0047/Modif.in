@@ -23,37 +23,44 @@ function RedactionTool() {
         let cancelled = false;
 
         (async () => {
-            const pdf = await loadPdfWithPdfJs(buffer);
-            if (cancelled) return;
-            setPageCount(pdf.numPages);
-            const canvas = await renderPageToCanvas(pdf, pageNum, 1.5);
-            pdf.destroy();
-            if (cancelled) return;
+            try {
+                const pdf = await loadPdfWithPdfJs(buffer);
+                if (cancelled) return;
+                setPageCount(pdf.numPages);
+                const canvas = await renderPageToCanvas(pdf, pageNum, 1.5);
+                pdf.destroy();
+                if (cancelled) return;
 
-            const display = canvasRef.current;
-            if (!display) return;
-            display.width = canvas.width;
-            display.height = canvas.height;
-            const ctx = display.getContext("2d");
-            ctx.drawImage(canvas, 0, 0);
-            canvas.width = 0;
-            canvas.height = 0;
+                const display = canvasRef.current;
+                if (!display) return;
+                display.width = canvas.width;
+                display.height = canvas.height;
+                const ctx = display.getContext("2d");
+                ctx.drawImage(canvas, 0, 0);
+                canvas.width = 0;
+                canvas.height = 0;
 
-            boxes
-                .filter((b) => b.page === pageNum)
-                .forEach((box) => {
-                    ctx.fillStyle = "#000";
-                    ctx.fillRect(box.x, box.y, box.w, box.h);
-                });
+                boxes
+                    .filter((b) => b.page === pageNum)
+                    .forEach((box) => {
+                        ctx.fillStyle = "#000";
+                        ctx.fillRect(box.x, box.y, box.w, box.h);
+                    });
 
-            if (current && start) {
-                ctx.fillStyle = "rgba(0,0,0,0.5)";
-                ctx.fillRect(
-                    Math.min(start.x, current.x),
-                    Math.min(start.y, current.y),
-                    Math.abs(current.x - start.x),
-                    Math.abs(current.y - start.y),
-                );
+                if (current && start) {
+                    ctx.fillStyle = "rgba(0,0,0,0.5)";
+                    ctx.fillRect(
+                        Math.min(start.x, current.x),
+                        Math.min(start.y, current.y),
+                        Math.abs(current.x - start.x),
+                        Math.abs(current.y - start.y),
+                    );
+                }
+            } catch (error) {
+                if (cancelled) return;
+                setPageCount(0);
+                setBoxes([]);
+                setStatus(error?.message || "Could not read this PDF. Choose another file.");
             }
         })();
 
@@ -67,7 +74,22 @@ function RedactionTool() {
         setFile(next);
         setBoxes([]);
         setPageNum(1);
-        setBuffer(next ? clonePdfBytes(await readFileAsArrayBuffer(next)) : null);
+        setStatus("");
+        if (!next) {
+            setBuffer(null);
+            setPageCount(0);
+            return;
+        }
+        try {
+            const bytes = clonePdfBytes(await readFileAsArrayBuffer(next));
+            const pdf = await loadPdfWithPdfJs(bytes);
+            pdf.destroy();
+            setBuffer(bytes);
+        } catch (error) {
+            setBuffer(null);
+            setPageCount(0);
+            setStatus(error?.message || "Could not read this PDF. Choose another file.");
+        }
     };
 
     const getCoords = (event) => {

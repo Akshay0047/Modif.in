@@ -83,16 +83,18 @@ function Watermarking() {
 
                 <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                     <div>
-                        <label className="doc-tool-label">Watermark text</label>
+                        <label className="doc-tool-label" htmlFor="watermark-text">Watermark text</label>
                         <input
+                            id="watermark-text"
                             className="doc-tool-input cursor-target"
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Opacity ({opacity})</label>
+                        <label className="doc-tool-label" htmlFor="watermark-opacity">Opacity ({opacity})</label>
                         <input
+                            id="watermark-opacity"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="0.1"
@@ -103,8 +105,9 @@ function Watermarking() {
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Font size ({fontSize}px)</label>
+                        <label className="doc-tool-label" htmlFor="watermark-font-size">Font size ({fontSize}px)</label>
                         <input
+                            id="watermark-font-size"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="12"
@@ -114,8 +117,9 @@ function Watermarking() {
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Angle ({angle}°)</label>
+                        <label className="doc-tool-label" htmlFor="watermark-angle">Angle ({angle}°)</label>
                         <input
+                            id="watermark-angle"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="-90"

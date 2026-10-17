@@ -15,6 +15,7 @@ import {
     rgb,
     StandardFonts,
 } from "../_shared/pdfUtils";
+import { pageScale } from "./pageScale";
 
 const FONTS = [
     { id: "Helvetica", label: "Helvetica", css: "IBM Plex Sans, sans-serif", embed: StandardFonts.Helvetica },
@@ -145,6 +146,7 @@ function PdfEditor() {
     const canvasRef = useRef(null);
     const pdfRef = useRef(null);
     const baseCanvasRef = useRef(null);
+    const pageSizesRef = useRef({});
     const imageCacheRef = useRef(new Map());
     const interactionRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -153,6 +155,8 @@ function PdfEditor() {
     const [buffer, setBuffer] = useState(null);
     const [pageNum, setPageNum] = useState(1);
     const [pageCount, setPageCount] = useState(0);
+    const [pageReady, setPageReady] = useState(false);
+    const [documentVersion, setDocumentVersion] = useState(0);
     const [tool, setTool] = useState("text");
     const [textInput, setTextInput] = useState("Sample text");
     const [fontId, setFontId] = useState("Helvetica");
@@ -202,19 +206,30 @@ function PdfEditor() {
     useEffect(() => {
         if (!pdfRef.current) return undefined;
         let cancelled = false;
+        setPageReady(false);
+        setStatus("Loading page preview…");
         (async () => {
-            const canvas = await renderPageToCanvas(pdfRef.current, pageNum, 1.5);
-            if (cancelled) return;
-            baseCanvasRef.current = canvas;
-            const images = await extractPdfPageImages(pdfRef.current, pageNum);
-            if (cancelled) return;
-            setPageImages(images);
-            setPageVersion((value) => value + 1);
+            try {
+                const canvas = await renderPageToCanvas(pdfRef.current, pageNum, 1.5);
+                if (cancelled) return;
+                pageSizesRef.current[pageNum] = { width: canvas.width, height: canvas.height };
+                baseCanvasRef.current = canvas;
+                const images = await extractPdfPageImages(pdfRef.current, pageNum);
+                if (cancelled) return;
+                setPageImages(images);
+                setPageVersion((value) => value + 1);
+                setPageReady(true);
+                setStatus("");
+            } catch (error) {
+                if (cancelled) return;
+                setPageReady(false);
+                setStatus(error?.message || "Could not render this page.");
+            }
         })();
         return () => {
             cancelled = true;
         };
-    }, [pageNum, buffer]);
+    }, [pageNum, buffer, documentVersion]);
 
     const handleFile = async (files) => {
         const next = files[0] ?? null;
@@ -223,6 +238,8 @@ function PdfEditor() {
         setSelectedId("");
         setPageNum(1);
         setLive(null);
+        setPageReady(false);
+        pageSizesRef.current = {};
         if (pdfRef.current) {
             pdfRef.current.destroy();
             pdfRef.current = null;
@@ -230,13 +247,22 @@ function PdfEditor() {
         if (!next) {
             setBuffer(null);
             setPageCount(0);
+            setDocumentVersion(0);
             return;
         }
-        const bytes = clonePdfBytes(await readFileAsArrayBuffer(next));
-        setBuffer(bytes);
-        const pdf = await loadPdfWithPdfJs(bytes);
-        pdfRef.current = pdf;
-        setPageCount(pdf.numPages);
+        try {
+            const bytes = clonePdfBytes(await readFileAsArrayBuffer(next));
+            setBuffer(bytes);
+            const pdf = await loadPdfWithPdfJs(bytes);
+            pdfRef.current = pdf;
+            setPageCount(pdf.numPages);
+            setDocumentVersion((value) => value + 1);
+        } catch (error) {
+            setBuffer(null);
+            setPageCount(0);
+            setPageReady(false);
+            setStatus(error?.message || "Could not read this PDF. Choose another file.");
+        }
     };
 
     const updateSelected = (patch) => {
@@ -245,7 +271,7 @@ function PdfEditor() {
 
     const handlePointerDown = (event) => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas || !pageReady) return;
         try {
             canvas.setPointerCapture(event.pointerId);
         } catch {
@@ -394,6 +420,10 @@ function PdfEditor() {
     };
 
     const addImage = async (dataUrl, width, height) => {
+        if (!pageReady || !pageSizesRef.current[pageNum]) {
+            setStatus("Wait for the page preview to finish loading.");
+            return;
+        }
         const id = nextId();
         const imageEl = new Image();
         imageEl.src = dataUrl;
@@ -421,6 +451,10 @@ function PdfEditor() {
 
     const handleSave = async () => {
         if (!buffer || !file) return;
+        if (!pageReady) {
+            setStatus("Wait for the page preview to finish loading.");
+            return;
+        }
         setStatus("Embedding annotations…");
 
         try {
@@ -430,14 +464,17 @@ function PdfEditor() {
                 fonts[font.id] = await pdf.embedFont(font.embed);
             }
             const pages = pdf.getPages();
-            const canvas = canvasRef.current;
 
             for (const ann of annotations) {
                 const page = pages[ann.page - 1];
-                if (!page || !canvas) continue;
+                const scale = pageScale(page?.getSize(), pageSizesRef.current[ann.page]);
+                if (!page || !scale) {
+                    setStatus("Wait for every annotated page to finish loading.");
+                    return;
+                }
                 const { width, height } = page.getSize();
-                const scaleX = width / canvas.width;
-                const scaleY = height / canvas.height;
+                const scaleX = scale.x;
+                const scaleY = scale.y;
 
                 if (ann.type === "text") {
                     page.drawText(ann.text, {
@@ -553,6 +590,7 @@ function PdfEditor() {
                                 type="button"
                                 className="doc-tool-button doc-tool-button--primary cursor-target"
                                 onClick={handleSave}
+                                disabled={!pageReady}
                             >
                                 Save & Download
                             </button>
@@ -684,8 +722,9 @@ function PdfEditor() {
                                     onPointerUp={handlePointerUp}
                                     className="cursor-target"
                                     style={{
-                                        cursor: tool === "draw" || tool === "highlight" ? "crosshair" : "default",
+                                        cursor: pageReady && (tool === "draw" || tool === "highlight") ? "crosshair" : "default",
                                         touchAction: "none",
+                                        pointerEvents: pageReady ? "auto" : "none",
                                     }}
                                 />
                             </div>
