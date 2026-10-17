@@ -3,6 +3,7 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
+import { formatPdfKeywords } from "../_shared/pdfDocumentOps";
 import { loadPdfWithPdfLib, stripMetadata } from "../_shared/pdfUtils";
 
 function MetadataStripper() {
@@ -25,7 +26,7 @@ function MetadataStripper() {
                 subject: pdf.getSubject() || "(empty)",
                 creator: pdf.getCreator() || "(empty)",
                 producer: pdf.getProducer() || "(empty)",
-                keywords: (pdf.getKeywords() ?? []).join(", ") || "(empty)",
+                keywords: formatPdfKeywords(pdf.getKeywords()),
                 creationDate: pdf.getCreationDate()?.toISOString() ?? "(empty)",
                 modificationDate: pdf.getModificationDate()?.toISOString() ?? "(empty)",
                 buffer,

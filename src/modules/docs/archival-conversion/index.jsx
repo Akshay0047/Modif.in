@@ -3,29 +3,7 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { flattenPdf, loadPdfWithPdfLib, stripMetadata } from "../_shared/pdfUtils";
-
-async function toArchivalPdf(buffer) {
-    let pdf = await loadPdfWithPdfLib(buffer);
-
-    try {
-        const form = pdf.getForm();
-        const fields = form.getFields();
-        fields.forEach((field) => {
-            try {
-                form.removeField(field);
-            } catch {
-                // Field may not be removable
-            }
-        });
-    } catch {
-        // No form present
-    }
-
-    const bytes = await pdf.save();
-    const flattened = await flattenPdf(bytes);
-    return stripMetadata(flattened);
-}
+import { toArchivalPdf } from "../_shared/pdfUtils";
 
 function ArchivalConversion() {
     const [file, setFile] = useState(null);
