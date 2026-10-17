@@ -9,6 +9,19 @@
       content="u8_JVsFvIy3JDIlUvKJjOyLDNwW2yGB0_Dqs0aZwI7w"
     />
     <title>MODIF.in | Text, image and document tools</title>
+    <link rel="canonical" href="https://modif.in/" />
+    <script>
+      (function () {
+        var link = document.querySelector('link[rel="canonical"]');
+        if (!link) return;
+        var path = location.pathname || "/";
+        try {
+          path = decodeURI(path);
+        } catch (e) {}
+        path = path.replace(/\/+$/, "").toLowerCase() || "/";
+        link.setAttribute("href", path === "/" ? "https://modif.in/" : "https://modif.in" + path);
+      })();
+    </script>
     <!-- Google tag (gtag.js) — send_page_view: false; SPA page views via useGaPageViews -->
     <script
       async
