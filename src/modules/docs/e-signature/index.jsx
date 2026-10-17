@@ -11,6 +11,7 @@ import {
     loadPdfWithPdfLib,
     renderPageToDataUrl,
 } from "../_shared/pdfUtils";
+import { signaturePoint } from "./signaturePoint";
 
 function ESignature() {
     const sigRef = useRef(null);
@@ -29,29 +30,43 @@ function ESignature() {
     const handleFile = async (files) => {
         const next = files[0] ?? null;
         setFile(next);
+        setStatus("");
+        setPageImage("");
         if (!next) {
             setBuffer(null);
-            setPageImage("");
             return;
         }
-        const bytes = clonePdfBytes(await readFileAsArrayBuffer(next));
-        setBuffer(bytes);
-        const pdf = await loadPdfWithPdfJs(bytes);
-        setPageCount(pdf.numPages);
-        setPage(1);
-        setPageImage(await renderPageToDataUrl(pdf, 1, 1.35));
-        pdf.destroy();
+        try {
+            const bytes = clonePdfBytes(await readFileAsArrayBuffer(next));
+            const pdf = await loadPdfWithPdfJs(bytes);
+            setBuffer(bytes);
+            setPageCount(pdf.numPages);
+            setPage(1);
+            setPageImage(await renderPageToDataUrl(pdf, 1, 1.35));
+            pdf.destroy();
+        } catch (error) {
+            setBuffer(null);
+            setPageImage("");
+            setPageCount(1);
+            setStatus(error?.message || "Could not read this PDF. Choose another file.");
+        }
     };
 
     useEffect(() => {
         if (!buffer) return undefined;
         let cancelled = false;
         (async () => {
-            const pdf = await loadPdfWithPdfJs(buffer);
-            if (cancelled) return;
-            const image = await renderPageToDataUrl(pdf, page, 1.35);
-            pdf.destroy();
-            if (!cancelled) setPageImage(image);
+            try {
+                const pdf = await loadPdfWithPdfJs(buffer);
+                if (cancelled) return;
+                const image = await renderPageToDataUrl(pdf, page, 1.35);
+                pdf.destroy();
+                if (!cancelled) setPageImage(image);
+            } catch (error) {
+                if (cancelled) return;
+                setPageImage("");
+                setStatus(error?.message || "Could not read this PDF. Choose another file.");
+            }
         })();
         return () => {
             cancelled = true;
@@ -59,28 +74,34 @@ function ESignature() {
     }, [buffer, page]);
 
     const startDraw = (event) => {
-        drawing.current = true;
+        if (event.button != null && event.button !== 0) return;
         const canvas = sigRef.current;
+        if (!canvas) return;
+        canvas.setPointerCapture(event.pointerId);
+        drawing.current = true;
         const ctx = canvas.getContext("2d");
-        const rect = canvas.getBoundingClientRect();
+        const point = signaturePoint(event, canvas);
         ctx.beginPath();
-        ctx.moveTo(event.clientX - rect.left, event.clientY - rect.top);
+        ctx.moveTo(point.x, point.y);
     };
 
     const draw = (event) => {
         if (!drawing.current) return;
         const canvas = sigRef.current;
         const ctx = canvas.getContext("2d");
-        const rect = canvas.getBoundingClientRect();
+        const point = signaturePoint(event, canvas);
         ctx.strokeStyle = "#1a1a1a";
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
-        ctx.lineTo(event.clientX - rect.left, event.clientY - rect.top);
+        ctx.lineTo(point.x, point.y);
         ctx.stroke();
     };
 
-    const stopDraw = () => {
+    const stopDraw = (event) => {
         drawing.current = false;
+        if (event?.currentTarget?.hasPointerCapture?.(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
     };
 
     const clearSig = () => {
@@ -201,17 +222,20 @@ function ESignature() {
 
                 <div style={{ marginTop: "1rem" }}>
                     <label className="doc-tool-label">Draw your signature</label>
-                    <canvas
-                        ref={sigRef}
-                        width={400}
-                        height={120}
-                        className="doc-tool-canvas-wrap cursor-target"
-                        style={{ background: "#fff", borderRadius: "12px" }}
-                        onMouseDown={startDraw}
-                        onMouseMove={draw}
-                        onMouseUp={stopDraw}
-                        onMouseLeave={stopDraw}
-                    />
+                    <div className="doc-tool-signature-pad">
+                        <canvas
+                            ref={sigRef}
+                            width={400}
+                            height={120}
+                            className="cursor-target"
+                            aria-label="Signature drawing area"
+                            style={{ background: "#fff", borderRadius: "12px", touchAction: "none" }}
+                            onPointerDown={startDraw}
+                            onPointerMove={draw}
+                            onPointerUp={stopDraw}
+                            onPointerCancel={stopDraw}
+                        />
+                    </div>
                     <div className="doc-tool-controls" style={{ marginTop: "0.75rem" }}>
                         <button type="button" className="doc-tool-button cursor-target" onClick={clearSig}>
                             Clear
@@ -223,10 +247,11 @@ function ESignature() {
                             Select picture from device
                             <input type="file" accept="image/*" hidden onChange={handlePicture} />
                         </label>
-                        <label className="doc-tool-label" style={{ margin: 0 }}>
+                        <label className="doc-tool-label" htmlFor="e-signature-page" style={{ margin: 0 }}>
                             Page:
                         </label>
                         <input
+                            id="e-signature-page"
                             className="doc-tool-input cursor-target"
                             type="number"
                             min="1"
