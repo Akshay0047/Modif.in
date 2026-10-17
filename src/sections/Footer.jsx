@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import "./Footer.css";
 
@@ -23,26 +23,64 @@ const documents = {
 
 function Footer() {
   const [activeDocument, setActiveDocument] = useState(null);
+  const openerRef = useRef(null);
+  const overlayRef = useRef(null);
+  const dialogRef = useRef(null);
 
   useEffect(() => {
-    if (!activeDocument) return;
+    if (!activeDocument) return undefined;
+
+    const overlay = overlayRef.current;
+    const dialog = dialogRef.current;
+    if (!overlay || !dialog) return undefined;
+    const parent = overlay?.parentElement;
+    const inertHosts = parent
+      ? [...parent.children].filter((child) => child !== overlay)
+      : [];
+    inertHosts.forEach((child) => {
+      child.inert = true;
+    });
+
+    const focusable = () => [...dialog.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )].filter((element) => !element.hasAttribute("disabled"));
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         setActiveDocument(null);
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
+    focusable()[0]?.focus();
 
     return () => {
+      inertHosts.forEach((child) => {
+        child.inert = false;
+      });
       document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
+      openerRef.current?.focus();
     };
   }, [activeDocument]);
 
-  const openDocument = (documentKey) => {
+  const openDocument = (documentKey, event) => {
+    openerRef.current = event.currentTarget;
     setActiveDocument(documents[documentKey]);
   };
 
@@ -86,7 +124,7 @@ function Footer() {
             <button
               type="button"
               className="cursor-target footer-button"
-              onClick={() => openDocument("privacy")}
+              onClick={(event) => openDocument("privacy", event)}
             >
               Privacy Policy
             </button>
@@ -96,7 +134,7 @@ function Footer() {
             <button
               type="button"
               className="cursor-target footer-button"
-              onClick={() => openDocument("terms")}
+              onClick={(event) => openDocument("terms", event)}
             >
               Terms of Service
             </button>
@@ -106,7 +144,7 @@ function Footer() {
             <button
               type="button"
               className="cursor-target footer-button"
-              onClick={() => openDocument("disclaimer")}
+              onClick={(event) => openDocument("disclaimer", event)}
             >
               Disclaimer
             </button>
@@ -117,10 +155,12 @@ function Footer() {
       {activeDocument && (
         <div
           className="document-overlay"
+          ref={overlayRef}
           onMouseDown={handleBackdropClick}
         >
           <div
             className="document-modal"
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="document-modal-title"
