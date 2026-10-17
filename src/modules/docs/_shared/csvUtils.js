@@ -21,23 +21,41 @@ export function csvToJson(text) {
     return parseCsv(text, { header: true });
 }
 
-export function csvToXml(data) {
-    const rows = Array.isArray(data) ? data : parseCsv(data, { header: true });
-    const headers = Object.keys(rows[0] ?? {});
-    const escape = (value) =>
-        String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
+function escapeXml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
 
+function tableCells(data) {
+    if (Array.isArray(data)) {
+        const headers = Object.keys(data[0] ?? {});
+        return {
+            headers,
+            rows: data.map((row) => headers.map((key) => row[key] ?? "")),
+        };
+    }
+
+    const parsed = Papa.parse(String(data ?? ""), { header: false, skipEmptyLines: true });
+    if (parsed.errors.length) throw new Error(parsed.errors[0].message);
+    const [headers = [], ...body] = parsed.data;
+    return {
+        headers,
+        rows: body.map((row) => headers.map((_, index) => row[index] ?? "")),
+    };
+}
+
+export function csvToXml(data) {
+    const { headers, rows } = tableCells(data);
     const body = rows
-        .map(
-            (row) =>
-                `  <row>\n${headers
-                    .map((key) => `    <${key}>${escape(row[key])}</${key}>`)
-                    .join("\n")}\n  </row>`,
-        )
+        .map((row) => {
+            const fields = headers
+                .map((key, index) => `    <field name="${escapeXml(key)}">${escapeXml(row[index])}</field>`)
+                .join("\n");
+            return `  <row>\n${fields}\n  </row>`;
+        })
         .join("\n");
 
     return `<?xml version="1.0" encoding="UTF-8"?>\n<data>\n${body}\n</data>`;
@@ -64,7 +82,10 @@ export function toMarkdownTable(data) {
 
     const headers = Object.keys(rows[0]);
     const escape = (value) =>
-        String(value ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+        String(value ?? "")
+            .replace(/\\/g, "\\\\")
+            .replace(/\|/g, "\\|")
+            .replace(/\r\n|\r|\n/g, "<br>");
 
     const headerRow = `| ${headers.map(escape).join(" | ")} |`;
     const separator = `| ${headers.map(() => "---").join(" | ")} |`;
