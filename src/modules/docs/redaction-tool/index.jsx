@@ -3,7 +3,8 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { clonePdfBytes, loadPdfWithPdfJs, loadPdfWithPdfLib, renderPageToCanvas, rgb } from "../_shared/pdfUtils";
+import { clonePdfBytes, loadPdfWithPdfJs, loadPdfWithPdfLib, PDFDocument, renderPageToCanvas } from "../_shared/pdfUtils";
+import { scaleCanvasRect } from "../_shared/redactionGeometry";
 
 function RedactionTool() {
     const canvasRef = useRef(null);
@@ -70,35 +71,45 @@ function RedactionTool() {
     };
 
     const getCoords = (event) => {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const scaleX = canvasRef.current.width / rect.width;
-        const scaleY = canvasRef.current.height / rect.height;
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
         return {
             x: (event.clientX - rect.left) * scaleX,
             y: (event.clientY - rect.top) * scaleY,
         };
     };
 
-    const handleMouseDown = (event) => {
+    const handlePointerDown = (event) => {
+        if (event.button != null && event.button !== 0) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        const point = getCoords(event);
         setDrawing(true);
-        setStart(getCoords(event));
-        setCurrent(getCoords(event));
+        setStart(point);
+        setCurrent(point);
     };
 
-    const handleMouseMove = (event) => {
+    const handlePointerMove = (event) => {
         if (!drawing) return;
         setCurrent(getCoords(event));
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = (event) => {
+        if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
         if (!drawing || !start || !current) return;
         setDrawing(false);
+        const canvas = canvasRef.current;
         const box = {
             page: pageNum,
             x: Math.min(start.x, current.x),
             y: Math.min(start.y, current.y),
             w: Math.abs(current.x - start.x),
             h: Math.abs(current.y - start.y),
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
         };
         if (box.w > 5 && box.h > 5) {
             setBoxes((prev) => [...prev, box]);
@@ -112,29 +123,52 @@ function RedactionTool() {
         setStatus("Applying permanent redactions…");
 
         try {
-            const pdf = await loadPdfWithPdfLib(buffer);
-            const pages = pdf.getPages();
+            const source = await loadPdfWithPdfLib(buffer);
+            const preview = await loadPdfWithPdfJs(buffer);
+            const output = await PDFDocument.create();
 
-            for (const box of boxes) {
-                const page = pages[box.page - 1];
-                if (!page) continue;
-                const { height } = page.getSize();
-                page.drawRectangle({
-                    x: box.x,
-                    y: height - box.y - box.h,
-                    width: box.w,
-                    height: box.h,
-                    color: rgb(0, 0, 0),
+            for (let index = 0; index < source.getPageCount(); index += 1) {
+                const pageBoxes = boxes.filter((box) => box.page === index + 1);
+                if (pageBoxes.length === 0) {
+                    const [copied] = await output.copyPages(source, [index]);
+                    output.addPage(copied);
+                    continue;
+                }
+
+                const canvas = await renderPageToCanvas(preview, index + 1, 2);
+                const context = canvas.getContext("2d");
+                context.fillStyle = "#000";
+                pageBoxes.forEach((box) => {
+                    const scaled = scaleCanvasRect(
+                        box,
+                        { width: box.canvasWidth, height: box.canvasHeight },
+                        { width: canvas.width, height: canvas.height },
+                    );
+                    context.fillRect(scaled.x, scaled.y, scaled.w, scaled.h);
                 });
+
+                const png = await new Promise((resolve, reject) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Could not rasterize the redacted page."));
+                    }, "image/png");
+                });
+                const { width, height } = source.getPage(index).getSize();
+                const image = await output.embedPng(new Uint8Array(await png.arrayBuffer()));
+                const page = output.addPage([width, height]);
+                page.drawImage(image, { x: 0, y: 0, width, height });
+                canvas.width = 0;
+                canvas.height = 0;
             }
 
-            const result = await pdf.save();
+            preview.destroy();
+            const result = await output.save();
             downloadBytes(
                 result,
                 `${getBaseName(file.name)}-redacted.pdf`,
                 "application/pdf",
             );
-            setStatus("Redacted PDF downloaded. Content under black boxes is permanently covered.");
+            setStatus("Redacted PDF downloaded. Covered pages are flattened to an image, so text and images under the black boxes cannot be extracted.");
         } catch (error) {
             setStatus(error?.message ?? "Redaction failed.");
         }
@@ -143,7 +177,7 @@ function RedactionTool() {
     return (
         <DocToolShell
             title="Redaction Tool"
-            description="Draw redaction boxes over sensitive content to permanently cover it with solid black."
+            description="Draw boxes over sensitive content. Covered pages are saved as images so the hidden text and pictures cannot be recovered from the download."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
@@ -184,16 +218,17 @@ function RedactionTool() {
                             </button>
                         </div>
 
-                        <p className="doc-tool-status">Click and drag to draw redaction boxes</p>
+                        <p className="doc-tool-status">Drag with a mouse, finger, or stylus to draw redaction boxes. The rest of the page still scrolls.</p>
 
                         <div className="doc-tool-canvas-wrap" style={{ marginTop: "0.5rem" }}>
                             <canvas
                                 ref={canvasRef}
-                                onMouseDown={handleMouseDown}
-                                onMouseMove={handleMouseMove}
-                                onMouseUp={handleMouseUp}
-                                onMouseLeave={handleMouseUp}
+                                onPointerDown={handlePointerDown}
+                                onPointerMove={handlePointerMove}
+                                onPointerUp={handlePointerUp}
+                                onPointerCancel={handlePointerUp}
                                 className="cursor-target"
+                                style={{ touchAction: "none", maxWidth: "100%" }}
                             />
                         </div>
                     </>
