@@ -25,6 +25,7 @@ function NumberBaseConverter() {
             })),
         [input, fromBase],
     );
+    const error = outputs.find((entry) => !entry.result.ok)?.result.error;
 
     return (
         <TextToolShell title="Number Base Converter" description="Convert numbers between binary, decimal, hexadecimal, and octal." leading={<BackButton />}>
@@ -35,7 +36,8 @@ function NumberBaseConverter() {
                         <button key={base.id} type="button" className={`text-tool-button cursor-target${fromBase === base.id ? " is-active" : ""}`} onClick={() => setFromBase(base.id)}>{base.label}</button>
                     ))}
                 </div>
-                <input className="text-tool-input" value={input} onChange={(e) => setInput(e.target.value)} />
+                <input id="number-base-input" aria-label="Number to convert" aria-invalid={Boolean(error)} aria-describedby={error ? "number-base-error" : undefined} className="text-tool-input" value={input} onChange={(e) => setInput(e.target.value)} />
+                {error && <p id="number-base-error" className="text-tool-empty" role="alert">{error}</p>}
             </div>
             <div className="text-tool-panel">
                 <h2 className="text-tool-section-title">Converted values</h2>
@@ -47,7 +49,7 @@ function NumberBaseConverter() {
                                 <CopyButton text={entry.result.ok ? entry.result.value : ""} disabled={!entry.result.ok} />
                             </div>
                             <div className="text-tool-result-card__value">
-                                {entry.result.error || entry.result.value || "—"}
+                                {entry.result.value || "—"}
                             </div>
                         </div>
                     ))}

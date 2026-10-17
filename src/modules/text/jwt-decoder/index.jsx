@@ -65,7 +65,9 @@ function JwtDecoder() {
                         <div className="text-tool-info-row">
                             <span className="text-tool-info-row__label">Expiration</span>
                             <span className="text-tool-info-row__value">
-                                {decoded.expiration ?? "No exp claim"}
+                                {decoded.expirationError ? (
+                                    <span role="status">{decoded.expirationError}</span>
+                                ) : decoded.expiration ?? "No exp claim"}
                             </span>
                         </div>
                         <div className="text-tool-info-row">

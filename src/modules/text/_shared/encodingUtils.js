@@ -70,65 +70,99 @@ export function decodeUrl(value) {
 }
 
 export function textToBinary(value, separator = " ") {
-    return [...value]
-        .map((char) => char.charCodeAt(0).toString(2).padStart(8, "0"))
+    return [...new TextEncoder().encode(value)]
+        .map((byte) => byte.toString(2).padStart(8, "0"))
         .join(separator);
 }
 
 export function binaryToText(value) {
+    if (!value.trim()) return "";
     const chunks = value.trim().split(/\s+/);
-    return chunks
-        .map((chunk) => String.fromCharCode(Number.parseInt(chunk, 2)))
-        .join("");
+    if (chunks.some((chunk) => !/^[01]{8}$/.test(chunk))) {
+        throw new Error("Enter complete 8-bit binary bytes (0 and 1 only), separated by spaces.");
+    }
+    return decodeUtf8Bytes(chunks.map((chunk) => Number.parseInt(chunk, 2)));
 }
 
 export function textToHex(value, separator = " ") {
-    return [...value]
-        .map((char) => char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0"))
+    return [...new TextEncoder().encode(value)]
+        .map((byte) => byte.toString(16).toUpperCase().padStart(2, "0"))
         .join(separator);
 }
 
 export function hexToText(value) {
-    const cleaned = value.replace(/[^0-9a-fA-F]/g, "");
-    return cleaned
-        .match(/.{1,2}/g)
-        ?.map((chunk) => String.fromCharCode(Number.parseInt(chunk, 16)))
-        .join("") ?? "";
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (trimmed.split(/\s+/).some((chunk) => !/^(?:[0-9a-fA-F]{2})+$/.test(chunk))) {
+        throw new Error("Enter complete pairs of hexadecimal digits (0–9 and A–F), with optional spaces.");
+    }
+    const bytes = trimmed.replace(/\s/g, "").match(/../g);
+    return decodeUtf8Bytes(bytes.map((chunk) => Number.parseInt(chunk, 16)));
 }
 
 export function asciiToDecimal(value) {
-    return [...value].map((char) => char.charCodeAt(0)).join(" ");
+    return asciiCodes(value).join(" ");
 }
 
 export function decimalToAscii(value) {
-    return value
-        .trim()
-        .split(/\s+/)
-        .map((code) => String.fromCharCode(Number.parseInt(code, 10)))
-        .join("");
+    if (!value.trim()) return "";
+    const tokens = value.trim().split(/\s+/);
+    if (tokens.some((token) => !/^\d+$/.test(token) || Number(token) > 127)) {
+        throw new Error("Enter whole ASCII decimal codes from 0 to 127, separated by spaces.");
+    }
+    return tokens.map((code) => String.fromCharCode(Number(code))).join("");
 }
 
 export function asciiToHex(value) {
-    return textToHex(value, " ");
+    return asciiCodes(value).map((code) => code.toString(16).toUpperCase().padStart(2, "0")).join(" ");
 }
 
 export function hexToAscii(value) {
-    return hexToText(value);
+    return requireAscii(hexToText(value));
 }
 
 export function asciiToBinary(value) {
-    return textToBinary(value, " ");
+    return asciiCodes(value).map((code) => code.toString(2).padStart(8, "0")).join(" ");
 }
 
 export function binaryToAscii(value) {
-    return binaryToText(value);
+    return requireAscii(binaryToText(value));
+}
+
+function decodeUtf8Bytes(bytes) {
+    try {
+        return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(Uint8Array.from(bytes));
+    } catch {
+        throw new Error("These bytes are not valid UTF-8 text. Check for missing or incorrect bytes.");
+    }
+}
+
+function requireAscii(value) {
+    if ([...value].some((char) => char.codePointAt(0) > 127)) {
+        throw new Error("ASCII supports codes 0 to 127 only. Use Binary ↔ Text or Hex ↔ Text for Unicode.");
+    }
+    return value;
+}
+
+function asciiCodes(value) {
+    return [...requireAscii(value)].map((char) => char.charCodeAt(0));
 }
 
 export function convertNumberBase(value, fromBase, toBase) {
-    const decimal = Number.parseInt(String(value).trim(), fromBase);
-    if (Number.isNaN(decimal)) {
-        throw new Error("Invalid number for the selected base.");
+    if (![fromBase, toBase].every((base) => Number.isInteger(base) && base >= 2 && base <= 36)) {
+        throw new Error("Choose an integer base from 2 to 36.");
     }
+    const input = String(value).trim();
+    const digits = input.replace(/^[+-]/, "");
+    if (!/^[0-9a-z]+$/i.test(digits) || [...digits].some((digit) => Number.parseInt(digit, 36) >= fromBase)) {
+        throw new Error(`Enter a whole base-${fromBase} integer using only valid digits, without a prefix.`);
+    }
+    let decimal = 0n;
+    const radix = BigInt(fromBase);
+    for (const digit of digits) {
+        decimal = decimal * radix + BigInt(Number.parseInt(digit, 36));
+    }
+    if (input.startsWith("-")) decimal = -decimal;
     return decimal.toString(toBase).toUpperCase();
 }
 
@@ -147,7 +181,8 @@ export function textToMorse(value) {
 export function morseToText(value) {
     return value
         .trim()
-        .split(/\s+\/\s+|\s+/)
+        .split(/(\/)|\s+/)
+        .filter(Boolean)
         .map((token) => {
             if (token === "/") return " ";
             const entry = Object.entries(MORSE_CODE).find(([, code]) => code === token);
@@ -216,8 +251,9 @@ export function atbashCipher(value) {
 }
 
 export function numberToRoman(value) {
-    let number = Number.parseInt(String(value).trim(), 10);
-    if (Number.isNaN(number) || number <= 0 || number > 3999) {
+    const input = String(value).trim();
+    let number = Number(input);
+    if (!/^\d+$/.test(input) || !Number.isInteger(number) || number <= 0 || number > 3999) {
         throw new Error("Roman numerals support integers from 1 to 3999.");
     }
 
@@ -233,8 +269,8 @@ export function numberToRoman(value) {
 
 export function romanToNumber(value) {
     const roman = value.trim().toUpperCase();
-    if (!/^[MDCLXVI]+$/.test(roman)) {
-        throw new Error("Invalid Roman numeral.");
+    if (!roman || !/^M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$/.test(roman)) {
+        throw new Error("Enter a canonical Roman numeral from I to MMMCMXCIX (1–3999).");
     }
 
     let total = 0;

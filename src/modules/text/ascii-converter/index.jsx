@@ -32,11 +32,11 @@ function AsciiConverter() {
                     ? selected.encode(input)
                     : selected.decode(input),
             ),
-        [input, mode, direction, selected],
+        [input, direction, selected],
     );
 
     return (
-        <TextToolShell title="ASCII Converter" description="Convert ASCII text to decimal, hex, and binary representations." leading={<BackButton />}>
+        <TextToolShell title="ASCII Converter" description="Convert ASCII characters (codes 0–127) to decimal, hex, and 8-bit binary representations. Separate decimal codes and binary bytes with spaces." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     {MODES.map((entry) => (
@@ -47,11 +47,12 @@ function AsciiConverter() {
                     <button type="button" className={`text-tool-button cursor-target${direction === "encode" ? " is-active" : ""}`} onClick={() => setDirection("encode")}>Encode</button>
                     <button type="button" className={`text-tool-button cursor-target${direction === "decode" ? " is-active" : ""}`} onClick={() => setDirection("decode")}>Decode</button>
                 </div>
-                <textarea className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                <textarea id="ascii-converter-input" aria-label="Input" aria-invalid={!output.ok} aria-describedby={output.error ? "ascii-converter-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
+                {output.error && <p id="ascii-converter-error" className="text-tool-empty" role="alert">{output.error}</p>}
             </div>
             <div className="text-tool-panel">
                 <div className="text-tool-output-header"><h2 className="text-tool-section-title">Output</h2><CopyButton text={output.ok ? output.value : ""} disabled={!output.ok} /></div>
-                {output.error ? <p className="text-tool-empty">{output.error}</p> : <textarea className="text-tool-textarea" value={output.value} readOnly />}
+                <textarea aria-label="Output" className="text-tool-textarea" value={output.value} readOnly />
             </div>
         </TextToolShell>
     );

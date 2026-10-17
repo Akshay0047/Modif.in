@@ -10,11 +10,12 @@ import {
 
 function TimestampConverter() {
     const [timestampInput, setTimestampInput] = useState("");
+    const [timestampUnit, setTimestampUnit] = useState("seconds");
     const [dateInput, setDateInput] = useState("");
 
     const fromTimestamp = useMemo(
-        () => safeExecute("timestamp", () => timestampToDate(timestampInput).toISOString()),
-        [timestampInput],
+        () => safeExecute("timestamp", () => timestampToDate(timestampInput, timestampUnit).toISOString()),
+        [timestampInput, timestampUnit],
     );
 
     const fromDate = useMemo(
@@ -30,15 +31,30 @@ function TimestampConverter() {
         >
             <div className="text-tool-grid text-tool-grid--2">
                 <div className="text-tool-panel">
+                    <div className="text-tool-controls" role="group" aria-label="Timestamp unit">
+                        {["seconds", "milliseconds"].map((unit) => (
+                            <button
+                                key={unit}
+                                type="button"
+                                className={`text-tool-button cursor-target${timestampUnit === unit ? " is-active" : ""}`}
+                                aria-pressed={timestampUnit === unit}
+                                onClick={() => setTimestampUnit(unit)}
+                            >
+                                {unit === "seconds" ? "Seconds" : "Milliseconds"}
+                            </button>
+                        ))}
+                    </div>
                     <label className="text-tool-label" htmlFor="timestamp-input">
-                        Unix timestamp
+                        Unix timestamp ({timestampUnit})
                     </label>
                     <input
                         id="timestamp-input"
                         className="text-tool-input"
                         value={timestampInput}
                         onChange={(event) => setTimestampInput(event.target.value)}
-                        placeholder="1710000000 or 1710000000000"
+                        placeholder={timestampUnit === "seconds" ? "1710000000" : "999999999999"}
+                        aria-invalid={Boolean(fromTimestamp.error)}
+                        aria-describedby={fromTimestamp.error ? "timestamp-error" : undefined}
                     />
                     <div className="text-tool-output-header" style={{ marginTop: "1rem" }}>
                         <h2 className="text-tool-section-title">Date output</h2>
@@ -48,7 +64,7 @@ function TimestampConverter() {
                         />
                     </div>
                     {fromTimestamp.error ? (
-                        <p className="text-tool-empty">{fromTimestamp.error}</p>
+                        <p id="timestamp-error" className="text-tool-empty" role="alert">{fromTimestamp.error}</p>
                     ) : (
                         <textarea
                             className="text-tool-textarea"

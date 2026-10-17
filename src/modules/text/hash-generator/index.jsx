@@ -15,12 +15,6 @@ function HashGenerator() {
     useEffect(() => {
         let cancelled = false;
 
-        if (!input) {
-            setOutput("");
-            setError("");
-            return undefined;
-        }
-
         generateHash(input, algorithm)
             .then((value) => {
                 if (!cancelled) {

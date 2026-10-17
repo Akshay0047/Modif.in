@@ -84,7 +84,7 @@ function ToolHub({
                                     key={tool.id}
                                     name={tool.name}
                                     isPopular={Boolean(tool.isPopular)}
-                                    onClick={() => handleToolSelect(tool)}
+                                    to={tool.path}
                                 />
                             ))}
                         </div>

@@ -1,357 +1,34 @@
+// Remove only names that identify tracking systems. Generic names such as
+// project, ref, source, filters, tab and session can be functional application data.
 const TRACKING_PARAMS = new Set([
-    "utm_source",
-    "utm_medium",
-    "utm_campaign",
-    "utm_term",
-    "utm_content",
-    "utm_id",
-    "utm_reader",
-    "utm_name",
-    "utm_cid",
-    "utm_referrer",
-    "gclid",
-    "gclsrc",
-    "dclid",
-    "wbraid",
-    "gbraid",
-    "gad_source",
-    "fbclid",
-    "fb_action_ids",
-    "fb_action_types",
-    "fb_source",
-    "fb_ref",
-    "mc_eid",
-    "mc_cid",
-    "msclkid",
-    "twclid",
-    "li_fat_id",
-    "igshid",
-    "igsh",
-    "yclid",
-    "srsltid",
-    "epik",
-    "ttclid",
-    "rb_clickid",
-    "irclickid",
-    "irgwc",
-    "clickid",
-    "click_id",
-    "cmpid",
-    "campaignid",
-    "_hsenc",
-    "_hsmi",
-    "hsctatracking",
-    "__hstc",
-    "__hssc",
-    "__hsfp",
-    "mkt_tok",
-    "vero_id",
-    "vgo_ee",
-    "ref",
-    "referrer",
-    "referer",
-    "source",
-    "campaign",
-    "medium",
-    "content",
-    "term",
-    "spm",
-    "scm",
-    "pvid",
-    "ncid",
-    "affiliate",
-    "aff",
-    "aff_id",
-    "affiliate_id",
-    "partner",
-    "pid",
-    "pp",
-    "sharer",
-    "share",
-    "feature",
-    "kw",
-    "si",
-    "ved",
-    "ei",
-    "usg",
-    "action_object_map",
-    "action_type_map",
-    "action_ref_map",
-    "al_applink_data",
-    "oly_anon_id",
-    "oly_enc_id",
-    "otc",
-    "openct",
-    "gs_lcp",
-    "s_kwcid",
-    "trk",
-    "trkInfo",
-    "sca_esv",
-    "oq",
-    "gs_lp",
+    "gclid", "gclsrc", "dclid", "wbraid", "gbraid", "gad_source",
+    "fbclid", "fb_action_ids", "fb_action_types", "fb_source", "fb_ref",
+    "mc_eid", "mc_cid", "msclkid", "twclid", "li_fat_id", "igshid",
+    "yclid", "srsltid", "epik", "ttclid", "rb_clickid", "irclickid",
+    "_hsenc", "_hsmi", "hsctatracking", "__hstc", "__hssc", "__hsfp",
+    "mkt_tok", "vero_id", "vgo_ee", "_ga", "_gl",
 ]);
-
-const TRACKING_PARAM_PREFIXES = [
-    "utm_",
-    "mt_",
-    "pk_",
-    "piwik_",
-    "matomo_",
-    "vero_",
-    "vgo_",
-    "_ga",
-    "__",
-    "hs_",
-    "mkt_",
-    "oly_",
-];
-
-const NOISE_PARAM_PATTERNS = [
-    /\[/,
-    /\]/,
-    /refinement/i,
-    /facetfilter/i,
-    /numericfilter/i,
-    /^filters?$/i,
-    /^filter_/i,
-    /sortby/i,
-    /sort_by/i,
-    /orderby/i,
-    /^highlight$/i,
-    /^select$/i,
-    /^state$/i,
-    /^config$/i,
-    /^data$/i,
-    /^json$/i,
-    /^callback$/i,
-    /^_/,
-    /session/i,
-    /^fb_/i,
-    /^gs_/i,
-    /clid$/i,
-    /^redirect$/i,
-    /^return_?url$/i,
-    /^next$/i,
-    /^modal$/i,
-    /^popup$/i,
-    /^overlay$/i,
-    /^layout$/i,
-    /^theme$/i,
-    /^view$/i,
-    /^tab$/i,
-    /^mode$/i,
-    /^toggle$/i,
-    /^expanded$/i,
-    /^collapsed$/i,
-    /^open$/i,
-    /^show$/i,
-    /^hide$/i,
-    /^autoplay$/i,
-    /^muted$/i,
-    /^controls$/i,
-    /^embed$/i,
-    /^widget$/i,
-    /^preview$/i,
-    /^nocache$/i,
-    /^cachebust/i,
-    /^rand(om)?$/i,
-    /^timestamp$/i,
-    /^_ts$/i,
-    /^cb$/i,
-];
-
-const MEANINGFUL_QUERY_PARAMS = new Set([
-    "id",
-    "v",
-    "video",
-    "video_id",
-    "vid",
-    "t",
-    "list",
-    "playlist",
-    "q",
-    "query",
-    "search",
-    "s",
-    "keyword",
-    "keywords",
-    "term",
-    "page",
-    "p",
-    "offset",
-    "limit",
-    "start",
-    "skip",
-    "per_page",
-    "lang",
-    "locale",
-    "l",
-    "hl",
-    "region",
-    "slug",
-    "article",
-    "post",
-    "story",
-    "title",
-    "name",
-    "repo",
-    "user",
-    "username",
-    "u",
-    "path",
-    "file",
-    "filename",
-    "doc",
-    "document",
-    "channel",
-    "c",
-    "product",
-    "variant",
-    "sku",
-    "cat",
-    "category",
-    "tag",
-    "year",
-    "month",
-    "day",
-    "from",
-    "to",
-    "date",
-    "format",
-    "type",
-    "ext",
-    "output",
-    "ll",
-    "lat",
-    "lng",
-    "lon",
-    "zoom",
-    "z",
-    "version",
-    "ver",
-    "api",
-    "status",
-    "tbm",
-    "near",
-    "place",
-]);
-
-const DOMAIN_SANITIZERS = {
-    "youtube.com": sanitizeYouTubeUrl,
-    "youtu.be": sanitizeYouTubeUrl,
-    "google.com": sanitizeGoogleUrl,
-    "amazon.com": stripAllQueryParams,
-    "twitter.com": stripAllQueryParams,
-    "x.com": stripAllQueryParams,
-    "facebook.com": stripAllQueryParams,
-    "instagram.com": stripAllQueryParams,
-    "linkedin.com": stripAllQueryParams,
-    "reddit.com": sanitizeRedditUrl,
-};
-
-function stripAllQueryParams(url) {
-    url.search = "";
-}
-
-function sanitizeYouTubeUrl(url) {
-    const kept = new URLSearchParams();
-    ["v", "list", "t"].forEach((key) => {
-        const value = url.searchParams.get(key);
-        if (value) kept.set(key, value);
-    });
-    url.search = kept.toString();
-}
-
-function sanitizeGoogleUrl(url) {
-    if (!/^\/search(?:\/|$)/i.test(url.pathname)) {
-        return;
-    }
-
-    const kept = new URLSearchParams();
-    ["q", "tbm", "near", "hl", "gl"].forEach((key) => {
-        const value = url.searchParams.get(key);
-        if (value) kept.set(key, value);
-    });
-    url.search = kept.toString();
-}
-
-function sanitizeRedditUrl(url) {
-    if (/^\/r\/[^/]+\/comments\/[^/]+/i.test(url.pathname)) {
-        url.search = "";
-    }
-}
-
-function normalizeHostname(hostname) {
-    return hostname.toLowerCase().replace(/^www\./, "");
-}
-
-function isNoiseQueryParam(key) {
-    const lowerKey = key.toLowerCase();
-
-    if (TRACKING_PARAMS.has(lowerKey)) {
-        return true;
-    }
-
-    if (TRACKING_PARAM_PREFIXES.some((prefix) => lowerKey.startsWith(prefix))) {
-        return true;
-    }
-
-    if (NOISE_PARAM_PATTERNS.some((pattern) => pattern.test(key))) {
-        return true;
-    }
-
-    if (key.length > 48 || (key.includes("_") && key.length > 24)) {
-        return true;
-    }
-
-    return false;
-}
-
-function isMeaningfulQueryParam(key) {
-    const lowerKey = key.toLowerCase();
-    return MEANINGFUL_QUERY_PARAMS.has(lowerKey);
-}
-
-function shouldKeepQueryParam(key) {
-    if (isNoiseQueryParam(key)) {
-        return false;
-    }
-
-    return isMeaningfulQueryParam(key);
-}
-
-function applyDomainSanitizer(url) {
-    const host = normalizeHostname(url.hostname);
-    const sanitizer = DOMAIN_SANITIZERS[host];
-    if (sanitizer) {
-        sanitizer(url);
-    }
-}
-
-function formatSanitizedUrl(url) {
-    url.hash = "";
-
-    const serialized = url.toString();
-    if (url.pathname === "/" && !url.search && !url.hash) {
-        return serialized.endsWith("/") ? serialized : `${serialized}/`;
-    }
-
-    return serialized.replace(/\/$/, "");
-}
 
 export function sanitizeUrl(value) {
-    const url = new URL(String(value).trim());
-    const cleaned = new URLSearchParams();
+    const original = String(value).trim();
+    // Validate without reserializing: URLSearchParams/URL serialization can
+    // rewrite signed values, percent escapes and path spelling.
+    new URL(original);
+    const fragmentIndex = original.indexOf("#");
+    const fragment = fragmentIndex < 0 ? "" : original.slice(fragmentIndex);
+    const beforeFragment = fragmentIndex < 0 ? original : original.slice(0, fragmentIndex);
+    const queryIndex = beforeFragment.indexOf("?");
+    if (queryIndex < 0) return original;
 
-    url.searchParams.forEach((paramValue, key) => {
-        if (shouldKeepQueryParam(key)) {
-            cleaned.set(key, paramValue);
-        }
+    const query = beforeFragment.slice(queryIndex + 1);
+    const parts = query.split("&");
+    const kept = parts.filter((part) => {
+        const key = new URLSearchParams(part).keys().next().value?.toLowerCase() ?? "";
+        return !key.startsWith("utm_") && !TRACKING_PARAMS.has(key);
     });
-
-    url.search = cleaned.toString();
-    applyDomainSanitizer(url);
-    return formatSanitizedUrl(url);
+    if (kept.length === parts.length) return original;
+    const cleanedQuery = kept.join("&");
+    return `${beforeFragment.slice(0, queryIndex)}${cleanedQuery ? `?${cleanedQuery}` : ""}${fragment}`;
 }
 
 export function parseUrl(value) {
@@ -711,10 +388,14 @@ function bytesToWords(bytes) {
 }
 
 function padMd5Words(words, byteLength) {
-    const padded = [...words];
+    // Every word must be initialized: adding an undefined sparse-array slot
+    // poisons a round before the bitwise conversion can coerce it to zero.
+    const blockWords = (Math.floor((byteLength + 8) / 64) + 1) * 16;
+    const padded = Array(blockWords).fill(0);
+    words.forEach((word, index) => { padded[index] = word; });
     padded[byteLength >> 2] |= 0x80 << ((byteLength % 4) * 8);
-    padded[(((byteLength + 8) >>> 6) << 4) + 14] = byteLength * 8;
-    while (padded.length % 16 !== 0) padded.push(0);
+    padded[blockWords - 2] = (byteLength * 8) >>> 0;
+    padded[blockWords - 1] = Math.floor(byteLength / 0x20000000);
     return padded;
 }
 

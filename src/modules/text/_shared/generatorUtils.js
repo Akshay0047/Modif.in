@@ -1,3 +1,5 @@
+import { PASSPHRASE_WORDS } from "./passphraseWords.js";
+
 const LOREM_WORDS = [
     "lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit",
     "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore",
@@ -48,7 +50,26 @@ const AMBIGUOUS = "0O1lI|`'\"\\";
 export function randomInt(min, max) {
     const low = Math.ceil(min);
     const high = Math.floor(max);
-    return Math.floor(Math.random() * (high - low + 1)) + low;
+    const range = high - low + 1;
+    if (!Number.isSafeInteger(low) || !Number.isSafeInteger(high) ||
+        !Number.isSafeInteger(range) || range < 1) {
+        throw new RangeError("Choose a valid safe-integer range.");
+    }
+    if (!globalThis.crypto?.getRandomValues) {
+        throw new Error("Secure random generation is unavailable in this browser.");
+    }
+
+    // Reject the incomplete final interval so every possible remainder has
+    // exactly the same number of source values, including non-power-of-two pools.
+    const space = range <= 0x100000000 ? 0x100000000 : 0x20000000000000;
+    const limit = Math.floor(space / range) * range;
+    const words = new Uint32Array(space === 0x100000000 ? 1 : 2);
+    let sample;
+    do {
+        crypto.getRandomValues(words);
+        sample = words.length === 1 ? words[0] : (words[0] & 0x1fffff) * 0x100000000 + words[1];
+    } while (sample >= limit);
+    return low + (sample % range);
 }
 
 export function randomItem(items) {
@@ -102,7 +123,11 @@ export function generatePassword({
         excludeAmbiguous,
     });
 
-    if (!charset) return "";
+    if (!charset) throw new Error("Select at least one character type.");
+    const classCount = [uppercase, lowercase, numbers, symbols].filter(Boolean).length;
+    if (!Number.isSafeInteger(length) || length < classCount) {
+        throw new RangeError("Password length must include every selected character type.");
+    }
 
     const required = [];
     if (uppercase) required.push(randomItem(charset.replace(/[^A-Z]/g, "") || "A"));
@@ -123,15 +148,32 @@ export function generatePassword({
 }
 
 export function generatePassphrase({
-    wordCount = 4,
+    wordCount = 6,
     separator = "-",
     capitalize = false,
 }) {
-    const words = Array.from({ length: wordCount }, () => randomItem(NOUNS));
+    validatePassphraseWordCount(wordCount);
+    const words = Array.from({ length: wordCount }, () => randomItem(PASSPHRASE_WORDS));
     const formatted = capitalize
         ? words.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         : words;
     return formatted.join(separator);
+}
+
+function validatePassphraseWordCount(wordCount) {
+    if (!Number.isInteger(wordCount) || wordCount < 3 || wordCount > 8) {
+        throw new RangeError("Choose between 3 and 8 passphrase words.");
+    }
+}
+
+export function calculatePassphraseEntropy(wordCount, separator = "-", capitalize = false) {
+    validatePassphraseWordCount(wordCount);
+    // All words are lowercase ASCII. Nonletter separators or initial capitals
+    // preserve boundaries; arbitrary concatenation can merge distinct sequences.
+    return {
+        bits: wordCount * Math.log2(PASSPHRASE_WORDS.length),
+        boundariesPreserved: capitalize || /[^a-z]/.test(separator),
+    };
 }
 
 export function generateUsername(style = "adjective_noun") {
@@ -256,7 +298,7 @@ function encodeRandom(length) {
 }
 
 export function generateUlid() {
-    return `${encodeTime(Date.now())}${encodeRandom(10)}`;
+    return `${encodeTime(Date.now())}${encodeRandom(16)}`;
 }
 
 export function generateNanoId(size = 21) {
@@ -331,10 +373,11 @@ export function generateTestData(type) {
         case "timestamp":
             return new Date(Date.now() - randomInt(0, 1000000000)).toISOString();
         case "boolean":
-            return Math.random() > 0.5 ? "true" : "false";
+            return randomInt(0, 1) ? "true" : "false";
         case "status":
             return randomItem(["active", "pending", "archived", "draft"]);
         default:
             return "";
     }
 }
+

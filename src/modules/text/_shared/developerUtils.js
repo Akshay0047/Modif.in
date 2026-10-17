@@ -18,12 +18,9 @@ export function sortJsonKeys(value, spaces = 2) {
             return input.map(sortDeep);
         }
         if (input && typeof input === "object") {
-            return Object.keys(input)
+            return Object.fromEntries(Object.keys(input)
                 .sort()
-                .reduce((accumulator, key) => {
-                    accumulator[key] = sortDeep(input[key]);
-                    return accumulator;
-                }, {});
+                .map((key) => [key, sortDeep(input[key])]));
         }
         return input;
     };
@@ -31,107 +28,30 @@ export function sortJsonKeys(value, spaces = 2) {
     return JSON.stringify(sortDeep(JSON.parse(value)), null, spaces);
 }
 
-export function jsonToYaml(value) {
-    const convert = (input, indent = 0) => {
-        const padding = "  ".repeat(indent);
-
-        if (input === null) return "null";
-        if (typeof input === "boolean" || typeof input === "number") {
-            return String(input);
-        }
-        if (typeof input === "string") {
-            return JSON.stringify(input);
-        }
-        if (Array.isArray(input)) {
-            if (input.length === 0) return "[]";
-            return input
-                .map((item) => {
-                    const rendered = convert(item, indent + 1);
-                    if (typeof item === "object" && item !== null) {
-                        return `${padding}-\n${rendered
-                            .split("\n")
-                            .map((line) => `  ${line}`)
-                            .join("\n")}`;
-                    }
-                    return `${padding}- ${rendered}`;
-                })
-                .join("\n");
-        }
-
-        const entries = Object.entries(input);
-        if (entries.length === 0) return "{}";
-
-        return entries
-            .map(([key, item]) => {
-                if (typeof item === "object" && item !== null) {
-                    return `${padding}${key}:\n${convert(item, indent + 1)}`;
-                }
-                return `${padding}${key}: ${convert(item, indent + 1)}`;
-            })
-            .join("\n");
-    };
-
-    return convert(JSON.parse(value));
+export async function jsonToYaml(value) {
+    const { stringify } = await import("yaml");
+    return stringify(JSON.parse(value));
 }
 
-export function yamlToJson(value) {
-    const lines = value.split("\n");
-    const root = {};
-    const stack = [{ indent: -1, value: root }];
-
-    for (const rawLine of lines) {
-        if (!rawLine.trim() || rawLine.trim().startsWith("#")) continue;
-
-        const indent = rawLine.match(/^\s*/)?.[0].length ?? 0;
-        const line = rawLine.trim();
-
-        while (stack.length > 1 && indent <= stack[stack.length - 1].indent) {
-            stack.pop();
+export async function yamlToJson(value) {
+    const { parseDocument } = await import("yaml");
+    const document = parseDocument(value, { stringKeys: true, intAsBigInt: true });
+    const problem = document.errors[0] ?? document.warnings[0];
+    if (problem) throw new Error(problem.message);
+    const parsed = document.toJS({ maxAliasCount: 100 });
+    return JSON.stringify(parsed, (_key, item) => {
+        if (typeof item === "bigint") {
+            const number = Number(item);
+            if (!Number.isSafeInteger(number)) {
+                throw new Error("YAML integer is outside the safe JSON number range.");
+            }
+            return number;
         }
-
-        const parent = stack[stack.length - 1].value;
-
-        if (line.startsWith("- ")) {
-            const arrayTarget = Array.isArray(parent)
-                ? parent
-                : (() => {
-                      const key = Object.keys(parent).pop();
-                      if (!Array.isArray(parent[key])) parent[key] = [];
-                      return parent[key];
-                  })();
-            arrayTarget.push(parseYamlScalar(line.slice(2).trim()));
-            continue;
+        if (typeof item === "number" && !Number.isFinite(item)) {
+            throw new Error("JSON cannot represent non-finite YAML numbers.");
         }
-
-        const separatorIndex = line.indexOf(":");
-        if (separatorIndex === -1) continue;
-
-        const key = line.slice(0, separatorIndex).trim();
-        const rawValue = line.slice(separatorIndex + 1).trim();
-
-        if (!rawValue) {
-            parent[key] = {};
-            stack.push({ indent, value: parent[key] });
-        } else {
-            parent[key] = parseYamlScalar(rawValue);
-        }
-    }
-
-    return JSON.stringify(root, null, 2);
-}
-
-function parseYamlScalar(value) {
-    if (value === "null") return null;
-    if (value === "true") return true;
-    if (value === "false") return false;
-    if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
-    if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-    ) {
-        return value.slice(1, -1);
-    }
-    return value;
+        return item;
+    }, 2);
 }
 
 export function jsonToCsv(value) {
@@ -143,98 +63,33 @@ export function jsonToCsv(value) {
     const headers = [...new Set(data.flatMap((row) => Object.keys(row)))];
     const escapeCell = (cell) => {
         const text = cell == null ? "" : String(cell);
-        if (/[",\n]/.test(text)) {
+        if (/[",\r\n]/.test(text)) {
             return `"${text.replace(/"/g, '""')}"`;
         }
         return text;
     };
 
     const rows = [
-        headers.join(","),
+        headers.map(escapeCell).join(","),
         ...data.map((row) => headers.map((header) => escapeCell(row[header])).join(",")),
     ];
 
     return rows.join("\n");
 }
 
-export function formatJavaScript(code) {
-    let output = "";
-    let indent = 0;
-    let inString = false;
-    let stringChar = "";
-    let escaped = false;
-
-    const pushIndent = () => {
-        output += "\n" + "    ".repeat(Math.max(0, indent));
-    };
-
-    for (let index = 0; index < code.length; index += 1) {
-        const char = code[index];
-
-        if (inString) {
-            output += char;
-            if (escaped) {
-                escaped = false;
-            } else if (char === "\\") {
-                escaped = true;
-            } else if (char === stringChar) {
-                inString = false;
-            }
-            continue;
-        }
-
-        if (char === '"' || char === "'" || char === "`") {
-            inString = true;
-            stringChar = char;
-            output += char;
-            continue;
-        }
-
-        if (char === "{") {
-            output += " {";
-            indent += 1;
-            pushIndent();
-            continue;
-        }
-
-        if (char === "}") {
-            indent = Math.max(0, indent - 1);
-            pushIndent();
-            output += "}";
-            continue;
-        }
-
-        if (char === ";") {
-            output += ";";
-            pushIndent();
-            continue;
-        }
-
-        if (char === "(") {
-            output += " (";
-            continue;
-        }
-
-        if (char === ")") {
-            output = output.replace(/\s+$/, "");
-            output += ")";
-            continue;
-        }
-
-        if (char === ",") {
-            output += ", ";
-            continue;
-        }
-
-        if (/\s/.test(char)) {
-            if (!/\s$/.test(output)) output += " ";
-            continue;
-        }
-
-        output += char;
-    }
-
-    return output.replace(/\s+\n/g, "\n").trim();
+export async function formatJavaScript(code, language = "javascript") {
+    const typed = language === "typescript" || language === "tsx";
+    const [{ format }, syntax, estree] = await Promise.all([
+        import("prettier/standalone"),
+        typed ? import("prettier/plugins/typescript") : import("prettier/plugins/babel"),
+        import("prettier/plugins/estree"),
+    ]);
+    return format(code, {
+        parser: typed ? "typescript" : "babel",
+        filepath: `input.${language === "tsx" ? "tsx" : typed ? "ts" : language === "jsx" ? "jsx" : "js"}`,
+        plugins: [syntax.default, estree.default],
+        tabWidth: 4,
+    });
 }
 
 export function formatHtml(code) {
@@ -284,16 +139,9 @@ export function formatCss(code) {
         .join("\n");
 }
 
-export function formatSql(code) {
-    return code
-        .replace(
-            /\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|INSERT INTO|VALUES|UPDATE|SET|DELETE FROM|JOIN|LEFT JOIN|RIGHT JOIN|INNER JOIN|ON|AND|OR)\b/gi,
-            "\n$1",
-        )
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .join("\n");
+export async function formatSql(code) {
+    const { format } = await import("sql-formatter");
+    return format(code, { language: "sql" });
 }
 
 export function formatXml(code) {
@@ -306,7 +154,7 @@ export function formatCode(code, language) {
         case "typescript":
         case "jsx":
         case "tsx":
-            return formatJavaScript(code);
+            return formatJavaScript(code, language);
         case "html":
             return formatHtml(code);
         case "css":
@@ -322,20 +170,27 @@ export function formatCode(code, language) {
     }
 }
 
-export function minifyCode(code, language) {
+export async function minifyCode(code, language) {
     switch (language) {
         case "json":
             return minifyJson(code);
-        case "css":
-            return code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
+        case "css": {
+            const { parse, generate } = await import("css-tree");
+            const ast = parse(code, { onParseError(error) { throw error; } });
+            return generate(ast);
+        }
         case "html":
             return code.replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
-        case "javascript":
-            return code
-                .replace(/\/\*[\s\S]*?\*\//g, "")
-                .replace(/(^|[^:])\/\/.*$/gm, "$1")
-                .replace(/\s+/g, " ")
-                .trim();
+        case "javascript": {
+            const { minify } = await import("terser");
+            const result = await minify(code, {
+                parse: { bare_returns: true },
+                compress: false,
+                mangle: false,
+                format: { comments: "some" },
+            });
+            return result.code;
+        }
         default:
             return code.replace(/\s+/g, " ").trim();
     }
@@ -343,7 +198,9 @@ export function minifyCode(code, language) {
 
 export function testRegex(pattern, flags, text) {
     const regex = new RegExp(pattern, flags);
-    const matches = [...text.matchAll(regex)].map((match) => ({
+    const first = regex.global ? null : regex.exec(text);
+    const results = regex.global ? [...text.matchAll(regex)] : first ? [first] : [];
+    const matches = results.map((match) => ({
         match: match[0],
         index: match.index,
         groups: match.slice(1),
@@ -375,22 +232,45 @@ export function decodeJwt(token) {
 
     const header = decodePart(parts[0]);
     const payload = decodePart(parts[1]);
-    const expiration =
-        typeof payload.exp === "number"
-            ? new Date(payload.exp * 1000).toISOString()
+    let expiration = null;
+    let expirationError = null;
+    if (payload && typeof payload === "object" && Object.hasOwn(payload, "exp")) {
+        const date = typeof payload.exp === "number" && Number.isFinite(payload.exp)
+            ? new Date(payload.exp * 1000)
             : null;
+        if (!date || Number.isNaN(date.getTime())) {
+            expirationError = "Invalid exp claim: use numeric Unix seconds within the supported date range.";
+        } else {
+            expiration = date.toISOString();
+        }
+    }
 
-    return { header, payload, expiration, claims: payload };
+    return { header, payload, expiration, expirationError, claims: payload };
 }
 
-export function timestampToDate(value) {
-    const numeric = Number(value);
-    const milliseconds = numeric > 1e12 ? numeric : numeric * 1000;
-    const date = new Date(milliseconds);
-    if (Number.isNaN(date.getTime())) {
+export function timestampToDate(value, unit = "seconds") {
+    const input = String(value).trim();
+    if (!/^[+-]?\d+(?:\.\d+)?$/.test(input)) {
+        throw new Error("Enter a numeric timestamp in the selected unit.");
+    }
+    if (unit !== "seconds" && unit !== "milliseconds") {
+        throw new Error("Select seconds or milliseconds.");
+    }
+    const [, sign, whole, decimal = ""] = /^([+-]?)(\d+)(?:\.(\d+))?$/.exec(input);
+    const fraction = decimal.replace(/0+$/, "");
+    const precision = unit === "seconds" ? 3 : 0;
+    if (fraction.length > precision) {
+        throw new Error("Timestamp must resolve to a whole millisecond.");
+    }
+    // Scale decimal digits exactly: floating point multiplication can turn
+    // 1.001 seconds into 1000.9999999999999 milliseconds.
+    let milliseconds = BigInt(whole) * (unit === "seconds" ? 1000n : 1n);
+    if (fraction) milliseconds += BigInt(fraction.padEnd(precision, "0"));
+    if (sign === "-") milliseconds = -milliseconds;
+    if (milliseconds < -8640000000000000n || milliseconds > 8640000000000000n) {
         throw new Error("Invalid timestamp.");
     }
-    return date;
+    return new Date(Number(milliseconds));
 }
 
 export function dateToTimestamps(dateInput) {
@@ -409,18 +289,28 @@ export function formatXmlDocument(value) {
     return formatXml(value);
 }
 
-export function validateXml(value) {
+function parseXmlDocument(value) {
     const parser = new DOMParser();
     const document = parser.parseFromString(value, "application/xml");
-    const errorNode = document.querySelector("parsererror");
+    const errorNode = [
+        "http://www.mozilla.org/newlayout/xml/parsererror.xml",
+        "http://www.w3.org/1999/xhtml",
+    ].map((namespace) => document.getElementsByTagNameNS(namespace, "parsererror")[0]).find(Boolean);
     if (errorNode) {
         throw new Error(errorNode.textContent || "Invalid XML.");
     }
+    return document;
+}
+
+export function validateXml(value) {
+    parseXmlDocument(value);
     return { valid: true, message: "Valid XML" };
 }
 
 export function minifyXml(value) {
-    return value.replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
+    // Without a schema, even whitespace-only text nodes can be meaningful.
+    // Let the XML serializer compact markup syntax; retain every content node.
+    return new XMLSerializer().serializeToString(parseXmlDocument(value));
 }
 
 export function encodeHtmlEntities(value) {
@@ -440,15 +330,29 @@ export function decodeHtmlEntities(value) {
 
 export function parseQueryString(value) {
     const params = new URLSearchParams(value.startsWith("?") ? value.slice(1) : value);
-    return Object.fromEntries(params.entries());
+    const grouped = new Map();
+    for (const [key, item] of params) {
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(item);
+    }
+    return Object.fromEntries([...grouped].map(([key, items]) => [key, items.length === 1 ? items[0] : items]));
 }
 
 export function generateQueryString(value) {
     const parsed = JSON.parse(value);
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+        throw new Error("Enter a JSON object with scalar values or arrays of scalars.");
+    }
     const params = new URLSearchParams();
     Object.entries(parsed).forEach(([key, item]) => {
-        if (item == null) return;
-        params.set(key, String(item));
+        const items = Array.isArray(item) ? item : [item];
+        for (const entry of items) {
+            if (entry == null) continue;
+            if (!["string", "number", "boolean"].includes(typeof entry) || (typeof entry === "number" && !Number.isFinite(entry))) {
+                throw new Error(`Query parameter "${key}" must contain scalar values.`);
+            }
+            params.append(key, String(entry));
+        }
     });
     return params.toString();
 }

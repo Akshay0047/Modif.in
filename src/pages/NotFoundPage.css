@@ -1,0 +1,43 @@
+.not-found-page {
+    position: relative;
+    width: min(640px, 100%);
+    box-sizing: border-box;
+    margin: 3rem auto;
+    padding: 2rem 1.5rem 6rem;
+    color: #f8fafc;
+    text-align: center;
+}
+
+.not-found-page h1 {
+    margin: 0 0 1rem;
+    font-family: Georgia, serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.not-found-page p {
+    color: #cbd5e1;
+    line-height: 1.6;
+}
+
+.not-found-page nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.not-found-page a {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    padding: 0.75rem 1rem;
+    color: inherit;
+    background: rgba(15, 20, 35, 0.4);
+    text-decoration: none;
+}
+
+.not-found-page a:hover,
+.not-found-page a:focus-visible {
+    outline: 2px solid #8991ff;
+    outline-offset: 2px;
+}

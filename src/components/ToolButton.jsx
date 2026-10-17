@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import "./ToolButton.css";
 
-function ToolButton({ name, isPopular = false, onClick }) {
+function ToolButton({ name, isPopular = false, to }) {
     const titleRef = useRef(null);
     const [isOverflowing, setIsOverflowing] = useState(false);
 
@@ -20,10 +21,9 @@ function ToolButton({ name, isPopular = false, onClick }) {
     }, [name]);
 
     return (
-        <button
-            type="button"
+        <Link
+            to={to}
             className={`tool-button cursor-target${isPopular ? " highlighted" : ""}`}
-            onClick={onClick}
             title={name}
         >
             {isPopular ? <div className="tool-button__badge">Popular</div> : null}
@@ -36,7 +36,7 @@ function ToolButton({ name, isPopular = false, onClick }) {
                     {isOverflowing ? <span aria-hidden="true">{name}</span> : null}
                 </span>
             </span>
-        </button>
+        </Link>
     );
 }
 

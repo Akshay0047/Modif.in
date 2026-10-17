@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
+import { safeExecute } from "../_shared/webSecurityUtils";
 import {
     generateRandomNameValue,
     generateRandomNumber,
@@ -16,7 +17,7 @@ function RandomGenerator() {
     const [max, setMax] = useState(1000);
     const [seed, setSeed] = useState(0);
 
-    const output = useMemo(() => {
+    const result = useMemo(() => safeExecute("generate", () => {
         const generator = () => {
             switch (type) {
                 case "word":
@@ -33,7 +34,9 @@ function RandomGenerator() {
         };
 
         return Array.from({ length: count }, generator).join("\n");
-    }, [type, count, min, max, seed]);
+    }), [type, count, min, max, seed]);
+
+    const output = result.ok ? result.value : "";
 
     return (
         <TextToolShell
@@ -120,8 +123,9 @@ function RandomGenerator() {
             <div className="text-tool-panel">
                 <div className="text-tool-output-header">
                     <h2 className="text-tool-section-title">Generated values</h2>
-                    <CopyButton text={output} />
+                    <CopyButton text={output} disabled={!result.ok} />
                 </div>
+                {result.error ? <p className="text-tool-empty" role="alert">{result.error}</p> : null}
                 <textarea
                     className="text-tool-textarea"
                     value={output}
