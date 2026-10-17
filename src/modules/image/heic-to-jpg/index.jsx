@@ -154,6 +154,17 @@ function HeicToJpg() {
         [convertFile],
     );
 
+    const settingsStamp = useRef(`${targetFormat}:${quality}`);
+
+    useEffect(() => {
+        const stamp = `${targetFormat}:${quality}`;
+        if (settingsStamp.current === stamp || isProcessing) return;
+        const ready = files.filter((entry) => entry.stage === STAGES.DONE);
+        settingsStamp.current = stamp;
+        if (!ready.length) return;
+        processQueue(ready);
+    }, [quality, targetFormat, files, isProcessing, processQueue]);
+
     const addFiles = useCallback(
         (incoming) => {
             const list = Array.from(incoming);

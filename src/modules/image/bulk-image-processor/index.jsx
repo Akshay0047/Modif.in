@@ -104,6 +104,7 @@ function BulkImageProcessor() {
     const processBatch = async () => {
         if (!items.length || isProcessing) return;
         const op = operationRef.current + 1;
+        operationRef.current = op;
         setIsProcessing(true);
         setShowProgress(true);
         setError("");

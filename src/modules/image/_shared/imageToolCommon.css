@@ -73,6 +73,11 @@
   scrollbar-gutter: stable;
 }
 
+.img-tool__controls-scroll:not(:has(:is(input, select, textarea, button):not(:disabled))) {
+  overflow: visible;
+  max-height: none;
+}
+
 .img-tool__preview-col {
   display: flex;
   flex-direction: column;
@@ -386,7 +391,7 @@
 .img-tool__preview-empty {
   margin: 0;
   padding: 1rem;
-  color: #64748b;
+  color: #b7c3d4;
   font-size: 0.8125rem;
   text-align: center;
 }
@@ -472,7 +477,7 @@
 
 .img-tool__hint {
   margin: 0;
-  color: #64748b;
+  color: #b7c3d4;
   font-size: 0.75rem;
   line-height: 1.5;
 }
@@ -802,7 +807,7 @@
 
 .img-tool__list-meta {
   display: block;
-  color: #64748b;
+  color: #b7c3d4;
   font-size: 0.6875rem;
   margin-top: 0.15rem;
 }
