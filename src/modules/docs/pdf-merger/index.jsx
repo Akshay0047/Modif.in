@@ -6,16 +6,15 @@ import PdfPreview from "../_shared/PdfPreview";
 import ProgressBar from "../_shared/ProgressBar";
 import { downloadBytes, readFileAsArrayBuffer } from "../_shared/downloadUtils";
 import { mergePdfBuffers } from "../_shared/pdfUtils";
+import { createDocWorker } from "../_shared/createDocWorker";
 import { useWorkerTask } from "../_shared/useWorkerTask";
-
-const WORKER_URL = new URL("../_shared/workers/docWorker.js", import.meta.url);
 
 function PdfMerger() {
     const [files, setFiles] = useState([]);
     const [previewFile, setPreviewFile] = useState(null);
     const [mergedBytes, setMergedBytes] = useState(null);
     const [status, setStatus] = useState("");
-    const { run, running, progress, error } = useWorkerTask(WORKER_URL);
+    const { run, running, progress, error } = useWorkerTask(createDocWorker);
 
     const buildMerged = async () => {
         const buffers = await Promise.all(files.map((file) => readFileAsArrayBuffer(file)));
