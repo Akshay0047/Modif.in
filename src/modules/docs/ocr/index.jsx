@@ -7,9 +7,8 @@ import FileDropZone from "../_shared/FileDropZone";
 import ProgressBar from "../_shared/ProgressBar";
 import { readFileAsDataUrl } from "../_shared/fileUtils";
 import { loadPdfWithPdfJs, renderPageToCanvas } from "../_shared/pdfUtils";
+import { createDocWorker } from "../_shared/createDocWorker";
 import { useWorkerTask } from "../_shared/useWorkerTask";
-
-const WORKER_URL = new URL("../_shared/workers/docWorker.js", import.meta.url);
 
 function ocrToMarkdown(data) {
     const paragraphs = data?.paragraphs?.length
@@ -36,7 +35,7 @@ function Ocr() {
     const [markdown, setMarkdown] = useState("");
     const [view, setView] = useState("txt");
     const [status, setStatus] = useState("");
-    const { run, running, progress, error } = useWorkerTask(WORKER_URL);
+    const { run, running, progress, error } = useWorkerTask(createDocWorker);
 
     const recognizeImage = async (imageData) => {
         const result = await run({
