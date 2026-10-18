@@ -3,7 +3,7 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { clonePdfBytes, loadPdfWithPdfJs, loadPdfWithPdfLib, PDFDocument, renderPageToCanvas } from "../_shared/pdfUtils";
+import { clonePdfBytes, loadPdfWithPdfJs, PDFDocument, renderPageToCanvas } from "../_shared/pdfUtils";
 import { scaleCanvasRect } from "../_shared/redactionGeometry";
 
 function RedactionTool() {
@@ -122,19 +122,17 @@ function RedactionTool() {
         if (!buffer || !file || boxes.length === 0) return;
         setStatus("Applying permanent redactions…");
 
+        let preview;
         try {
-            const source = await loadPdfWithPdfLib(buffer);
-            const preview = await loadPdfWithPdfJs(buffer);
+            preview = await loadPdfWithPdfJs(buffer);
             const output = await PDFDocument.create();
 
-            for (let index = 0; index < source.getPageCount(); index += 1) {
+            // Even an untouched page can reference shared resources containing
+            // redacted content. Rebuild every page without copying source objects.
+            for (let index = 0; index < preview.numPages; index += 1) {
                 const pageBoxes = boxes.filter((box) => box.page === index + 1);
-                if (pageBoxes.length === 0) {
-                    const [copied] = await output.copyPages(source, [index]);
-                    output.addPage(copied);
-                    continue;
-                }
-
+                const sourcePage = await preview.getPage(index + 1);
+                const { width, height } = sourcePage.getViewport({ scale: 1 });
                 const canvas = await renderPageToCanvas(preview, index + 1, 2);
                 const context = canvas.getContext("2d");
                 context.fillStyle = "#000";
@@ -153,7 +151,6 @@ function RedactionTool() {
                         else reject(new Error("Could not rasterize the redacted page."));
                     }, "image/png");
                 });
-                const { width, height } = source.getPage(index).getSize();
                 const image = await output.embedPng(new Uint8Array(await png.arrayBuffer()));
                 const page = output.addPage([width, height]);
                 page.drawImage(image, { x: 0, y: 0, width, height });
@@ -161,23 +158,24 @@ function RedactionTool() {
                 canvas.height = 0;
             }
 
-            preview.destroy();
             const result = await output.save();
             downloadBytes(
                 result,
                 `${getBaseName(file.name)}-redacted.pdf`,
                 "application/pdf",
             );
-            setStatus("Redacted PDF downloaded. Covered pages are flattened to an image, so text and images under the black boxes cannot be extracted.");
+            setStatus("Redacted PDF downloaded. Every page is saved as an image to remove recoverable source objects. Text is no longer selectable.");
         } catch (error) {
             setStatus(error?.message ?? "Redaction failed.");
+        } finally {
+            await preview?.destroy();
         }
     };
 
     return (
         <DocToolShell
             title="Redaction Tool"
-            description="Draw boxes over sensitive content. Covered pages are saved as images so the hidden text and pictures cannot be recovered from the download."
+            description="Draw boxes over sensitive content. Every page is saved as an image to remove hidden source content; text will no longer be selectable."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
