@@ -3,7 +3,7 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBlob, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { PDFDocument, StandardFonts, rgb } from "../_shared/pdfUtils";
+import { writeTextPdf } from "../_shared/unicodeTextPdf";
 import ePub from "epubjs";
 
 async function extractEpubText(arrayBuffer) {
@@ -23,46 +23,7 @@ async function extractEpubText(arrayBuffer) {
 }
 
 async function textToPdf(text) {
-    const pdf = await PDFDocument.create();
-    const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const fontSize = 11;
-    const margin = 50;
-    const lineHeight = fontSize * 1.5;
-    const pageWidth = 595;
-    const pageHeight = 842;
-    const maxWidth = pageWidth - margin * 2;
-
-    let page = pdf.addPage([pageWidth, pageHeight]);
-    let y = pageHeight - margin;
-
-    for (const paragraph of text.split(/\n\n+/)) {
-        const words = paragraph.split(/\s+/);
-        let line = "";
-        for (const word of words) {
-            const testLine = line ? `${line} ${word}` : word;
-            if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth && line) {
-                page.drawText(line, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
-                y -= lineHeight;
-                line = word;
-                if (y < margin) {
-                    page = pdf.addPage([pageWidth, pageHeight]);
-                    y = pageHeight - margin;
-                }
-            } else {
-                line = testLine;
-            }
-        }
-        if (line) {
-            page.drawText(line, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
-            y -= lineHeight * 1.5;
-            if (y < margin) {
-                page = pdf.addPage([pageWidth, pageHeight]);
-                y = pageHeight - margin;
-            }
-        }
-    }
-
-    return pdf.save();
+    return writeTextPdf(text, { fontSize: 11 });
 }
 
 function EbookConversion() {
