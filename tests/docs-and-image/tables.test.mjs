@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { csvToXml, toMarkdownTable } from "../../src/modules/docs/_shared/csvUtils.js";
-import { formatExtractedTable, rowsFromPages } from "../../src/modules/docs/table-extractor/tableRows.js";
+import { formatExtractedTable, groupIntoTable, rowsFromPages } from "../../src/modules/docs/table-extractor/tableRows.js";
 
 test("markdown cells keep multiline text inside one row", () => {
     const markdown = toMarkdownTable("Name,Notes\nBob,\"line1\r\nline2 | extra\"");
@@ -36,4 +36,33 @@ test("table rows stay on their own page and follow the selected format", () => {
     const json = formatExtractedTable(rows, "json");
     assert.equal(csv.startsWith("Page,Column 1,Column 2"), true);
     assert.equal(JSON.parse(json)[0]["Column 1"], "Alice");
+});
+
+test("empty PDF pages do not renumber later extracted rows", () => {
+    const rows = rowsFromPages([
+        [],
+        [{ text: "Page two", x: 10, y: 100 }],
+        [],
+        [{ text: "Page four", x: 10, y: 100 }],
+    ]);
+    assert.deepEqual(rows.map((row) => row.Page), ["2", "4"]);
+    assert.deepEqual(rows.map((row) => row["Column 1"]), ["Page two", "Page four"]);
+    assert.deepEqual(rowsFromPages([[], []]), []);
+});
+
+test("a column at the left PDF boundary is not duplicated", () => {
+    const table = groupIntoTable([
+        { text: "Name", x: 0, y: 100 },
+        { text: "Amount", x: 80, y: 100 },
+        { text: "Alice", x: 0, y: 80 },
+        { text: "12.50", x: 80, y: 80 },
+    ]);
+    assert.deepEqual(table, [["Name", "Amount"], ["Alice", "12.50"]]);
+});
+
+test("CSV to XML rejects inconsistent field counts instead of losing data", () => {
+    assert.throws(() => csvToXml("First,Last\nAlice,Brown,Unexpected\n"), /3 fields; expected 2/);
+    assert.throws(() => csvToXml("First,Middle,Last\nAlice,Brown\n"), /2 fields; expected 3/);
+    const valid = csvToXml("First,Last\nAlice,\n");
+    assert.match(valid, /<field name="Last"><\/field>/);
 });

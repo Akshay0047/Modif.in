@@ -41,6 +41,11 @@ function tableCells(data) {
     const parsed = Papa.parse(String(data ?? ""), { header: false, skipEmptyLines: true });
     if (parsed.errors.length) throw new Error(parsed.errors[0].message);
     const [headers = [], ...body] = parsed.data;
+    body.forEach((row, index) => {
+        if (row.length !== headers.length) {
+            throw new Error(`CSV row ${index + 2} has ${row.length} fields; expected ${headers.length}.`);
+        }
+    });
     return {
         headers,
         rows: body.map((row) => headers.map((_, index) => row[index] ?? "")),

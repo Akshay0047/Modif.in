@@ -28,7 +28,7 @@ export function groupIntoTable(textItems) {
     rows.forEach((row) => {
         row.forEach((cell) => {
             const existing = columnPositions.find((x) => Math.abs(x - cell.x) < 15);
-            if (!existing) columnPositions.push(cell.x);
+            if (existing === undefined) columnPositions.push(cell.x);
         });
     });
     columnPositions.sort((a, b) => a - b);
@@ -48,7 +48,7 @@ export function groupIntoTable(textItems) {
 }
 
 export function rowsFromPages(pages) {
-    const tables = pages.map((items) => groupIntoTable(items)).filter((table) => table.length);
+    const tables = pages.map((items) => groupIntoTable(items));
     const width = tables.reduce(
         (max, table) => Math.max(max, ...table.map((row) => row.length)),
         0,
