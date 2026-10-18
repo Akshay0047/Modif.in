@@ -39,8 +39,8 @@ function PaginationLayout() {
         setRunning(true);
         setStatus("Saving paginated PDF…");
         try {
-            const result = previewBytes ?? await buildPaginated();
-            if (!previewBytes) setPreviewBytes(result);
+            const result = await buildPaginated();
+            setPreviewBytes(result);
             downloadBytes(
                 result,
                 `${getBaseName(file.name)}-paginated.pdf`,
@@ -73,23 +73,31 @@ function PaginationLayout() {
 
                 <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                     <div>
-                        <label className="doc-tool-label">Page number format</label>
+                        <label className="doc-tool-label" htmlFor="pagination-format">Page number format</label>
                         <input
+                            id="pagination-format"
                             className="doc-tool-input cursor-target"
                             value={format}
-                            onChange={(e) => setFormat(e.target.value)}
+                            onChange={(e) => {
+                                setFormat(e.target.value);
+                                setPreviewBytes(null);
+                            }}
                             placeholder="Page {n} of {total}"
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Font size ({fontSize}px)</label>
+                        <label className="doc-tool-label" htmlFor="pagination-font-size">Font size ({fontSize}px)</label>
                         <input
+                            id="pagination-font-size"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="8"
                             max="24"
                             value={fontSize}
-                            onChange={(e) => setFontSize(Number(e.target.value))}
+                            onChange={(e) => {
+                                setFontSize(Number(e.target.value));
+                                setPreviewBytes(null);
+                            }}
                         />
                     </div>
                 </div>

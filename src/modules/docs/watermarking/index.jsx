@@ -49,8 +49,8 @@ function Watermarking() {
         setRunning(true);
         setStatus("Saving watermarked PDF…");
         try {
-            const result = previewBytes ?? await buildWatermarked();
-            if (!previewBytes) setPreviewBytes(result);
+            const result = await buildWatermarked();
+            setPreviewBytes(result);
             downloadBytes(
                 result,
                 `${getBaseName(file.name)}-watermarked.pdf`,
@@ -83,45 +83,61 @@ function Watermarking() {
 
                 <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                     <div>
-                        <label className="doc-tool-label">Watermark text</label>
+                        <label className="doc-tool-label" htmlFor="watermark-text">Watermark text</label>
                         <input
+                            id="watermark-text"
                             className="doc-tool-input cursor-target"
                             value={text}
-                            onChange={(e) => setText(e.target.value)}
+                            onChange={(e) => {
+                                setText(e.target.value);
+                                setPreviewBytes(null);
+                            }}
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Opacity ({opacity})</label>
+                        <label className="doc-tool-label" htmlFor="watermark-opacity">Opacity ({opacity})</label>
                         <input
+                            id="watermark-opacity"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="0.1"
                             max="1"
                             step="0.05"
                             value={opacity}
-                            onChange={(e) => setOpacity(Number(e.target.value))}
+                            onChange={(e) => {
+                                setOpacity(Number(e.target.value));
+                                setPreviewBytes(null);
+                            }}
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Font size ({fontSize}px)</label>
+                        <label className="doc-tool-label" htmlFor="watermark-font-size">Font size ({fontSize}px)</label>
                         <input
+                            id="watermark-font-size"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="12"
                             max="120"
                             value={fontSize}
-                            onChange={(e) => setFontSize(Number(e.target.value))}
+                            onChange={(e) => {
+                                setFontSize(Number(e.target.value));
+                                setPreviewBytes(null);
+                            }}
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Angle ({angle}°)</label>
+                        <label className="doc-tool-label" htmlFor="watermark-angle">Angle ({angle}°)</label>
                         <input
+                            id="watermark-angle"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="-90"
                             max="90"
                             value={angle}
-                            onChange={(e) => setAngle(Number(e.target.value))}
+                            onChange={(e) => {
+                                setAngle(Number(e.target.value));
+                                setPreviewBytes(null);
+                            }}
                         />
                     </div>
                 </div>
@@ -130,7 +146,10 @@ function Watermarking() {
                     <button
                         type="button"
                         className={`doc-tool-button cursor-target${tile ? " is-active" : ""}`}
-                        onClick={() => setTile((v) => !v)}
+                        onClick={() => {
+                            setTile((v) => !v);
+                            setPreviewBytes(null);
+                        }}
                     >
                         Tile pattern
                     </button>

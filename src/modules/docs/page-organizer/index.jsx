@@ -19,18 +19,26 @@ function PageOrganizer() {
         let cancelled = false;
 
         (async () => {
-            const pdf = await loadPdfWithPdfJs(buffer);
-            if (cancelled) return;
-            const indices = Array.from({ length: pdf.numPages }, (_, i) => i);
-            setOrder(indices);
-            setRotations({});
+            try {
+                const pdf = await loadPdfWithPdfJs(buffer);
+                if (cancelled) return;
+                const indices = Array.from({ length: pdf.numPages }, (_, i) => i);
+                setOrder(indices);
+                setRotations({});
 
-            const thumbs = [];
-            for (let i = 1; i <= pdf.numPages; i += 1) {
-                thumbs.push(await renderPageToDataUrl(pdf, i, 0.4));
+                const thumbs = [];
+                for (let i = 1; i <= pdf.numPages; i += 1) {
+                    thumbs.push(await renderPageToDataUrl(pdf, i, 0.4));
+                }
+                pdf.destroy();
+                if (!cancelled) setThumbnails(thumbs);
+            } catch (error) {
+                if (cancelled) return;
+                setOrder([]);
+                setRotations({});
+                setThumbnails([]);
+                setStatus(error?.message || "Could not read this PDF. Choose another file.");
             }
-            pdf.destroy();
-            if (!cancelled) setThumbnails(thumbs);
         })();
 
         return () => {
