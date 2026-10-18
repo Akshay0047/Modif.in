@@ -63,9 +63,17 @@ function getCategoryForPreset(presetKey) {
     return "instagram";
 }
 
+function bitmapSize(image) {
+    return {
+        width: image.naturalWidth || image.width || 0,
+        height: image.naturalHeight || image.height || 0,
+    };
+}
+
 function sliceImage(image, rows, cols) {
-    const sliceW = Math.floor(image.naturalWidth / cols);
-    const sliceH = Math.floor(image.naturalHeight / rows);
+    const { width, height } = bitmapSize(image);
+    const sliceW = Math.floor(width / cols);
+    const sliceH = Math.floor(height / rows);
     const slices = [];
 
     for (let r = 0; r < rows; r += 1) {
@@ -90,18 +98,19 @@ function sliceImage(image, rows, cols) {
 
 function getCanvasDimensions(image, rows, cols) {
     const targetAspect = cols / rows;
-    const imageAspect = image.naturalWidth / image.naturalHeight;
+    const { width: imageWidth, height: imageHeight } = bitmapSize(image);
+    const imageAspect = imageWidth / imageHeight;
 
     if (Math.abs(imageAspect - targetAspect) < 0.01) {
         return {
-            width: image.naturalWidth,
-            height: image.naturalHeight,
+            width: imageWidth,
+            height: imageHeight,
             needsLetterbox: false,
         };
     }
 
     if (imageAspect > targetAspect) {
-        const height = image.naturalHeight;
+        const height = imageHeight;
         return {
             width: Math.round(height * targetAspect),
             height,
@@ -109,7 +118,7 @@ function getCanvasDimensions(image, rows, cols) {
         };
     }
 
-    const width = image.naturalWidth;
+    const width = imageWidth;
     return {
         width,
         height: Math.round(width / targetAspect),
@@ -133,10 +142,11 @@ function composeImageForGrid(image, rows, cols, options) {
         ctx.fillRect(0, 0, canvasW, canvasH);
     }
 
-    const containScale = Math.min(canvasW / image.naturalWidth, canvasH / image.naturalHeight);
+    const { width: imageWidth, height: imageHeight } = bitmapSize(image);
+    const containScale = Math.min(canvasW / imageWidth, canvasH / imageHeight);
     const drawScale = containScale * zoom;
-    const drawW = image.naturalWidth * drawScale;
-    const drawH = image.naturalHeight * drawScale;
+    const drawW = imageWidth * drawScale;
+    const drawH = imageHeight * drawScale;
     const cx = canvasW / 2 + panX;
     const cy = canvasH / 2 + panY;
 

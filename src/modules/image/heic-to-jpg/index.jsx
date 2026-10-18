@@ -76,7 +76,7 @@ function HeicToJpg() {
     }, [revokeThumbUrls]);
 
     const convertFile = useCallback(
-        async (entry, operationId) => {
+        async (entry, operationId, { targetFormat, quality }) => {
             const updateEntry = (patch) => {
                 if (operationRef.current !== operationId) return;
                 setFiles((prev) =>
@@ -84,7 +84,18 @@ function HeicToJpg() {
                 );
             };
 
-            updateEntry({ stage: STAGES.UNPACKING, progress: 10, error: "" });
+            if (entry.thumbUrl) {
+                URL.revokeObjectURL(entry.thumbUrl);
+                thumbUrlsRef.current = thumbUrlsRef.current.filter((url) => url !== entry.thumbUrl);
+            }
+            updateEntry({
+                stage: STAGES.UNPACKING,
+                progress: 10,
+                error: "",
+                blob: null,
+                thumbUrl: "",
+                outputSize: 0,
+            });
 
             try {
                 const heic2any = (await import("heic2any")).default;
@@ -127,11 +138,11 @@ function HeicToJpg() {
                 });
             }
         },
-        [quality, targetFormat],
+        [],
     );
 
     const processQueue = useCallback(
-        async (newEntries) => {
+        async (newEntries, settings = { targetFormat, quality }) => {
             const operationId = operationRef.current;
             setShowProgress(true);
             setGlobalStage(STAGE_LABELS[STAGES.UNPACKING]);
@@ -143,7 +154,7 @@ function HeicToJpg() {
                     `${STAGE_LABELS[STAGES.DECODING]} (${i + 1} of ${newEntries.length})`,
                 );
                 setGlobalProgress(Math.round(((i + 0.5) / newEntries.length) * 90));
-                await convertFile(newEntries[i], operationId);
+                await convertFile(newEntries[i], operationId, settings);
             }
 
             if (operationRef.current !== operationId) return;
@@ -151,8 +162,16 @@ function HeicToJpg() {
             setGlobalProgress(100);
             setStatus(`${newEntries.length} file(s) processed.`);
         },
-        [convertFile],
+        [convertFile, quality, targetFormat],
     );
+
+    const updateSettings = (nextFormat, nextQuality) => {
+        if (isProcessing || isZipping) return;
+        setTargetFormat(nextFormat);
+        setQuality(nextQuality);
+        const ready = files.filter((entry) => entry.stage === STAGES.DONE || entry.stage === STAGES.ERROR);
+        if (ready.length) processQueue(ready, { targetFormat: nextFormat, quality: nextQuality });
+    };
 
     const addFiles = useCallback(
         (incoming) => {
@@ -202,14 +221,14 @@ function HeicToJpg() {
     );
 
     const handleDownloadSingle = (entry) => {
-        if (!entry.blob || isProcessing) return;
+        if (entry.stage !== STAGES.DONE || !entry.blob || isProcessing) return;
         const ext = targetFormat === "jpg" ? "jpg" : "png";
         triggerDownload(entry.blob, replaceExtension(entry.file.name, ext));
         setStatus(`Downloaded ${entry.file.name}.`);
     };
 
     const handleDownloadAll = async () => {
-        const done = files.filter((f) => f.blob);
+        const done = files.filter((f) => f.stage === STAGES.DONE && f.blob);
         if (!done.length || isProcessing || isZipping) return;
 
         setIsZipping(true);
@@ -252,7 +271,7 @@ function HeicToJpg() {
                         className={`img-tool__segment cursor-target${targetFormat === "jpg" ? " is-active" : ""}`}
                         aria-pressed={targetFormat === "jpg"}
                         disabled={isProcessing || isZipping}
-                        onClick={() => setTargetFormat("jpg")}
+                        onClick={() => updateSettings("jpg", quality)}
                     >
                         JPG
                     </button>
@@ -261,7 +280,7 @@ function HeicToJpg() {
                         className={`img-tool__segment cursor-target${targetFormat === "png" ? " is-active" : ""}`}
                         aria-pressed={targetFormat === "png"}
                         disabled={isProcessing || isZipping}
-                        onClick={() => setTargetFormat("png")}
+                        onClick={() => updateSettings("png", quality)}
                     >
                         PNG
                     </button>
@@ -275,7 +294,7 @@ function HeicToJpg() {
                 max={100}
                 value={quality}
                 disabled={isProcessing || isZipping || targetFormat === "png"}
-                onChange={setQuality}
+                onChange={(value) => updateSettings(targetFormat, value)}
                 formatDisplay={(val) => (targetFormat === "png" ? "N/A for PNG" : `${val}%`)}
                 lowLabel="50%"
                 highLabel="100%"
@@ -383,7 +402,7 @@ function HeicToJpg() {
                             <button
                                 type="button"
                                 className="img-tool__btn cursor-target"
-                                disabled={!entry.blob || isProcessing || isZipping}
+                                disabled={entry.stage !== STAGES.DONE || !entry.blob || isProcessing || isZipping}
                                 onClick={() => handleDownloadSingle(entry)}
                             >
                                 Download

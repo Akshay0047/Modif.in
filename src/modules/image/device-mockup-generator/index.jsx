@@ -452,8 +452,9 @@ function DeviceMockupGenerator() {
     const left = (
         <>
             <div>
-                <span className="img-tool__label">Device frame</span>
+                <label className="img-tool__label" htmlFor="mockup-device">Device frame</label>
                 <select
+                    id="mockup-device"
                     className="img-tool__select"
                     value={device}
                     disabled={!hasImage}
@@ -533,14 +534,15 @@ function DeviceMockupGenerator() {
 
             {backdrop === "solid" && (
                 <div className="img-tool__color-row">
+                    <label className="img-tool__hint" htmlFor="mockup-backdrop-color">Background color</label>
                     <input
+                        id="mockup-backdrop-color"
                         className="img-tool__color-input"
                         type="color"
                         value={backdropColor}
                         disabled={!hasImage}
                         onChange={(e) => setBackdropColor(e.target.value)}
                     />
-                    <span className="img-tool__hint">Background color</span>
                 </div>
             )}
 
@@ -586,6 +588,7 @@ function DeviceMockupGenerator() {
                     className="img-tool__dropzone-input"
                     type="file"
                     accept={IMAGE_ACCEPT}
+                    aria-label="Upload screenshot"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) ingestFile(f); }}
                 />
                 <p className="img-tool__dropzone-text">
