@@ -14,9 +14,8 @@ import {
     rgb,
     stripMetadata,
 } from "../_shared/pdfUtils";
+import { createDocWorker } from "../_shared/createDocWorker";
 import { useWorkerTask } from "../_shared/useWorkerTask";
-
-const WORKER_URL = new URL("../_shared/workers/docWorker.js", import.meta.url);
 
 const OPERATIONS = [
     { id: "merge", label: "Merge" },
@@ -52,7 +51,8 @@ async function runPipeline(buffers, steps, workerRun, setProgress, watermark) {
                     task: "compress",
                     payload: { buffer: current, quality: 0.6, scale: 1.2 },
                 });
-            } catch {
+            } catch (workerError) {
+                if (workerError?.name === "AbortError") throw workerError;
                 current = await compressPdf(current, {
                     quality: 0.6,
                     scale: 1.2,
@@ -92,7 +92,7 @@ function BatchWorkflowAutomation() {
         color: "#808080",
         tile: false,
     });
-    const { run, running, progress, error, setProgress } = useWorkerTask(WORKER_URL);
+    const { run, running, progress, error, setProgress } = useWorkerTask(createDocWorker);
 
     const toggleStep = (id) => {
         setPipeline((prev) =>
@@ -114,6 +114,7 @@ function BatchWorkflowAutomation() {
             setPreviewBytes(result);
             setStatus("Preview ready.");
         } catch (pipelineError) {
+            if (pipelineError?.name === "AbortError") return;
             setStatus(pipelineError?.message ?? "Pipeline failed.");
         }
     };
@@ -123,14 +124,15 @@ function BatchWorkflowAutomation() {
         setStatus("Running pipeline…");
 
         try {
-            const result = previewBytes ?? await buildResult();
-            if (!previewBytes) setPreviewBytes(result);
+            const result = await buildResult();
+            setPreviewBytes(result);
             const name = files.length === 1
                 ? getBaseName(files[0].name)
                 : "batch";
             downloadBytes(result, `${name}-processed.pdf`, "application/pdf");
             setStatus(`Pipeline complete: ${pipeline.join(" → ")}`);
         } catch (pipelineError) {
+            if (pipelineError?.name === "AbortError") return;
             setStatus(pipelineError?.message ?? "Pipeline failed.");
         }
     };
@@ -179,7 +181,10 @@ function BatchWorkflowAutomation() {
                             <input
                                 className="doc-tool-input cursor-target"
                                 value={watermark.text}
-                                onChange={(e) => setWatermark((prev) => ({ ...prev, text: e.target.value }))}
+                                onChange={(e) => {
+                                    setWatermark((prev) => ({ ...prev, text: e.target.value }));
+                                    setPreviewBytes(null);
+                                }}
                             />
                         </div>
                         <div>
@@ -190,7 +195,10 @@ function BatchWorkflowAutomation() {
                                 min="-90"
                                 max="90"
                                 value={watermark.angle}
-                                onChange={(e) => setWatermark((prev) => ({ ...prev, angle: Number(e.target.value) }))}
+                                onChange={(e) => {
+                                    setWatermark((prev) => ({ ...prev, angle: Number(e.target.value) }));
+                                    setPreviewBytes(null);
+                                }}
                             />
                         </div>
                         <div>
@@ -202,7 +210,10 @@ function BatchWorkflowAutomation() {
                                 max="1"
                                 step="0.05"
                                 value={watermark.opacity}
-                                onChange={(e) => setWatermark((prev) => ({ ...prev, opacity: Number(e.target.value) }))}
+                                onChange={(e) => {
+                                    setWatermark((prev) => ({ ...prev, opacity: Number(e.target.value) }));
+                                    setPreviewBytes(null);
+                                }}
                             />
                         </div>
                         <div>
@@ -211,14 +222,20 @@ function BatchWorkflowAutomation() {
                                 className="doc-tool-input cursor-target"
                                 type="color"
                                 value={watermark.color}
-                                onChange={(e) => setWatermark((prev) => ({ ...prev, color: e.target.value }))}
+                                onChange={(e) => {
+                                    setWatermark((prev) => ({ ...prev, color: e.target.value }));
+                                    setPreviewBytes(null);
+                                }}
                             />
                         </div>
                         <div>
                             <button
                                 type="button"
                                 className={`doc-tool-button cursor-target${watermark.tile ? " is-active" : ""}`}
-                                onClick={() => setWatermark((prev) => ({ ...prev, tile: !prev.tile }))}
+                                onClick={() => {
+                                    setWatermark((prev) => ({ ...prev, tile: !prev.tile }));
+                                    setPreviewBytes(null);
+                                }}
                             >
                                 Tile watermark
                             </button>
