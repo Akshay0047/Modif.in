@@ -39,8 +39,8 @@ function PaginationLayout() {
         setRunning(true);
         setStatus("Saving paginated PDF…");
         try {
-            const result = previewBytes ?? await buildPaginated();
-            if (!previewBytes) setPreviewBytes(result);
+            const result = await buildPaginated();
+            setPreviewBytes(result);
             downloadBytes(
                 result,
                 `${getBaseName(file.name)}-paginated.pdf`,
@@ -78,7 +78,10 @@ function PaginationLayout() {
                             id="pagination-format"
                             className="doc-tool-input cursor-target"
                             value={format}
-                            onChange={(e) => setFormat(e.target.value)}
+                            onChange={(e) => {
+                                setFormat(e.target.value);
+                                setPreviewBytes(null);
+                            }}
                             placeholder="Page {n} of {total}"
                         />
                     </div>
@@ -91,7 +94,10 @@ function PaginationLayout() {
                             min="8"
                             max="24"
                             value={fontSize}
-                            onChange={(e) => setFontSize(Number(e.target.value))}
+                            onChange={(e) => {
+                                setFontSize(Number(e.target.value));
+                                setPreviewBytes(null);
+                            }}
                         />
                     </div>
                 </div>
