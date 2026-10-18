@@ -3,7 +3,8 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { clonePdfBytes, loadPdfWithPdfJs, loadPdfWithPdfLib, renderPageToCanvas, rgb } from "../_shared/pdfUtils";
+import { clonePdfBytes, loadPdfWithPdfJs, PDFDocument, renderPageToCanvas } from "../_shared/pdfUtils";
+import { scaleCanvasRect } from "../_shared/redactionGeometry";
 
 function RedactionTool() {
     const canvasRef = useRef(null);
@@ -70,35 +71,45 @@ function RedactionTool() {
     };
 
     const getCoords = (event) => {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const scaleX = canvasRef.current.width / rect.width;
-        const scaleY = canvasRef.current.height / rect.height;
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
         return {
             x: (event.clientX - rect.left) * scaleX,
             y: (event.clientY - rect.top) * scaleY,
         };
     };
 
-    const handleMouseDown = (event) => {
+    const handlePointerDown = (event) => {
+        if (event.button != null && event.button !== 0) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        const point = getCoords(event);
         setDrawing(true);
-        setStart(getCoords(event));
-        setCurrent(getCoords(event));
+        setStart(point);
+        setCurrent(point);
     };
 
-    const handleMouseMove = (event) => {
+    const handlePointerMove = (event) => {
         if (!drawing) return;
         setCurrent(getCoords(event));
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = (event) => {
+        if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
         if (!drawing || !start || !current) return;
         setDrawing(false);
+        const canvas = canvasRef.current;
         const box = {
             page: pageNum,
             x: Math.min(start.x, current.x),
             y: Math.min(start.y, current.y),
             w: Math.abs(current.x - start.x),
             h: Math.abs(current.y - start.y),
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
         };
         if (box.w > 5 && box.h > 5) {
             setBoxes((prev) => [...prev, box]);
@@ -111,39 +122,60 @@ function RedactionTool() {
         if (!buffer || !file || boxes.length === 0) return;
         setStatus("Applying permanent redactions…");
 
+        let preview;
         try {
-            const pdf = await loadPdfWithPdfLib(buffer);
-            const pages = pdf.getPages();
+            preview = await loadPdfWithPdfJs(buffer);
+            const output = await PDFDocument.create();
 
-            for (const box of boxes) {
-                const page = pages[box.page - 1];
-                if (!page) continue;
-                const { height } = page.getSize();
-                page.drawRectangle({
-                    x: box.x,
-                    y: height - box.y - box.h,
-                    width: box.w,
-                    height: box.h,
-                    color: rgb(0, 0, 0),
+            // Even an untouched page can reference shared resources containing
+            // redacted content. Rebuild every page without copying source objects.
+            for (let index = 0; index < preview.numPages; index += 1) {
+                const pageBoxes = boxes.filter((box) => box.page === index + 1);
+                const sourcePage = await preview.getPage(index + 1);
+                const { width, height } = sourcePage.getViewport({ scale: 1 });
+                const canvas = await renderPageToCanvas(preview, index + 1, 2);
+                const context = canvas.getContext("2d");
+                context.fillStyle = "#000";
+                pageBoxes.forEach((box) => {
+                    const scaled = scaleCanvasRect(
+                        box,
+                        { width: box.canvasWidth, height: box.canvasHeight },
+                        { width: canvas.width, height: canvas.height },
+                    );
+                    context.fillRect(scaled.x, scaled.y, scaled.w, scaled.h);
                 });
+
+                const png = await new Promise((resolve, reject) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Could not rasterize the redacted page."));
+                    }, "image/png");
+                });
+                const image = await output.embedPng(new Uint8Array(await png.arrayBuffer()));
+                const page = output.addPage([width, height]);
+                page.drawImage(image, { x: 0, y: 0, width, height });
+                canvas.width = 0;
+                canvas.height = 0;
             }
 
-            const result = await pdf.save();
+            const result = await output.save();
             downloadBytes(
                 result,
                 `${getBaseName(file.name)}-redacted.pdf`,
                 "application/pdf",
             );
-            setStatus("Redacted PDF downloaded. Content under black boxes is permanently covered.");
+            setStatus("Redacted PDF downloaded. Every page is saved as an image to remove recoverable source objects. Text is no longer selectable.");
         } catch (error) {
             setStatus(error?.message ?? "Redaction failed.");
+        } finally {
+            await preview?.destroy();
         }
     };
 
     return (
         <DocToolShell
             title="Redaction Tool"
-            description="Draw redaction boxes over sensitive content to permanently cover it with solid black."
+            description="Draw boxes over sensitive content. Every page is saved as an image to remove hidden source content; text will no longer be selectable."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">
@@ -184,16 +216,17 @@ function RedactionTool() {
                             </button>
                         </div>
 
-                        <p className="doc-tool-status">Click and drag to draw redaction boxes</p>
+                        <p className="doc-tool-status">Drag with a mouse, finger, or stylus to draw redaction boxes. The rest of the page still scrolls.</p>
 
                         <div className="doc-tool-canvas-wrap" style={{ marginTop: "0.5rem" }}>
                             <canvas
                                 ref={canvasRef}
-                                onMouseDown={handleMouseDown}
-                                onMouseMove={handleMouseMove}
-                                onMouseUp={handleMouseUp}
-                                onMouseLeave={handleMouseUp}
+                                onPointerDown={handlePointerDown}
+                                onPointerMove={handlePointerMove}
+                                onPointerUp={handlePointerUp}
+                                onPointerCancel={handlePointerUp}
                                 className="cursor-target"
+                                style={{ touchAction: "none", maxWidth: "100%" }}
                             />
                         </div>
                     </>
