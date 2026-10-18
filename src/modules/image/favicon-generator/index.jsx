@@ -65,6 +65,9 @@ function buildHtmlSnippet(selectedSizes) {
     if (selectedSizes.has(16)) {
         lines.push('<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">');
     }
+    if (selectedSizes.has(48)) {
+        lines.push('<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">');
+    }
     if (selectedSizes.has(180)) {
         lines.push('<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">');
     }

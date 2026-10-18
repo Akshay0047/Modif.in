@@ -126,9 +126,12 @@ function BulkImageProcessor() {
                 setItems([...working]);
                 setProgressLabel(`Processing ${item.file.name}...`);
 
+                let loaded;
                 try {
                     const buffer = await readFileWithProgress(item.file);
-                    const loaded = await loadImageFromBuffer(buffer, item.file.type);
+                    if (operationRef.current !== op) return;
+                    loaded = await loadImageFromBuffer(buffer, item.file.type);
+                    if (operationRef.current !== op) return;
                     const format = outputFormat === "original" ? "auto" : outputFormat;
                     const options = {
                         quality,
@@ -139,7 +142,7 @@ function BulkImageProcessor() {
                     if (resizeMode === "scale") options.scalePercent = scalePercent;
 
                     const result = await compressImage(loaded.image, item.file, options);
-                    URL.revokeObjectURL(loaded.objectUrl);
+                    if (operationRef.current !== op) return;
 
                     const name = applyNamingPattern(item.file.name, namingPattern, result.ext);
                     item.status = "done";
@@ -147,8 +150,11 @@ function BulkImageProcessor() {
                     item.outputSize = result.blob.size;
                     output.push({ name, blob: result.blob });
                 } catch (err) {
+                    if (operationRef.current !== op) return;
                     item.status = "error";
                     item.error = err.message || "Failed";
+                } finally {
+                    if (loaded?.objectUrl) URL.revokeObjectURL(loaded.objectUrl);
                 }
 
                 const done = working.filter((i) => i.status === "done" || i.status === "error").length;
@@ -315,6 +321,7 @@ function BulkImageProcessor() {
                 onDrop={(e) => {
                     preventDragDefaults(e);
                     setIsDragging(false);
+                    if (isProcessing) return;
                     addFiles(e.dataTransfer.files);
                 }}
                 onClick={() => !isProcessing && fileInputRef.current?.click()}
