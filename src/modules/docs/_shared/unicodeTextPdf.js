@@ -3,6 +3,17 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const UNICODE_FONT = '"Segoe UI", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Noto Sans", sans-serif';
+const RASTER_SCALE = 2;
+const RASTER_PADDING = 2;
+const graphemeSegmenter = typeof Intl.Segmenter === "function"
+    ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+    : null;
+
+function graphemes(text) {
+    return graphemeSegmenter
+        ? Array.from(graphemeSegmenter.segment(text), (item) => item.segment)
+        : Array.from(text);
+}
 
 // Tabs become four spaces. Each explicit newline starts a new line.
 // A blank line adds a paragraph gap. Long lines wrap on spaces, and a
@@ -35,7 +46,7 @@ function wrapLine(rawLine, measure, maxWidth) {
 
     const breakWord = (word) => {
         let chunk = "";
-        for (const character of word) {
+        for (const character of graphemes(word)) {
             const next = chunk + character;
             if (chunk && measure(next) > maxWidth) {
                 lines.push(chunk);
@@ -75,7 +86,7 @@ export function splitTextRuns(text, canEncode) {
     let current = "";
     let latin = null;
 
-    for (const character of text) {
+    for (const character of graphemes(text)) {
         const isLatin = canEncode(character);
         if (latin === null) {
             latin = isLatin;
@@ -95,14 +106,29 @@ export function splitTextRuns(text, canEncode) {
     return runs;
 }
 
+function rasterMetrics(context, text, fontSize) {
+    context.font = `${fontSize * RASTER_SCALE}px ${UNICODE_FONT}`;
+    context.textBaseline = "alphabetic";
+    const measured = context.measureText(text);
+    const left = Math.max(0, measured.actualBoundingBoxLeft ?? 0);
+    const right = Math.max(measured.width, measured.actualBoundingBoxRight ?? 0);
+    const ascent = Math.max(fontSize * RASTER_SCALE * 0.8, measured.actualBoundingBoxAscent ?? 0);
+    const descent = Math.max(fontSize * RASTER_SCALE * 0.2, measured.actualBoundingBoxDescent ?? 0);
+    return {
+        width: Math.max(1, Math.ceil(left + right) + RASTER_PADDING * 2),
+        height: Math.max(1, Math.ceil(ascent + descent) + RASTER_PADDING * 2),
+        x: left + RASTER_PADDING,
+        baseline: ascent + RASTER_PADDING,
+    };
+}
+
 function measureWidth(font, fontSize, text) {
     if (canEncodeWinAnsi(font, text)) return font.widthOfTextAtSize(text, fontSize);
     if (typeof document === "undefined") return text.length * fontSize * 0.6;
     const canvas = measureWidth.canvas ?? document.createElement("canvas");
     measureWidth.canvas = canvas;
     const context = canvas.getContext("2d");
-    context.font = `${fontSize}px ${UNICODE_FONT}`;
-    return context.measureText(text).width;
+    return rasterMetrics(context, text, fontSize).width / RASTER_SCALE;
 }
 
 async function rasterRun(pdf, text, fontSize) {
@@ -110,25 +136,24 @@ async function rasterRun(pdf, text, fontSize) {
         throw new Error("This text includes characters that need a browser font. Open the converter in a browser and try again.");
     }
 
-    const scale = 2;
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    context.font = `${fontSize * scale}px ${UNICODE_FONT}`;
-    const measured = context.measureText(text);
-    canvas.width = Math.max(1, Math.ceil(measured.width) + 4);
-    canvas.height = Math.max(1, Math.ceil(fontSize * scale * 1.35));
-    context.font = `${fontSize * scale}px ${UNICODE_FONT}`;
+    const metrics = rasterMetrics(context, text, fontSize);
+    canvas.width = metrics.width;
+    canvas.height = metrics.height;
+    context.font = `${fontSize * RASTER_SCALE}px ${UNICODE_FONT}`;
     context.fillStyle = "#111111";
-    context.textBaseline = "top";
-    context.fillText(text, 1, 1);
+    context.textBaseline = "alphabetic";
+    context.fillText(text, metrics.x, metrics.baseline);
 
     const png = canvas.toDataURL("image/png");
     const bytes = Uint8Array.from(atob(png.split(",")[1]), (char) => char.charCodeAt(0));
     const image = await pdf.embedPng(bytes);
     return {
         image,
-        width: canvas.width / scale,
-        height: canvas.height / scale,
+        width: canvas.width / RASTER_SCALE,
+        height: canvas.height / RASTER_SCALE,
+        baselineOffset: (canvas.height - metrics.baseline) / RASTER_SCALE,
     };
 }
 
@@ -155,31 +180,26 @@ export async function writeTextPdf(text, { fontSize = 12 } = {}) {
             continue;
         }
 
-        let x = margin;
-        const runs = splitTextRuns(item.text, (character) => canEncodeWinAnsi(font, character));
         let rowHeight = lineHeight;
-
-        for (const run of runs) {
-            if (run.latin) {
-                page.drawText(run.text, {
-                    x,
-                    y,
-                    size: fontSize,
-                    font,
-                    color: rgb(0, 0, 0),
-                });
-                x += font.widthOfTextAtSize(run.text, fontSize);
-            } else {
-                const raster = await rasterRun(pdf, run.text, fontSize);
-                page.drawImage(raster.image, {
-                    x,
-                    y: y - fontSize * 0.25,
-                    width: raster.width,
-                    height: raster.height,
-                });
-                x += raster.width;
-                rowHeight = Math.max(rowHeight, raster.height);
-            }
+        if (canEncodeWinAnsi(font, item.text)) {
+            page.drawText(item.text, {
+                x: margin,
+                y,
+                size: fontSize,
+                font,
+                color: rgb(0, 0, 0),
+            });
+        } else {
+            // Keep a complete line together so the browser can shape combining
+            // marks, joined emoji and bidirectional text in their full context.
+            const raster = await rasterRun(pdf, item.text, fontSize);
+            page.drawImage(raster.image, {
+                x: margin,
+                y: y - raster.baselineOffset,
+                width: raster.width,
+                height: raster.height,
+            });
+            rowHeight = Math.max(rowHeight, raster.height);
         }
 
         y -= rowHeight;

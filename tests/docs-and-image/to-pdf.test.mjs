@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import zlib from "node:zlib";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, decodePDFRawStream } from "pdf-lib";
 import { imageEmbedPlan, legacyDocMessage } from "../../src/modules/docs/to-pdf/imageEmbedPlan.js";
 import { planTextLayout, splitTextRuns, writeTextPdf } from "../../src/modules/docs/_shared/unicodeTextPdf.js";
 
@@ -70,4 +70,59 @@ test("webp images are decoded and legacy doc files are rejected", async () => {
     assert.equal(imageEmbedPlan({ name: "photo.jpg", type: "image/jpeg" }), "jpeg");
     assert.match(legacyDocMessage("simple.doc"), /Save the document as \.docx/);
     assert.equal(legacyDocMessage("notes.docx"), "");
+});
+
+test("long Unicode words wrap between complete graphemes", () => {
+    const family = "👨‍👩‍👧‍👦";
+    const text = `abc${family}def${family}ghi`;
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    const measure = (line) => [...segmenter.segment(line)].length;
+    const planned = planTextLayout(text, measure, 4);
+    assert.equal(planned.map((item) => item.text).join(""), text);
+    assert.deepEqual(planned.map((item) => item.text), [`abc${family}`, `def${family}`, "ghi"]);
+});
+
+test("Unicode lines keep shaping context and fit the PDF text area", async () => {
+    const previousDocument = globalThis.document;
+    const painted = [];
+    const transparentPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+    globalThis.document = {
+        createElement: () => ({
+            getContext: () => ({
+                font: "",
+                measureText(text) {
+                    const size = Number.parseFloat(this.font);
+                    const width = [...text].reduce((sum, character) => sum + (character === "界" ? size : size / 2), 0);
+                    return { width, actualBoundingBoxAscent: size * 0.8, actualBoundingBoxDescent: size * 0.2 };
+                },
+                fillText: (text) => painted.push(text),
+            }),
+            toDataURL: () => transparentPng,
+        }),
+    };
+
+    try {
+        const mixed = "a界".repeat(26);
+        const bytes = await writeTextPdf(`cafe\u0301\nمرحبا بالعالم\n${mixed}`);
+        assert.deepEqual(painted.slice(0, 2), ["cafe\u0301", "مرحبا بالعالم"]);
+        assert.equal(painted.slice(2).join(""), mixed);
+
+        const pdf = await PDFDocument.load(bytes);
+        let imageCount = 0;
+        for (const page of pdf.getPages()) {
+            const contents = page.node.Contents();
+            for (let index = 0; index < contents.size(); index += 1) {
+                const stream = pdf.context.lookup(contents.get(index));
+                const operators = Buffer.from(decodePDFRawStream(stream).decode()).toString("latin1");
+                for (const match of operators.matchAll(/q\s+1 0 0 1 50 [\d.]+ cm\s+1 0 0 1 0 0 cm\s+([\d.]+) 0 0 ([\d.]+) 0 0 cm/g)) {
+                    imageCount += 1;
+                    assert.ok(Number(match[1]) <= 495.28, `Image width ${match[1]} exceeds the text area`);
+                }
+            }
+        }
+        assert.equal(imageCount, painted.length);
+    } finally {
+        if (previousDocument === undefined) delete globalThis.document;
+        else globalThis.document = previousDocument;
+    }
 });
