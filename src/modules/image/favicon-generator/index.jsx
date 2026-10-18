@@ -34,23 +34,20 @@ const FONT_FAMILIES = [
     ["Courier New, Courier, monospace", "Courier New"],
 ];
 
-function buildManifest() {
+function buildManifest(selectedSizes) {
+    const icons = FAVICON_SIZES
+        .filter((entry) => (entry.size === 192 || entry.size === 512) && selectedSizes.has(entry.size))
+        .map((entry) => ({
+            src: entry.name,
+            sizes: `${entry.size}x${entry.size}`,
+            type: "image/png",
+        }));
+
     return JSON.stringify(
         {
             name: "My App",
             short_name: "App",
-            icons: [
-                {
-                    src: "android-chrome-192x192.png",
-                    sizes: "192x192",
-                    type: "image/png",
-                },
-                {
-                    src: "android-chrome-512x512.png",
-                    sizes: "512x512",
-                    type: "image/png",
-                },
-            ],
+            icons,
             theme_color: "#ffffff",
             background_color: "#ffffff",
             display: "standalone",
@@ -60,11 +57,24 @@ function buildManifest() {
     );
 }
 
-function buildHtmlSnippet() {
-    return `<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">`;
+function buildHtmlSnippet(selectedSizes) {
+    const lines = [];
+    if (selectedSizes.has(32)) {
+        lines.push('<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">');
+    }
+    if (selectedSizes.has(16)) {
+        lines.push('<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">');
+    }
+    if (selectedSizes.has(48)) {
+        lines.push('<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">');
+    }
+    if (selectedSizes.has(180)) {
+        lines.push('<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">');
+    }
+    if (selectedSizes.has(192) || selectedSizes.has(512)) {
+        lines.push('<link rel="manifest" href="/site.webmanifest">');
+    }
+    return lines.join("\n");
 }
 
 function drawLettermarkIcon(ctx, size, { letter, fontFamily, fontColor, bgColor, radiusPercent, withBackground }) {
@@ -230,7 +240,7 @@ function FaviconGenerator() {
                 done += 1;
                 setProgress(10 + Math.round((done / sizes.length) * 70));
             }
-            zip.file("site.webmanifest", buildManifest());
+            zip.file("site.webmanifest", buildManifest(selectedSizes));
             setProgress(90);
             const zipBlob = await zip.generateAsync({ type: "blob" });
             triggerDownload(zipBlob, "favicon-pack.zip");
@@ -245,12 +255,12 @@ function FaviconGenerator() {
 
     const copyHtml = useCallback(async () => {
         try {
-            await copyTextToClipboard(buildHtmlSnippet());
+            await copyTextToClipboard(buildHtmlSnippet(selectedSizes));
             setStatus("HTML snippet copied.");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Copy failed.");
         }
-    }, []);
+    }, [selectedSizes]);
 
     const left = (
         <>
@@ -297,6 +307,7 @@ function FaviconGenerator() {
                         type="file"
                         accept={IMAGE_ACCEPT}
                         className="img-tool__dropzone-input"
+                        aria-label="Upload icon"
                         onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) processFile(file);
@@ -419,6 +430,7 @@ function FaviconGenerator() {
                         value={bgColor}
                         onChange={(e) => setBgColor(e.target.value)}
                         disabled={!canRender}
+                        aria-label="Background color"
                     />
                     <input
                         type="text"
@@ -426,6 +438,7 @@ function FaviconGenerator() {
                         value={bgColor}
                         onChange={(e) => setBgColor(e.target.value)}
                         disabled={!canRender}
+                        aria-label="Background hex value"
                     />
                 </div>
             ) : null}

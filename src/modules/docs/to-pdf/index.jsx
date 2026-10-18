@@ -60,7 +60,7 @@ function ToPdf() {
     return (
         <DocToolShell
             title="To PDF"
-            description="Convert PNG, JPEG, WebP, TXT, DOC, DOCX, and ODT files into PDF documents."
+            description="Convert PNG, JPEG, WebP, TXT, DOCX, and ODT files into PDF documents. Legacy .doc files need to be saved as .docx first."
             leading={<BackButton />}
         >
             <div className="doc-tool-panel">

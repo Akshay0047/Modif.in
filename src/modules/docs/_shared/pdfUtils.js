@@ -1,5 +1,11 @@
 import * as pdfjs from "pdfjs-dist";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
+import {
+    combinePageRotation,
+    flattenDocument,
+    prepareArchivalDocument,
+    stripDocumentMetadata,
+} from "./pdfDocumentOps";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -149,9 +155,9 @@ export async function reorderPages(buffer, order, rotations = {}) {
 
     for (const index of order) {
         const page = allPages[index];
-        const rotation = rotations[index] ?? 0;
-        if (rotation) {
-            page.setRotation(degrees(rotation));
+        const extra = rotations[index] ?? 0;
+        if (extra) {
+            page.setRotation(degrees(combinePageRotation(page.getRotation().angle, extra)));
         }
         output.addPage(page);
     }
@@ -218,25 +224,19 @@ export async function addWatermark(buffer, options) {
 
 export async function stripMetadata(buffer) {
     const pdf = await loadPdfWithPdfLib(buffer);
-    pdf.setTitle("");
-    pdf.setAuthor("");
-    pdf.setSubject("");
-    pdf.setKeywords([]);
-    pdf.setProducer("");
-    pdf.setCreator("");
-    pdf.setCreationDate(new Date(0));
-    pdf.setModificationDate(new Date(0));
+    stripDocumentMetadata(pdf);
     return pdf.save();
 }
 
 export async function flattenPdf(buffer) {
     const pdf = await loadPdfWithPdfLib(buffer);
-    const form = pdf.getForm();
-    try {
-        form.flatten();
-    } catch {
-        // No form fields to flatten
-    }
+    await flattenDocument(pdf);
+    return pdf.save();
+}
+
+export async function toArchivalPdf(buffer) {
+    const pdf = await loadPdfWithPdfLib(buffer);
+    await prepareArchivalDocument(pdf);
     return pdf.save();
 }
 

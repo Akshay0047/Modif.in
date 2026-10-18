@@ -344,8 +344,9 @@ function PlaceholderImageGenerator() {
 
             <div className="img-tool__field-row">
                 <div>
-                    <span className="img-tool__label">Width (px)</span>
+                    <label className="img-tool__label" htmlFor="placeholder-width">Width (px)</label>
                     <input
+                        id="placeholder-width"
                         type="number"
                         className="img-tool__input"
                         min={1}
@@ -355,8 +356,9 @@ function PlaceholderImageGenerator() {
                     />
                 </div>
                 <div>
-                    <span className="img-tool__label">Height (px)</span>
+                    <label className="img-tool__label" htmlFor="placeholder-height">Height (px)</label>
                     <input
+                        id="placeholder-height"
                         type="number"
                         className="img-tool__input"
                         min={1}
@@ -368,8 +370,9 @@ function PlaceholderImageGenerator() {
             </div>
 
             <div>
-                <span className="img-tool__label">Label</span>
+                <label className="img-tool__label" htmlFor="placeholder-label">Label</label>
                 <input
+                    id="placeholder-label"
                     type="text"
                     className="img-tool__input"
                     value={label}
@@ -393,8 +396,9 @@ function PlaceholderImageGenerator() {
             </div>
 
             <div>
-                <span className="img-tool__label">Background style</span>
+                <label className="img-tool__label" htmlFor="placeholder-bg-style">Background style</label>
                 <select
+                    id="placeholder-bg-style"
                     className="img-tool__select"
                     value={bgStyle}
                     onChange={(e) => setBgStyle(e.target.value)}
@@ -407,9 +411,10 @@ function PlaceholderImageGenerator() {
 
             <div className="img-tool__field-row">
                 <div>
-                    <span className="img-tool__label">Background</span>
+                    <label className="img-tool__label" htmlFor="placeholder-bg-color">Background</label>
                     <div className="img-tool__color-row">
                         <input
+                            id="placeholder-bg-color"
                             type="color"
                             className="img-tool__color-input"
                             value={safeBg}
@@ -419,14 +424,16 @@ function PlaceholderImageGenerator() {
                             type="text"
                             className="img-tool__input"
                             value={bgColor}
+                            aria-label="Background hex value"
                             onChange={(e) => setBgColor(e.target.value)}
                         />
                     </div>
                 </div>
                 <div>
-                    <span className="img-tool__label">Text color</span>
+                    <label className="img-tool__label" htmlFor="placeholder-text-color">Text color</label>
                     <div className="img-tool__color-row">
                         <input
+                            id="placeholder-text-color"
                             type="color"
                             className="img-tool__color-input"
                             value={safeText}
@@ -436,6 +443,7 @@ function PlaceholderImageGenerator() {
                             type="text"
                             className="img-tool__input"
                             value={textColor}
+                            aria-label="Text hex value"
                             onChange={(e) => setTextColor(e.target.value)}
                         />
                     </div>
