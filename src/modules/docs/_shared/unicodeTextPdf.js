@@ -39,8 +39,7 @@ export function planTextLayout(text, measure, maxWidth) {
 function wrapLine(rawLine, measure, maxWidth) {
     if (measure(rawLine) <= maxWidth) return [rawLine];
 
-    const indent = rawLine.match(/^ +/)?.[0] ?? "";
-    const words = rawLine.trim().split(/ +/).filter(Boolean);
+    const words = rawLine.replace(/ +$/, "").match(/ *[^ ]+/g) ?? [];
     const lines = [];
     let current = "";
 
@@ -58,8 +57,9 @@ function wrapLine(rawLine, measure, maxWidth) {
         return chunk;
     };
 
-    for (const word of words) {
-        const next = current ? `${current} ${word}` : `${indent}${word}`;
+    for (const token of words) {
+        const word = token.replace(/^ +/, "");
+        const next = current ? `${current}${token}` : token;
         if (measure(next) <= maxWidth) {
             current = next;
             continue;

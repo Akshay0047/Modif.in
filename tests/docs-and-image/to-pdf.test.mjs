@@ -40,6 +40,11 @@ test("long lines wrap without joining separate lines", () => {
     assert.deepEqual(planned.map((item) => item.text), ["Hello", "world", "again"]);
 });
 
+test("wrapping keeps expanded tabs and repeated spaces within a line", () => {
+    const planned = planTextLayout("a\tb c d", (line) => line.length, 8);
+    assert.deepEqual(planned.map((item) => item.text), ["a    b c", "d"]);
+});
+
 test("latin lines stay extractable and unicode runs are separate", async () => {
     const bytes = await writeTextPdf("Title\nHello world\nLine two\n\nNext paragraph");
     const visible = pdfText(bytes);
