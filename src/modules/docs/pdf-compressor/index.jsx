@@ -5,9 +5,8 @@ import FileDropZone from "../_shared/FileDropZone";
 import ProgressBar from "../_shared/ProgressBar";
 import { downloadBytes, formatFileSize, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
 import { compressPdf } from "../_shared/pdfUtils";
+import { createDocWorker } from "../_shared/createDocWorker";
 import { useWorkerTask } from "../_shared/useWorkerTask";
-
-const WORKER_URL = new URL("../_shared/workers/docWorker.js", import.meta.url);
 
 function PdfCompressor() {
     const [files, setFiles] = useState([]);
@@ -15,7 +14,7 @@ function PdfCompressor() {
     const [scale, setScale] = useState(1.2);
     const [status, setStatus] = useState("");
     const [localProgress, setLocalProgress] = useState(0);
-    const { run, running, progress, error, setProgress } = useWorkerTask(WORKER_URL);
+    const { run, running, progress, error, setProgress } = useWorkerTask(createDocWorker);
 
     const compressOne = async (file, index, total) => {
         const buffer = await readFileAsArrayBuffer(file);
@@ -24,7 +23,8 @@ function PdfCompressor() {
                 task: "compress",
                 payload: { buffer, quality, scale },
             });
-        } catch {
+        } catch (workerError) {
+            if (workerError?.name === "AbortError") throw workerError;
             return compressPdf(buffer, {
                 quality,
                 scale,
@@ -55,6 +55,7 @@ function PdfCompressor() {
                 );
             }
         } catch (compressError) {
+            if (compressError?.name === "AbortError") return;
             setStatus(compressError?.message ?? "Compression failed.");
         }
     };
@@ -77,8 +78,9 @@ function PdfCompressor() {
 
                 <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                     <div>
-                        <label className="doc-tool-label">JPEG quality ({quality})</label>
+                        <label className="doc-tool-label" htmlFor="compressor-quality">JPEG quality ({quality})</label>
                         <input
+                            id="compressor-quality"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="0.2"
@@ -89,8 +91,9 @@ function PdfCompressor() {
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Render scale ({scale}x)</label>
+                        <label className="doc-tool-label" htmlFor="compressor-scale">Render scale ({scale}x)</label>
                         <input
+                            id="compressor-scale"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="0.8"

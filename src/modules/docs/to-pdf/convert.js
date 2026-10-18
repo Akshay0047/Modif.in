@@ -1,7 +1,9 @@
 import mammoth from "mammoth";
 import html2canvas from "html2canvas";
-import { PDFDocument, StandardFonts, rgb } from "../_shared/pdfUtils";
+import { PDFDocument } from "../_shared/pdfUtils";
 import { readFileAsArrayBuffer, readFileAsText } from "../_shared/downloadUtils";
+import { writeTextPdf } from "../_shared/unicodeTextPdf";
+import { imageEmbedPlan, legacyDocMessage } from "./imageEmbedPlan";
 
 const A4_WIDTH = 595.28;
 const A4_HEIGHT = 841.89;
@@ -13,51 +15,37 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;");
 }
 
+async function decodeImageToPng(bytes, mimeType) {
+    const blob = new Blob([bytes], { type: mimeType || "image/webp" });
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d");
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0);
+    bitmap.close?.();
+    const png = canvas.toDataURL("image/png");
+    return Uint8Array.from(atob(png.split(",")[1]), (char) => char.charCodeAt(0));
+}
+
 export async function imageToPdf(file) {
     const bytes = new Uint8Array(await readFileAsArrayBuffer(file));
     const pdf = await PDFDocument.create();
-    const isPng = file.type === "image/png" || file.name.toLowerCase().endsWith(".png");
-    const image = isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+    const plan = imageEmbedPlan(file);
+    const imageBytes = plan === "decode"
+        ? await decodeImageToPng(bytes, file.type)
+        : bytes;
+    const image = plan === "jpeg"
+        ? await pdf.embedJpg(imageBytes)
+        : await pdf.embedPng(imageBytes);
     const page = pdf.addPage([image.width, image.height]);
     page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
     return pdf.save();
 }
 
 export async function textToPdf(text) {
-    const pdf = await PDFDocument.create();
-    const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const fontSize = 12;
-    const margin = 50;
-    const lineHeight = fontSize * 1.4;
-    const maxWidth = A4_WIDTH - margin * 2;
-
-    let page = pdf.addPage([A4_WIDTH, A4_HEIGHT]);
-    let y = A4_HEIGHT - margin;
-    const words = String(text).split(/\s+/);
-    let line = "";
-
-    const flush = (content) => {
-        page.drawText(content, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
-        y -= lineHeight;
-        if (y < margin) {
-            page = pdf.addPage([A4_WIDTH, A4_HEIGHT]);
-            y = A4_HEIGHT - margin;
-        }
-    };
-
-    for (const word of words) {
-        const testLine = line ? `${line} ${word}` : word;
-        const width = font.widthOfTextAtSize(testLine, fontSize);
-        if (width > maxWidth && line) {
-            flush(line);
-            line = word;
-        } else {
-            line = testLine;
-        }
-    }
-
-    if (line) flush(line);
-    return pdf.save();
+    return writeTextPdf(text);
 }
 
 export async function htmlToPdf(html) {
@@ -166,19 +154,10 @@ function odtToHtml(xml) {
     return `<article>${walk(body)}</article>`;
 }
 
-function extractLegacyDocText(buffer) {
-    const bytes = new Uint8Array(buffer);
-    let text = "";
-    for (let i = 0; i + 1 < bytes.length; i += 2) {
-        const code = bytes[i] | (bytes[i + 1] << 8);
-        if (code === 13 || code === 10) text += "\n";
-        else if (code >= 32 && code < 127) text += String.fromCharCode(code);
-        else text += " ";
-    }
-    return text.replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
-}
-
 export async function officeToPdf(file) {
+    const unsupported = legacyDocMessage(file.name);
+    if (unsupported) throw new Error(unsupported);
+
     const buffer = await readFileAsArrayBuffer(file);
     const name = file.name.toLowerCase();
 
@@ -193,22 +172,6 @@ export async function officeToPdf(file) {
         const xml = await zip.file("content.xml")?.async("string");
         if (!xml) throw new Error("This ODT file has no content.xml.");
         return htmlToPdf(odtToHtml(xml));
-    }
-
-    if (name.endsWith(".doc")) {
-        try {
-            const { value } = await mammoth.convertToHtml({ arrayBuffer: buffer });
-            if (value?.trim()) return htmlToPdf(value);
-        } catch {
-            // Fall through to binary text extraction for legacy .doc
-        }
-        const text = extractLegacyDocText(buffer);
-        if (!text) throw new Error("Could not read this .doc file. Save it as .docx and try again.");
-        const html = text
-            .split(/\n{2,}/)
-            .map((paragraph) => `<p>${escapeHtml(paragraph.trim())}</p>`)
-            .join("");
-        return htmlToPdf(html);
     }
 
     throw new Error(`Unsupported Office file: ${file.name}`);

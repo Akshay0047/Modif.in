@@ -160,8 +160,9 @@ function FromPdf() {
                 {mode === "images" ? (
                     <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                         <div>
-                            <label className="doc-tool-label">Format</label>
+                            <label className="doc-tool-label" htmlFor="from-pdf-format">Format</label>
                             <select
+                                id="from-pdf-format"
                                 className="doc-tool-select cursor-target"
                                 value={format}
                                 onChange={(e) => setFormat(e.target.value)}
@@ -171,17 +172,19 @@ function FromPdf() {
                             </select>
                         </div>
                         <div>
-                            <label className="doc-tool-label">Resolution scale</label>
+                            <label className="doc-tool-label" htmlFor="from-pdf-scale">Resolution scale</label>
                             <input
+                                id="from-pdf-scale"
                                 className="doc-tool-range cursor-target"
                                 type="range"
                                 min="1"
                                 max="4"
                                 step="0.5"
                                 value={scale}
+                                aria-describedby="from-pdf-scale-help"
                                 onChange={(e) => setScale(Number(e.target.value))}
                             />
-                            <div className="doc-tool-range-meta">
+                            <div className="doc-tool-range-meta" id="from-pdf-scale-help">
                                 <span>1x</span>
                                 <span>{scale}x</span>
                                 <span>4x</span>
