@@ -60,6 +60,14 @@ test("a column at the left PDF boundary is not duplicated", () => {
     assert.deepEqual(table, [["Name", "Amount"], ["Alice", "12.50"]]);
 });
 
+test("empty columns on a continuation page keep their original position", () => {
+    const rows = rowsFromPages([
+        [{ text: "Name", x: 10, y: 100 }, { text: "Amount", x: 80, y: 100 }],
+        [{ text: "12.50", x: 80, y: 100 }],
+    ]);
+    assert.deepEqual(rows[1], { Page: "2", "Column 1": "", "Column 2": "12.50" });
+});
+
 test("CSV to XML rejects inconsistent field counts instead of losing data", () => {
     assert.throws(() => csvToXml("First,Last\nAlice,Brown,Unexpected\n"), /3 fields; expected 2/);
     assert.throws(() => csvToXml("First,Middle,Last\nAlice,Brown\n"), /2 fields; expected 3/);

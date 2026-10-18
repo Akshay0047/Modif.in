@@ -1,6 +1,15 @@
 import { toCsv } from "../_shared/csvUtils.js";
 
-export function groupIntoTable(textItems) {
+function columnPositionsFor(textItems) {
+    const positions = [];
+    [...textItems].sort((a, b) => a.x - b.x).forEach((cell) => {
+        const existing = positions.find((x) => Math.abs(x - cell.x) < 15);
+        if (existing === undefined) positions.push(cell.x);
+    });
+    return positions;
+}
+
+export function groupIntoTable(textItems, columnPositions = columnPositionsFor(textItems)) {
     if (!textItems.length) return [];
 
     const sorted = [...textItems].sort((a, b) => {
@@ -24,15 +33,6 @@ export function groupIntoTable(textItems) {
     }
     if (currentRow.length) rows.push(currentRow);
 
-    const columnPositions = [];
-    rows.forEach((row) => {
-        row.forEach((cell) => {
-            const existing = columnPositions.find((x) => Math.abs(x - cell.x) < 15);
-            if (existing === undefined) columnPositions.push(cell.x);
-        });
-    });
-    columnPositions.sort((a, b) => a - b);
-
     return rows.map((row) => {
         const cells = columnPositions.map(() => "");
         row.forEach((cell) => {
@@ -48,11 +48,9 @@ export function groupIntoTable(textItems) {
 }
 
 export function rowsFromPages(pages) {
-    const tables = pages.map((items) => groupIntoTable(items));
-    const width = tables.reduce(
-        (max, table) => Math.max(max, ...table.map((row) => row.length)),
-        0,
-    );
+    const columnPositions = columnPositionsFor(pages.flat());
+    const tables = pages.map((items) => groupIntoTable(items, columnPositions));
+    const width = columnPositions.length;
 
     return tables.flatMap((table, pageIndex) =>
         table.map((cells) => {
