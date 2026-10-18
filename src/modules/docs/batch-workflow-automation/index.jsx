@@ -51,7 +51,8 @@ async function runPipeline(buffers, steps, workerRun, setProgress, watermark) {
                     task: "compress",
                     payload: { buffer: current, quality: 0.6, scale: 1.2 },
                 });
-            } catch {
+            } catch (workerError) {
+                if (workerError?.name === "AbortError") throw workerError;
                 current = await compressPdf(current, {
                     quality: 0.6,
                     scale: 1.2,
@@ -113,6 +114,7 @@ function BatchWorkflowAutomation() {
             setPreviewBytes(result);
             setStatus("Preview ready.");
         } catch (pipelineError) {
+            if (pipelineError?.name === "AbortError") return;
             setStatus(pipelineError?.message ?? "Pipeline failed.");
         }
     };
@@ -130,6 +132,7 @@ function BatchWorkflowAutomation() {
             downloadBytes(result, `${name}-processed.pdf`, "application/pdf");
             setStatus(`Pipeline complete: ${pipeline.join(" → ")}`);
         } catch (pipelineError) {
+            if (pipelineError?.name === "AbortError") return;
             setStatus(pipelineError?.message ?? "Pipeline failed.");
         }
     };

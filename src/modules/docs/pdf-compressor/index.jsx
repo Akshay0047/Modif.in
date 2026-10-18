@@ -23,7 +23,8 @@ function PdfCompressor() {
                 task: "compress",
                 payload: { buffer, quality, scale },
             });
-        } catch {
+        } catch (workerError) {
+            if (workerError?.name === "AbortError") throw workerError;
             return compressPdf(buffer, {
                 quality,
                 scale,
@@ -54,6 +55,7 @@ function PdfCompressor() {
                 );
             }
         } catch (compressError) {
+            if (compressError?.name === "AbortError") return;
             setStatus(compressError?.message ?? "Compression failed.");
         }
     };

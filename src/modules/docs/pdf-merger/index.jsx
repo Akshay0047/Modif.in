@@ -23,7 +23,8 @@ function PdfMerger() {
                 task: "merge",
                 payload: { buffers },
             });
-        } catch {
+        } catch (workerError) {
+            if (workerError?.name === "AbortError") throw workerError;
             return mergePdfBuffers(buffers);
         }
     };
@@ -40,6 +41,7 @@ function PdfMerger() {
             setPreviewFile(null);
             setStatus("Merged preview ready.");
         } catch (mergeError) {
+            if (mergeError?.name === "AbortError") return;
             setStatus(mergeError?.message ?? "Failed to merge PDFs.");
         }
     };
@@ -57,6 +59,7 @@ function PdfMerger() {
             downloadBytes(merged, "merged.pdf", "application/pdf");
             setStatus("Merged PDF downloaded successfully.");
         } catch (mergeError) {
+            if (mergeError?.name === "AbortError") return;
             setStatus(mergeError?.message ?? "Failed to merge PDFs.");
         }
     };

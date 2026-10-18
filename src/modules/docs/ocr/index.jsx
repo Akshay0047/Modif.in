@@ -86,6 +86,7 @@ function Ocr() {
             setMarkdown(nextMarkdown);
             setStatus("OCR complete.");
         } catch (ocrError) {
+            if (ocrError?.name === "AbortError") return;
             setStatus(ocrError?.message ?? "OCR failed.");
         }
     };
