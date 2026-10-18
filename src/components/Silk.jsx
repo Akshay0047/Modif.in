@@ -1,4 +1,4 @@
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, invalidate, useFrame, useThree } from "@react-three/fiber";
 import {
     forwardRef,
     useRef,
@@ -176,6 +176,8 @@ function Silk({
         materialUniforms.uRotation.value = rotation;
         materialUniforms.uLightMode.value = lightMode ? 1 : 0;
         if (materialUniforms.uReduced) materialUniforms.uReduced.value = reducedMotion ? 1 : 0;
+        // Demand rendering also needs a frame after imperative uniform updates.
+        invalidate();
     }, [
         speed,
         scale,
