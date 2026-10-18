@@ -1,4 +1,4 @@
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, invalidate, useFrame, useThree } from "@react-three/fiber";
 import {
     forwardRef,
     useRef,
@@ -100,6 +100,7 @@ const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
     }, [ref, viewport]);
 
     useFrame((_, delta) => {
+        if (uniforms.uReduced?.value) return;
         if (ref.current?.material?.uniforms?.uTime) {
             ref.current.material.uniforms.uTime.value += 0.1 * delta;
         }
@@ -118,6 +119,23 @@ const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
 });
 SilkPlane.displayName = "SilkPlane";
 
+function usePrefersReducedMotion() {
+    const [reduced, setReduced] = useState(() =>
+        typeof window !== "undefined"
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
+
+    useEffect(() => {
+        const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+        const update = () => setReduced(media.matches);
+        update();
+        media.addEventListener("change", update);
+        return () => media.removeEventListener("change", update);
+    }, []);
+
+    return reduced;
+}
+
 function Silk({
     speed = 5,
     scale = 1,
@@ -129,6 +147,7 @@ function Silk({
     lightMode = false,
 }) {
     const meshRef = useRef();
+    const reducedMotion = usePrefersReducedMotion();
     const resolvedColor1 = color1 ?? color ?? "#7B7481";
     const resolvedColor2 = color2 ?? color1 ?? color ?? "#7B7481";
 
@@ -141,6 +160,7 @@ function Silk({
             uColor2: { value: new Color(...hexToNormalizedRGB(resolvedColor2)) },
             uRotation: { value: rotation },
             uLightMode: { value: lightMode ? 1 : 0 },
+            uReduced: { value: reducedMotion ? 1 : 0 },
             uTime: { value: 0 },
         }),
     );
@@ -155,6 +175,9 @@ function Silk({
         materialUniforms.uColor2.value.setRGB(...hexToNormalizedRGB(resolvedColor2));
         materialUniforms.uRotation.value = rotation;
         materialUniforms.uLightMode.value = lightMode ? 1 : 0;
+        if (materialUniforms.uReduced) materialUniforms.uReduced.value = reducedMotion ? 1 : 0;
+        // Demand rendering also needs a frame after imperative uniform updates.
+        invalidate();
     }, [
         speed,
         scale,
@@ -163,13 +186,14 @@ function Silk({
         resolvedColor2,
         rotation,
         lightMode,
+        reducedMotion,
     ]);
 
     return (
         <Canvas
-            className="silk-container"
+            className={`silk-container${reducedMotion ? " is-static" : ""}`}
             dpr={[1, 2]}
-            frameloop="always"
+            frameloop={reducedMotion ? "demand" : "always"}
             gl={{ antialias: true, alpha: false }}
         >
             <SilkPlane ref={meshRef} uniforms={uniforms} />
