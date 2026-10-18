@@ -1,13 +1,44 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import zlib from "node:zlib";
-import { PDFDocument, PDFName, PDFString } from "pdf-lib";
+import { PDFDocument, PDFName, PDFString, decodePDFRawStream } from "pdf-lib";
 import {
+    bakeAndRemoveAnnotations,
     combinePageRotation,
+    flattenDocument,
     formatPdfKeywords,
     prepareArchivalDocument,
     stripDocumentMetadata,
 } from "../../src/modules/docs/_shared/pdfDocumentOps.js";
+
+function addStamp(pdf, { matrix, states = false } = {}) {
+    const page = pdf.addPage([300, 300]);
+    const appearance = pdf.context.register(pdf.context.flateStream("1 0 0 rg 10 20 50 25 re f", {
+        Type: "XObject",
+        Subtype: "Form",
+        BBox: [10, 20, 60, 45],
+        ...(matrix ? { Matrix: matrix } : {}),
+        Resources: {},
+    }));
+    const annot = pdf.context.obj({
+        Type: "Annot",
+        Subtype: "Stamp",
+        Rect: [100, 120, 200, 220],
+        AP: { N: states ? { Approved: appearance } : appearance },
+        ...(states ? { AS: "Approved" } : {}),
+    });
+    page.node.set(PDFName.of("Annots"), pdf.context.obj([pdf.context.register(annot)]));
+    return { page, annot };
+}
+
+async function savedPageContents(pdf) {
+    const saved = await PDFDocument.load(await pdf.save());
+    const page = saved.getPage(0);
+    const streams = page.node.Contents();
+    const text = Array.from({ length: streams.size() }, (_, i) =>
+        new TextDecoder().decode(decodePDFRawStream(streams.lookup(i)).decode())).join("\n");
+    return { saved, page, text };
+}
 
 function pdfText(bytes) {
     const latin = Buffer.from(bytes).toString("latin1");
@@ -84,4 +115,49 @@ test("archival conversion drops document JavaScript after preserving form text",
     const visible = pdfText(bytes);
     assert.equal(visible.includes("QA-SCRIPT-MARKER-12345"), false);
     assert.equal(visible.includes("Initial QA"), true);
+});
+
+test("flattening preserves stamp graphics and positions its original appearance", async () => {
+    const pdf = await PDFDocument.create();
+    addStamp(pdf);
+    await flattenDocument(pdf);
+    const { page, text } = await savedPageContents(pdf);
+    assert.equal(page.node.Annots(), undefined);
+    assert.match(text, /2 0 0 4 80 40 cm/);
+    assert.match(text, /\/FlatAnnotation-\d+ Do/);
+    const xObjects = page.node.Resources().lookup(PDFName.of("XObject"));
+    const appearance = xObjects.lookup(xObjects.keys()[0]);
+    assert.equal(new TextDecoder().decode(decodePDFRawStream(appearance).decode()), "1 0 0 rg 10 20 50 25 re f");
+});
+
+test("flattening selects annotation state and accounts for its appearance matrix", async () => {
+    const pdf = await PDFDocument.create();
+    addStamp(pdf, { matrix: [0, 1, -1, 0, 0, 0], states: true });
+    await prepareArchivalDocument(pdf);
+    const { text } = await savedPageContents(pdf);
+    assert.match(text, /4 0 0 2 280 100 cm/);
+    assert.match(text, /\/FlatAnnotation-\d+ Do/);
+});
+
+test("unsupported visible annotations abort without deleting annotation data", async () => {
+    const pdf = await PDFDocument.create();
+    const { page } = addStamp(pdf);
+    const annotations = page.node.Annots();
+    annotations.push(pdf.context.register(pdf.context.obj({
+        Type: "Annot", Subtype: "Ink", Rect: [0, 0, 50, 50], InkList: [[0, 0, 50, 50]],
+    })));
+    assert.throws(() => bakeAndRemoveAnnotations(pdf), /no usable appearance/);
+    assert.equal(page.node.Annots().size(), 2);
+    assert.equal(page.node.Contents(), undefined);
+});
+
+test("form appearance failures propagate instead of deleting the widgets", async () => {
+    const pdf = await PDFDocument.create();
+    const page = pdf.addPage();
+    const form = pdf.getForm();
+    const field = form.createTextField("text");
+    field.addToPage(page);
+    field.setText("\u4fdd\u5b58");
+    await assert.rejects(flattenDocument(pdf), /WinAnsi cannot encode/);
+    assert.equal(page.node.Annots().size(), 1);
 });
