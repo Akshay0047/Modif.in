@@ -4,6 +4,7 @@ import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
 import { loadPdfWithPdfLib } from "../_shared/pdfUtils";
+import { formFieldKind } from "./fieldKind";
 
 function FillableFormTools() {
     const [fields, setFields] = useState([]);
@@ -29,17 +30,15 @@ function FillableFormTools() {
             const form = pdf.getForm();
             const formFields = form.getFields().map((field) => {
                 const name = field.getName();
+                const type = formFieldKind(field);
                 let value = "";
                 try {
-                    if (field.constructor.name.includes("Text")) {
-                        value = field.getText() ?? "";
-                    } else if (field.constructor.name.includes("CheckBox")) {
-                        value = field.isChecked() ? "true" : "false";
-                    }
+                    if (type === "text") value = field.getText() ?? "";
+                    else if (type === "checkbox") value = field.isChecked() ? "true" : "false";
                 } catch {
                     value = "";
                 }
-                return { name, type: field.constructor.name, value };
+                return { name, type, value };
             });
             setFields(formFields);
             setValues(
@@ -66,9 +65,10 @@ function FillableFormTools() {
                 if (value === undefined) continue;
 
                 try {
-                    if (field.constructor.name.includes("Text")) {
+                    const type = formFieldKind(field);
+                    if (type === "text") {
                         field.setText(String(value));
-                    } else if (field.constructor.name.includes("CheckBox")) {
+                    } else if (type === "checkbox") {
                         if (value === "true" || value === true) field.check();
                         else field.uncheck();
                     }
@@ -105,11 +105,14 @@ function FillableFormTools() {
 
                 {fields.length > 0 ? (
                     <div style={{ marginTop: "1rem" }}>
-                        {fields.map((field) => (
+                        {fields.map((field, index) => {
+                            const fieldId = `fillable-field-${index}`;
+                            return (
                             <div key={field.name} style={{ marginBottom: "0.75rem" }}>
-                                <label className="doc-tool-label">{field.name}</label>
-                                {field.type.includes("CheckBox") ? (
+                                <label className="doc-tool-label" htmlFor={field.type === "other" ? undefined : fieldId}>{field.name}</label>
+                                {field.type === "checkbox" ? (
                                     <input
+                                        id={fieldId}
                                         type="checkbox"
                                         className="cursor-target"
                                         checked={values[field.name] === "true"}
@@ -120,8 +123,9 @@ function FillableFormTools() {
                                             }))
                                         }
                                     />
-                                ) : (
+                                ) : field.type === "text" ? (
                                     <input
+                                        id={fieldId}
                                         className="doc-tool-input cursor-target"
                                         value={values[field.name] ?? ""}
                                         onChange={(e) =>
@@ -131,9 +135,12 @@ function FillableFormTools() {
                                             }))
                                         }
                                     />
+                                ) : (
+                                    <p className="doc-tool-status">This field type cannot be edited here.</p>
                                 )}
                             </div>
-                        ))}
+                            );
+                        })}
                         <button
                             type="button"
                             className="doc-tool-button doc-tool-button--primary cursor-target"

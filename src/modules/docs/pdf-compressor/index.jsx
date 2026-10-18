@@ -78,8 +78,9 @@ function PdfCompressor() {
 
                 <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                     <div>
-                        <label className="doc-tool-label">JPEG quality ({quality})</label>
+                        <label className="doc-tool-label" htmlFor="compressor-quality">JPEG quality ({quality})</label>
                         <input
+                            id="compressor-quality"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="0.2"
@@ -90,8 +91,9 @@ function PdfCompressor() {
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Render scale ({scale}x)</label>
+                        <label className="doc-tool-label" htmlFor="compressor-scale">Render scale ({scale}x)</label>
                         <input
+                            id="compressor-scale"
                             className="doc-tool-range cursor-target"
                             type="range"
                             min="0.8"
