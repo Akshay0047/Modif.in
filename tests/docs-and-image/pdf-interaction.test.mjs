@@ -3,7 +3,7 @@ import test from "node:test";
 import { PDFDocument } from "pdf-lib";
 import { formFieldKind } from "../../src/modules/docs/fillable-form-tools/fieldKind.js";
 import { signaturePoint } from "../../src/modules/docs/e-signature/signaturePoint.js";
-import { pageScale } from "../../src/modules/docs/pdf-editor/pageScale.js";
+import { pageGeometry } from "../../src/modules/docs/pdf-editor/pageScale.js";
 
 test("form fields keep their kind when class names are minified", async () => {
     const pdf = await PDFDocument.create();
@@ -35,7 +35,8 @@ test("signature strokes follow the displayed canvas size", () => {
 });
 
 test("annotation scale uses rendered page pixels", () => {
-    assert.equal(pageScale({ width: 612, height: 792 }, null), null);
-    const scale = pageScale({ width: 612, height: 792 }, { width: 918, height: 1188 });
-    assert.equal(Math.round(18 * scale.y * 100) / 100, 12);
+    const viewport = { transform: [1.5, 0, 0, -1.5, 0, 1188] };
+    assert.equal(pageGeometry(viewport, null), null);
+    const geometry = pageGeometry(viewport, { width: 918, height: 1188 });
+    assert.equal(Math.round(18 * geometry.transform[3] * 100) / 100, 12);
 });

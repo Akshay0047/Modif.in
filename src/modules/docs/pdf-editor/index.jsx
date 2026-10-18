@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LineCapStyle } from "pdf-lib";
+import { concatTransformationMatrix, LineCapStyle, popGraphicsState, pushGraphicsState } from "pdf-lib";
 import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
@@ -15,7 +15,7 @@ import {
     rgb,
     StandardFonts,
 } from "../_shared/pdfUtils";
-import { pageScale } from "./pageScale";
+import { pageGeometry } from "./pageScale";
 
 const FONTS = [
     { id: "Helvetica", label: "Helvetica", css: "IBM Plex Sans, sans-serif", embed: StandardFonts.Helvetica },
@@ -210,9 +210,15 @@ function PdfEditor() {
         setStatus("Loading page preview…");
         (async () => {
             try {
+                const page = await pdfRef.current.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 1.5 });
                 const canvas = await renderPageToCanvas(pdfRef.current, pageNum, 1.5);
                 if (cancelled) return;
-                pageSizesRef.current[pageNum] = { width: canvas.width, height: canvas.height };
+                pageSizesRef.current[pageNum] = {
+                    width: canvas.width,
+                    height: canvas.height,
+                    viewport,
+                };
                 baseCanvasRef.current = canvas;
                 const images = await extractPdfPageImages(pdfRef.current, pageNum);
                 if (cancelled) return;
@@ -467,29 +473,32 @@ function PdfEditor() {
 
             for (const ann of annotations) {
                 const page = pages[ann.page - 1];
-                const scale = pageScale(page?.getSize(), pageSizesRef.current[ann.page]);
-                if (!page || !scale) {
+                const preview = pageSizesRef.current[ann.page];
+                const geometry = pageGeometry(preview?.viewport, preview);
+                if (!page || !geometry) {
                     setStatus("Wait for every annotated page to finish loading.");
                     return;
                 }
-                const { width, height } = page.getSize();
-                const scaleX = scale.x;
-                const scaleY = scale.y;
+                const { height } = geometry;
+                page.pushOperators(
+                    pushGraphicsState(),
+                    concatTransformationMatrix(...geometry.transform),
+                );
 
                 if (ann.type === "text") {
                     page.drawText(ann.text, {
-                        x: ann.x * scaleX,
-                        y: height - ann.y * scaleY,
-                        size: (ann.size ?? 16) * scaleY,
+                        x: ann.x,
+                        y: height - ann.y,
+                        size: ann.size ?? 16,
                         font: fonts[ann.fontId] ?? fonts.Helvetica,
                         color: hexToRgbColor(ann.color),
                     });
                 } else if (ann.type === "highlight") {
                     page.drawRectangle({
-                        x: ann.x * scaleX,
-                        y: height - (ann.y + ann.h) * scaleY,
-                        width: ann.w * scaleX,
-                        height: ann.h * scaleY,
+                        x: ann.x,
+                        y: height - (ann.y + ann.h),
+                        width: ann.w,
+                        height: ann.h,
                         color: hexToRgbColor(ann.color),
                         opacity: 0.35,
                     });
@@ -498,9 +507,9 @@ function PdfEditor() {
                         const from = ann.points[i - 1];
                         const to = ann.points[i];
                         page.drawLine({
-                            start: { x: from.x * scaleX, y: height - from.y * scaleY },
-                            end: { x: to.x * scaleX, y: height - to.y * scaleY },
-                            thickness: (ann.size ?? 2) * scaleX,
+                            start: { x: from.x, y: height - from.y },
+                            end: { x: to.x, y: height - to.y },
+                            thickness: ann.size ?? 2,
                             color: hexToRgbColor(ann.color),
                             opacity: ann.opacity ?? 1,
                             lineCap: LineCapStyle.Round,
@@ -513,13 +522,14 @@ function PdfEditor() {
                         ? await pdf.embedJpg(bytes)
                         : await pdf.embedPng(bytes);
                     page.drawImage(image, {
-                        x: ann.x * scaleX,
-                        y: height - (ann.y + ann.h) * scaleY,
-                        width: ann.w * scaleX,
-                        height: ann.h * scaleY,
+                        x: ann.x,
+                        y: height - (ann.y + ann.h),
+                        width: ann.w,
+                        height: ann.h,
                         rotate: degrees(ann.rotation ?? 0),
                     });
                 }
+                page.pushOperators(popGraphicsState());
             }
 
             const result = await pdf.save();
