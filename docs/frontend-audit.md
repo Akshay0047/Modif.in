@@ -56,3 +56,15 @@ The premium static scanner resolves all declared canonical owners. Its remaining
 Automated axe scans do not certify layered contrast, screen-reader behavior, every uploaded-file state, Safari/iOS behavior, physical mobile hardware, or all input sizes. The four-worker route sweep's timings include test contention; they are diagnostic observations, not calibrated FPS, INP, or device-performance guarantees. Large local file processing and third-party processing libraries retain their existing practical limits. No claim of universal zero latency or zero lag is made.
 
 The merged-PR review and all 38 issue closures are recorded separately in [issue reconciliation](issue-reconciliation.md).
+
+## Cold-cache performance follow-up
+
+The subsequent production snapshot at `e452810` again passed **354/354 viewport checks and 236 axe scans**, with no findings. Its report and representative screenshots are retained locally under `.git/frontend-audit/performance-final/`. Desktop and mobile screenshots preserve the existing Dither, Silk, DepthText, WarpText, TargetCursor and PixelCard treatment.
+
+The follow-up passed **63 Text/catalog/analytics unit tests and 45 Docs/Image unit tests**, the complete 22-suite Text/shell runner plus the new cursor-loading suite, and eight Docs/Image browser suites. The HEIC decoder interception suite uses the development server as documented; the other Docs/Image suites ran against production preview. After the final rebuild, PDF fallback and CSV export lifecycle checks passed again against production.
+
+Additional regressions cover immediate search results with delayed/failed animation imports; absent idle document workers and Excel engines; first-party fonts; decoded idle-JavaScript budgets across seven representative routes; full fallback busy state; stale results after clear, reorder, replacement or navigation; and usable workspaces/native cursors when optional effect chunks fail. Graphics comparisons covered 18 frozen-pixel cases: Dither's buffer changes were bit-identical, and Silk's original shader on OGL differed by at most one channel value out of 255.
+
+Project ESLint and the production build pass. The follow-up Impeccable scan reported four advisory findings for existing fluid type sizes; it also skipped the intentionally deleted, unused Silk-preview context. Design-system lint still has zero errors and the same 17 documented advisories. These static tools are not reported as clean accessibility certifications.
+
+See the [cold-cache performance audit](performance-audit.md) for live deployment identity, before/after measurements, cache proofs, profiling commands and measurement limits.
