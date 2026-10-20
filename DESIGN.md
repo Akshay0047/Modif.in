@@ -156,6 +156,8 @@ Fluid sizes are recorded in the hierarchy below rather than frontmatter `fontSiz
 ### Hierarchy
 
 - **Brand Display** (800, clamp(3rem, 12vw, 7rem), 1): MODIF.in DepthText on landing and hub headers only.
+- **Footer brand** (700, 1.75rem, 1, -0.02em tracking): Compact IBM Plex Sans wordmark beside the existing favicon logo.
+- **Footer tagline** (400, 0.95rem, 1.6): Supporting brand sentence in the shared footer.
 - **Display** (700, clamp(2rem, 5vw, 3rem), 1.25): Tool page titles in Docs/Image shells.
 - **Title** (700, clamp(1.125rem, 2.2vw, 1.375rem), 1.25): PixelCard hub titles, modal headings.
 - **Body** (400, clamp(0.95rem, 2vw, 1.05rem), 1.6): Descriptions, form copy, legal markdown in modals (~65–75ch where constrained).
