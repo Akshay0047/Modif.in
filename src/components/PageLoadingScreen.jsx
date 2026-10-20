@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAnimationSettings } from "../contexts/AnimationContext";
 import { getModuleFromPathname } from "../utils/moduleTheme";
+import { acquireInert } from "../utils/inertLock";
 
 export default function PageLoadingScreen() {
     const { pathname } = useLocation();
@@ -19,9 +20,14 @@ export default function PageLoadingScreen() {
         window.clearTimeout(window.__modifBootTimer);
         const html = document.documentElement;
         const events = new AbortController();
+        const boot = root.hasAttribute("data-loader-boot");
+        const previousBusy = boot ? null : root.getAttribute("aria-busy");
+        root.removeAttribute("data-loader-boot");
+        const releaseInert = acquireInert(root, { initiallyInert: boot ? false : root.inert });
         const decoded = new Map();
         const decoding = new Map();
         let disposed = false, revealing = false;
+        let ownsLoadingLock = true;
         let firstFrame = 0, secondFrame = 0, exitTimer = 0;
 
         loader.dataset.state = "loading";
@@ -29,16 +35,21 @@ export default function PageLoadingScreen() {
         loader.setAttribute("aria-label", "Loading page");
         const bootRecovery = document.getElementById("boot-recovery");
         if (bootRecovery) bootRecovery.hidden = true;
-        root.inert = true;
         root.setAttribute("aria-busy", "true");
         html.classList.add("modif-page-loading");
 
+        const release = () => {
+            if (!ownsLoadingLock) return;
+            ownsLoadingLock = false;
+            releaseInert();
+            if (previousBusy === null) root.removeAttribute("aria-busy");
+            else root.setAttribute("aria-busy", previousBusy);
+            html.classList.remove("modif-page-loading");
+        };
         const finish = () => {
             if (disposed) return;
             loader.dataset.state = "hidden";
-            root.inert = false;
-            root.removeAttribute("aria-busy");
-            html.classList.remove("modif-page-loading");
+            release();
         };
         const reveal = () => {
             if (disposed || revealing) return;
@@ -114,9 +125,8 @@ export default function PageLoadingScreen() {
             window.clearTimeout(exitTimer);
             cancelAnimationFrame(firstFrame);
             cancelAnimationFrame(secondFrame);
-            root.inert = false;
-            root.removeAttribute("aria-busy");
-            html.classList.remove("modif-page-loading");
+            loader.dataset.state = "hidden";
+            release();
         };
     }, [pathname]);
 
