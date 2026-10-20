@@ -38,18 +38,32 @@ try {
 
     // Measure fresh contexts, excluding unrelated analytics requests. The local
     // preview serves identity encoding; decoded bytes make this reproducible.
-    for (const path of ["/", "/text/text-counter"]) {
+    for (const path of ["/", "/text", "/image", "/doc", "/text/text-counter", "/image/compress-image", "/doc/pdf-merger"]) {
         const coldContext = await browser.newContext({ reducedMotion: "reduce" });
         const cold = await coldContext.newPage();
+        const fontRequests = [];
+        const workers = [];
+        cold.on("request", (request) => {
+            if (/fonts\.(googleapis|gstatic)\.com/.test(request.url())) fontRequests.push(request.url());
+        });
+        cold.on("worker", (worker) => workers.push(worker.url()));
         await cold.goto(baseURL + path, { waitUntil: "domcontentloaded" });
         await ready(cold, path);
+        // Include the actual decorative renderer, even with motion paused.
+        // Looking only at the first heading can miss its later chunk requests.
+        await cold.locator(path === "/" ? ".dither-container canvas" : ".silk-container canvas").waitFor();
+        await cold.evaluate(() => document.fonts.ready);
         const scripts = await cold.evaluate(() => performance.getEntriesByType("resource")
             .filter((entry) => entry.name.startsWith(location.origin) && /\.m?js(?:\?|$)/.test(entry.name))
             .map(({ name, decodedBodySize }) => ({ name: new URL(name).pathname, bytes: decodedBodySize })));
         assert.ok(scripts.length > 0 && scripts.every(({ bytes }) => bytes > 0));
-        assert.ok(scripts.every(({ name }) => !/pdfUtils-|pdf\.worker|csvUtils-|heic2any-|jszip|to-pdf-|ebook-conversion-|imageToolUtils-/.test(name)), "cold entry does not request document/image processing chunks");
+        assert.ok(scripts.every(({ name }) => !/pdfUtils-|pdf\.worker|docWorker-|xlsx-|heic2any-|jszip|to-pdf-|ebook-conversion-|AnimatedList-/.test(name)), "idle routes do not request heavy processing or search animation chunks");
+        assert.deepEqual(workers, [], "An idle workspace creates no processing workers");
+        assert.deepEqual(fontRequests, [], "Font loading stays on the first-party origin");
+        if (path !== "/") assert.ok(scripts.every(({ name }) => !/Dither-|react-three-fiber/.test(name)), "Silk routes do not download the homepage renderer");
         const bytes = scripts.reduce((total, script) => total + script.bytes, 0);
-        assert.ok(bytes < 2_000_000, "cold entry stays well below the former 4.6 MB entry bundle");
+        const budget = path === "/" ? 1_500_000 : 500_000;
+        assert.ok(bytes < budget, `${path} exceeds its ${budget}-byte decoded idle-JavaScript budget (${bytes})`);
         console.log(JSON.stringify({ coldRoute: path, decodedJavaScriptBytes: bytes, scripts }));
         await coldContext.close();
     }
@@ -63,6 +77,7 @@ try {
     await delayed.goto(baseURL + "/text/text-counter", { waitUntil: "domcontentloaded" });
     await delayed.getByRole("status").filter({ has: delayed.getByRole("heading", { name: "Loading page…" }) }).waitFor();
     assert.equal(await delayed.getByRole("navigation", { name: "Loading recovery" }).getByRole("link").count(), 4);
+    assert.ok(await delayed.locator("footer").evaluate((footer) => footer.getBoundingClientRect().top >= innerHeight - 1), "Loading reserves the viewport so the footer cannot shift from above the fold");
     releaseChunk();
     await ready(delayed, "/text/text-counter");
     await delayedContext.close();
