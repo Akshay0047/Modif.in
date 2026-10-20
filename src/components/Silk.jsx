@@ -5,8 +5,10 @@ import {
     useState,
     useLayoutEffect,
     useEffect,
+    useSyncExternalStore,
 } from "react";
 import { Color } from "three";
+import { useAnimationSettings } from "../contexts/AnimationContext";
 import "./Silk.css";
 
 const hexToNormalizedRGB = (hex) => {
@@ -90,6 +92,11 @@ if (uLightMode > 0.5) {
 }
 `;
 
+function advanceSilkUniforms(uniforms, delta) {
+    if (!uniforms || uniforms.uReduced?.value) return;
+    uniforms.uTime.value += 0.1 * Math.min(delta, 0.1);
+}
+
 const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
     const { viewport } = useThree();
 
@@ -100,10 +107,7 @@ const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
     }, [ref, viewport]);
 
     useFrame((_, delta) => {
-        if (uniforms.uReduced?.value) return;
-        if (ref.current?.material?.uniforms?.uTime) {
-            ref.current.material.uniforms.uTime.value += 0.1 * delta;
-        }
+        advanceSilkUniforms(ref.current?.material?.uniforms, delta);
     });
 
     return (
@@ -119,22 +123,17 @@ const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
 });
 SilkPlane.displayName = "SilkPlane";
 
-function usePrefersReducedMotion() {
-    const [reduced, setReduced] = useState(() =>
-        typeof window !== "undefined"
-        && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    );
-
-    useEffect(() => {
-        const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-        const update = () => setReduced(media.matches);
-        update();
-        media.addEventListener("change", update);
-        return () => media.removeEventListener("change", update);
-    }, []);
-
-    return reduced;
+function subscribeEnvironment(listener) {
+    const media = [window.matchMedia("(prefers-reduced-motion: reduce)"), window.matchMedia("(pointer: coarse)")];
+    media.forEach((query) => query.addEventListener("change", listener));
+    document.addEventListener("visibilitychange", listener);
+    return () => {
+        media.forEach((query) => query.removeEventListener("change", listener));
+        document.removeEventListener("visibilitychange", listener);
+    };
 }
+
+const getEnvironment = () => `${window.matchMedia("(prefers-reduced-motion: reduce)").matches},${document.hidden},${window.matchMedia("(pointer: coarse)").matches}`;
 
 function Silk({
     speed = 5,
@@ -147,7 +146,10 @@ function Silk({
     lightMode = false,
 }) {
     const meshRef = useRef();
-    const reducedMotion = usePrefersReducedMotion();
+    const { active = true, reducedMotion } = useAnimationSettings();
+    const environment = useSyncExternalStore(subscribeEnvironment, getEnvironment, () => "true,false,true");
+    const [reduce, hidden, coarse] = environment.split(",").map((value) => value === "true");
+    const paused = !active || reducedMotion || reduce || hidden;
     const resolvedColor1 = color1 ?? color ?? "#7B7481";
     const resolvedColor2 = color2 ?? color1 ?? color ?? "#7B7481";
 
@@ -160,7 +162,7 @@ function Silk({
             uColor2: { value: new Color(...hexToNormalizedRGB(resolvedColor2)) },
             uRotation: { value: rotation },
             uLightMode: { value: lightMode ? 1 : 0 },
-            uReduced: { value: reducedMotion ? 1 : 0 },
+            uReduced: { value: paused ? 1 : 0 },
             uTime: { value: 0 },
         }),
     );
@@ -175,7 +177,7 @@ function Silk({
         materialUniforms.uColor2.value.setRGB(...hexToNormalizedRGB(resolvedColor2));
         materialUniforms.uRotation.value = rotation;
         materialUniforms.uLightMode.value = lightMode ? 1 : 0;
-        if (materialUniforms.uReduced) materialUniforms.uReduced.value = reducedMotion ? 1 : 0;
+        if (materialUniforms.uReduced) materialUniforms.uReduced.value = paused ? 1 : 0;
         // Demand rendering also needs a frame after imperative uniform updates.
         invalidate();
     }, [
@@ -186,14 +188,14 @@ function Silk({
         resolvedColor2,
         rotation,
         lightMode,
-        reducedMotion,
+        paused,
     ]);
 
     return (
         <Canvas
-            className={`silk-container${reducedMotion ? " is-static" : ""}`}
-            dpr={[1, 2]}
-            frameloop={reducedMotion ? "demand" : "always"}
+            className={`silk-container${paused ? " is-static" : ""}`}
+            dpr={coarse ? 1 : [1, 1.5]}
+            frameloop={paused ? "demand" : "always"}
             gl={{ antialias: true, alpha: false }}
         >
             <SilkPlane ref={meshRef} uniforms={uniforms} />

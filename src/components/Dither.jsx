@@ -1,8 +1,9 @@
-import { useRef, useEffect, useState, forwardRef } from "react";
+import { useRef, useEffect, useState, forwardRef, useSyncExternalStore } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, wrapEffect } from "@react-three/postprocessing";
 import { Effect } from "postprocessing";
 import * as THREE from "three";
+import { useAnimationSettings } from "../contexts/AnimationContext";
 
 import "./Dither.css";
 
@@ -166,6 +167,17 @@ const RetroEffect = forwardRef((props, ref) => {
 });
 RetroEffect.displayName = "RetroEffect";
 
+// Three.js material uniforms are imperative GPU handles, independent of React state.
+function updateWaveUniforms(uniforms, props) {
+    uniforms.waveSpeed.value = props.waveSpeed;
+    uniforms.waveFrequency.value = props.waveFrequency;
+    uniforms.waveAmplitude.value = props.waveAmplitude;
+    uniforms.waveColor.value.set(...props.waveColor);
+    uniforms.backgroundColor.value.set(...props.backgroundColor);
+    uniforms.enableMouseInteraction.value = props.enableMouseInteraction ? 1 : 0;
+    uniforms.mouseRadius.value = props.mouseRadius;
+}
+
 function DitheredWaves({
     waveSpeed,
     waveFrequency,
@@ -181,7 +193,7 @@ function DitheredWaves({
     const mesh = useRef(null);
     const materialRef = useRef(null);
     const mouseRef = useRef(new THREE.Vector2());
-    const { viewport, size, gl } = useThree();
+    const { viewport, size, gl, invalidate } = useThree();
 
     const [uniforms] = useState(() => ({
         time: { value: 0 },
@@ -201,26 +213,19 @@ function DitheredWaves({
         const w = Math.floor(size.width * dpr);
         const h = Math.floor(size.height * dpr);
         materialRef.current?.uniforms.resolution.value.set(w, h);
-    }, [size, gl]);
+        invalidate();
+    }, [size, gl, invalidate]);
 
-    useFrame(({ clock }) => {
+    useEffect(() => {
+        const materialUniforms = materialRef.current?.uniforms;
+        if (!materialUniforms) return;
+        updateWaveUniforms(materialUniforms, { waveSpeed, waveFrequency, waveAmplitude, waveColor, backgroundColor, enableMouseInteraction, mouseRadius });
+        invalidate();
+    }, [waveSpeed, waveFrequency, waveAmplitude, waveColor, backgroundColor, enableMouseInteraction, mouseRadius, invalidate]);
+
+    useFrame((_, delta) => {
         if (!materialRef.current) return;
-
-        if (!disableAnimation) {
-            materialRef.current.uniforms.time.value = clock.getElapsedTime();
-        }
-
-        materialRef.current.uniforms.waveSpeed.value = waveSpeed;
-        materialRef.current.uniforms.waveFrequency.value = waveFrequency;
-        materialRef.current.uniforms.waveAmplitude.value = waveAmplitude;
-        materialRef.current.uniforms.waveColor.value.set(...waveColor);
-        materialRef.current.uniforms.backgroundColor.value.set(
-            ...backgroundColor,
-        );
-        materialRef.current.uniforms.enableMouseInteraction.value =
-            enableMouseInteraction ? 1 : 0;
-        materialRef.current.uniforms.mouseRadius.value = mouseRadius;
-
+        if (!disableAnimation) materialRef.current.uniforms.time.value += Math.min(delta, 0.1);
         if (enableMouseInteraction) {
             materialRef.current.uniforms.mousePos.value.copy(mouseRef.current);
         }
@@ -234,6 +239,7 @@ function DitheredWaves({
             (e.clientX - rect.left) * dpr,
             (e.clientY - rect.top) * dpr,
         );
+        invalidate();
     };
 
     return (
@@ -265,6 +271,18 @@ function DitheredWaves({
     );
 }
 
+function subscribeEnvironment(listener) {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    media.addEventListener("change", listener);
+    document.addEventListener("visibilitychange", listener);
+    return () => {
+        media.removeEventListener("change", listener);
+        document.removeEventListener("visibilitychange", listener);
+    };
+}
+
+const getEnvironment = () => `${window.matchMedia("(prefers-reduced-motion: reduce)").matches},${document.hidden}`;
+
 export default function Dither({
     waveSpeed = 0.05,
     waveFrequency = 3,
@@ -277,11 +295,16 @@ export default function Dither({
     enableMouseInteraction = true,
     mouseRadius = 1,
 }) {
+    const { active = true, reducedMotion } = useAnimationSettings();
+    const environment = useSyncExternalStore(subscribeEnvironment, getEnvironment, () => "true,false");
+    const [reduce, hidden] = environment.split(",").map((value) => value === "true");
+    const paused = disableAnimation || !active || reducedMotion || reduce || hidden;
     return (
         <Canvas
             className="dither-container"
             camera={{ position: [0, 0, 6] }}
             dpr={1}
+            frameloop={paused ? "demand" : "always"}
             gl={{ antialias: true, preserveDrawingBuffer: true }}
         >
             <DitheredWaves
@@ -292,8 +315,8 @@ export default function Dither({
                 backgroundColor={backgroundColor}
                 colorNum={colorNum}
                 pixelSize={pixelSize}
-                disableAnimation={disableAnimation}
-                enableMouseInteraction={enableMouseInteraction}
+                disableAnimation={paused}
+                enableMouseInteraction={enableMouseInteraction && !paused}
                 mouseRadius={mouseRadius}
             />
         </Canvas>
