@@ -15,6 +15,7 @@ import { signaturePoint } from "./signaturePoint";
 
 function ESignature() {
     const sigRef = useRef(null);
+    const pictureRef = useRef(null);
     const drawing = useRef(false);
     const pageWrapRef = useRef(null);
     const [file, setFile] = useState(null);
@@ -126,6 +127,23 @@ function ESignature() {
         setStamp({ x: 48, y: 48, w: 180, h: 80, rotation: 0 });
     };
 
+    const adjustStamp = (field, value) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return;
+        setStamp((current) => {
+            const next = { ...current, [field]: numeric };
+            const wrap = pageWrapRef.current;
+            const pageWidth = wrap?.clientWidth || 10000;
+            const pageHeight = wrap?.clientHeight || 10000;
+            next.w = Math.max(40, Math.min(pageWidth, next.w));
+            next.h = Math.max(24, Math.min(pageHeight, next.h));
+            next.x = Math.max(0, Math.min(pageWidth - next.w, next.x));
+            next.y = Math.max(0, Math.min(pageHeight - next.h, next.y));
+            next.rotation = Math.max(-180, Math.min(180, next.rotation));
+            return next;
+        });
+    };
+
     const onStampPointerDown = (event, mode) => {
         event.preventDefault();
         event.stopPropagation();
@@ -221,7 +239,7 @@ function ESignature() {
                 />
 
                 <div style={{ marginTop: "1rem" }}>
-                    <label className="doc-tool-label">Draw your signature</label>
+                    <p className="doc-tool-label">Draw your signature or select a picture</p>
                     <div className="doc-tool-signature-pad">
                         <canvas
                             ref={sigRef}
@@ -243,10 +261,10 @@ function ESignature() {
                         <button type="button" className="doc-tool-button cursor-target" onClick={useDrawnSignature}>
                             Use drawn signature
                         </button>
-                        <label className="doc-tool-button cursor-target" style={{ display: "inline-flex", alignItems: "center" }}>
+                        <button type="button" className="doc-tool-button cursor-target" onClick={() => pictureRef.current?.click()}>
                             Select picture from device
-                            <input type="file" accept="image/*" hidden onChange={handlePicture} />
-                        </label>
+                        </button>
+                        <input ref={pictureRef} type="file" accept="image/png,image/jpeg" hidden onChange={handlePicture} />
                         <label className="doc-tool-label" htmlFor="e-signature-page" style={{ margin: 0 }}>
                             Page:
                         </label>
@@ -277,6 +295,34 @@ function ESignature() {
             {pageImage ? (
                 <div className="doc-tool-panel">
                     <h2 className="doc-tool-section-title">Place signature on page {page}</h2>
+                    {stampSrc ? (
+                        <fieldset style={{ border: 0, padding: 0, margin: "0 0 1rem" }}>
+                            <legend className="doc-tool-label">Signature placement</legend>
+                            <p className="doc-tool-empty" style={{ marginBottom: "0.75rem" }}>Drag the signature or use these fields to position, resize, and rotate it.</p>
+                            <div className="doc-tool-grid doc-tool-grid--3">
+                                {[
+                                    ["x", "Left (px)", 0],
+                                    ["y", "Top (px)", 0],
+                                    ["w", "Width (px)", 40],
+                                    ["h", "Height (px)", 24],
+                                    ["rotation", "Rotation (degrees)", -180],
+                                ].map(([field, label, min]) => (
+                                    <label key={field} className="doc-tool-label" htmlFor={`signature-${field}`}>
+                                        {label}
+                                        <input
+                                            id={`signature-${field}`}
+                                            className="doc-tool-input cursor-target"
+                                            type="number"
+                                            min={min}
+                                            max={field === "rotation" ? 180 : undefined}
+                                            value={Math.round(stamp[field])}
+                                            onChange={(event) => adjustStamp(field, event.target.value)}
+                                        />
+                                    </label>
+                                ))}
+                            </div>
+                        </fieldset>
+                    ) : null}
                     <div
                         ref={pageWrapRef}
                         className="doc-tool-stamp-layer"

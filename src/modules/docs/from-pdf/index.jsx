@@ -146,7 +146,7 @@ function FromPdf() {
                         ["text", "To Text"],
                         ["markdown", "To Markdown"],
                     ].map(([id, label]) => (
-                        <button
+                        <button aria-pressed={mode === id}
                             key={id}
                             type="button"
                             className={`doc-tool-button cursor-target${mode === id ? " is-active" : ""}`}

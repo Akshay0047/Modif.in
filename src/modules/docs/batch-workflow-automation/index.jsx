@@ -161,7 +161,7 @@ function BatchWorkflowAutomation() {
                 </label>
                 <div className="doc-tool-controls">
                     {OPERATIONS.map((op) => (
-                        <button
+                        <button aria-pressed={pipeline.includes(op.id)}
                             key={op.id}
                             type="button"
                             className={`doc-tool-button cursor-target${
@@ -229,7 +229,7 @@ function BatchWorkflowAutomation() {
                             />
                         </div>
                         <div>
-                            <button
+                            <button aria-pressed={watermark.tile}
                                 type="button"
                                 className={`doc-tool-button cursor-target${watermark.tile ? " is-active" : ""}`}
                                 onClick={() => {

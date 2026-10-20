@@ -149,21 +149,18 @@ function PdfSplitter() {
 
                         <div className="doc-tool-page-grid">
                             {thumbnails.map((src, index) => (
-                                <div
+                                <button
+                                    type="button"
+                                    aria-pressed={selected.has(index)}
                                     key={index}
                                     className={`doc-tool-page-thumb cursor-target${selected.has(index) ? " is-selected" : ""}`}
                                     onClick={() => togglePage(index)}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") togglePage(index);
-                                    }}
                                 >
                                     <img src={src} alt={`Page ${index + 1}`} />
                                     <span className="doc-tool-page-thumb__label">
                                         Page {index + 1}
                                     </span>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </>

@@ -75,14 +75,14 @@ function EbookConversion() {
                 />
 
                 <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
-                    <button
+                    <button aria-pressed={output === "txt"}
                         type="button"
                         className={`doc-tool-button cursor-target${output === "txt" ? " is-active" : ""}`}
                         onClick={() => setOutput("txt")}
                     >
                         TXT
                     </button>
-                    <button
+                    <button aria-pressed={output === "pdf"}
                         type="button"
                         className={`doc-tool-button cursor-target${output === "pdf" ? " is-active" : ""}`}
                         onClick={() => setOutput("pdf")}

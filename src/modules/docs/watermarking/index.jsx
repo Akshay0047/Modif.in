@@ -143,7 +143,7 @@ function Watermarking() {
                 </div>
 
                 <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
-                    <button
+                    <button aria-pressed={tile}
                         type="button"
                         className={`doc-tool-button cursor-target${tile ? " is-active" : ""}`}
                         onClick={() => {

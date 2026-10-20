@@ -571,3 +571,64 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Controls and file lists reflow inside the document's natural scroller. */
+.doc-tool-panel,
+.doc-tool-grid > *,
+.doc-tool-split > *,
+.doc-tool-editor-layout > * {
+  min-width: 0;
+}
+
+.doc-tool-button,
+.doc-tool-range,
+.doc-tool-swatch {
+  min-height: 44px;
+}
+
+.doc-tool-button,
+.doc-tool-swatch {
+  min-width: 44px;
+}
+
+.doc-tool-button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.doc-tool-output-header {
+  flex-wrap: wrap;
+}
+
+.doc-tool-file-list {
+  padding: 0;
+  list-style: none;
+}
+
+.doc-tool-file-item__name {
+  flex: 1 1 10rem;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.doc-tool-table-wrap {
+  max-width: 100%;
+}
+
+.doc-tool-markdown pre {
+  max-width: 100%;
+  overflow: auto;
+}
+
+@media (max-width: 700px) {
+  .doc-tool-page {
+    padding-inline: 1rem;
+  }
+
+  .doc-tool-input,
+  .doc-tool-select,
+  .doc-tool-textarea {
+    font-size: 1rem;
+  }
+}

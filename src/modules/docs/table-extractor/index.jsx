@@ -66,14 +66,14 @@ function TableExtractor() {
                     label="Drop a PDF file"
                 />
                 <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
-                    <button
+                    <button aria-pressed={format === "csv"}
                         type="button"
                         className={`doc-tool-button cursor-target${format === "csv" ? " is-active" : ""}`}
                         onClick={() => setFormat("csv")}
                     >
                         CSV
                     </button>
-                    <button
+                    <button aria-pressed={format === "json"}
                         type="button"
                         className={`doc-tool-button cursor-target${format === "json" ? " is-active" : ""}`}
                         onClick={() => setFormat("json")}

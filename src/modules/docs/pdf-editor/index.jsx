@@ -561,7 +561,7 @@ function PdfEditor() {
                     <>
                         <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
                             {["text", "draw", "highlight", "picture", "changes"].map((t) => (
-                                <button
+                                <button aria-pressed={t === "changes" ? sidebar === "changes" : tool === t && sidebar !== "changes"}
                                     key={t}
                                     type="button"
                                     className={`doc-tool-button cursor-target${(t === "changes" ? sidebar === "changes" : tool === t && sidebar !== "changes") ? " is-active" : ""}`}
@@ -668,7 +668,7 @@ function PdfEditor() {
                         {tool === "draw" ? (
                             <div className="doc-tool-controls" style={{ marginTop: "0.75rem" }}>
                                 {BRUSHES.map((item) => (
-                                    <button
+                                    <button aria-pressed={brush === item.id}
                                         key={item.id}
                                         type="button"
                                         className={`doc-tool-button cursor-target${brush === item.id ? " is-active" : ""}`}
@@ -679,7 +679,7 @@ function PdfEditor() {
                                 ))}
                                 <div className="doc-tool-swatches">
                                     {DRAW_COLORS.map((color) => (
-                                        <button
+                                        <button aria-pressed={drawColor === color}
                                             key={color}
                                             type="button"
                                             className={`doc-tool-swatch cursor-target${drawColor === color ? " is-active" : ""}`}
@@ -722,7 +722,7 @@ function PdfEditor() {
                                 <span className="doc-tool-label" style={{ margin: 0 }}>Highlighter</span>
                                 <div className="doc-tool-swatches">
                                     {HIGHLIGHT_COLORS.map((color) => (
-                                        <button
+                                        <button aria-pressed={highlightColor === color}
                                             key={color}
                                             type="button"
                                             className={`doc-tool-swatch cursor-target${highlightColor === color ? " is-active" : ""}`}

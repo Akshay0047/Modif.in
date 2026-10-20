@@ -115,14 +115,14 @@ function Ocr() {
                     <div className="doc-tool-output-header">
                         <h2 className="doc-tool-section-title">Recognized Text</h2>
                         <div className="doc-tool-controls" style={{ marginBottom: 0 }}>
-                            <button
+                            <button aria-pressed={view === "txt"}
                                 type="button"
                                 className={`doc-tool-button cursor-target${view === "txt" ? " is-active" : ""}`}
                                 onClick={() => setView("txt")}
                             >
                                 View TXT
                             </button>
-                            <button
+                            <button aria-pressed={view === "markdown"}
                                 type="button"
                                 className={`doc-tool-button cursor-target${view === "markdown" ? " is-active" : ""}`}
                                 onClick={() => setView("markdown")}

@@ -62,7 +62,7 @@ function CsvConverter() {
 
                 <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
                     {["json", "xml", "xlsx"].map((f) => (
-                        <button
+                        <button aria-pressed={format === f}
                             key={f}
                             type="button"
                             className={`doc-tool-button cursor-target${format === f ? " is-active" : ""}`}
