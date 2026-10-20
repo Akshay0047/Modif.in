@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { acquireInert } from "../utils/inertLock";
 import { createPortal } from "react-dom";
 import "./Footer.css";
 
@@ -39,11 +40,8 @@ function Footer() {
     const inertHosts = parent
       ? [...parent.children].filter((child) => child !== overlay)
       : [];
-    const previousInert = inertHosts.map((child) => child.inert);
+    const releaseInert = inertHosts.map((child) => acquireInert(child));
     const previousOverflow = document.body.style.overflow;
-    inertHosts.forEach((child) => {
-      child.inert = true;
-    });
 
     const focusable = () => [...dialog.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -74,9 +72,7 @@ function Footer() {
     focusable()[0]?.focus();
 
     return () => {
-      inertHosts.forEach((child, index) => {
-        child.inert = previousInert[index];
-      });
+      releaseInert.forEach((release) => release());
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
       openerRef.current?.focus();
