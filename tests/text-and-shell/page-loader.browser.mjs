@@ -42,10 +42,10 @@ async function covered(page) {
     assert.ok(Math.abs(geometry.y - geometry.centerY) <= 3, "The loading wordmark is centered vertically");
 }
 
-async function revealed(page) {
+async function revealed(page, { inert = false } = {}) {
     await page.locator('#page-loader[data-state="hidden"]').waitFor({ state: "attached", timeout: 18000 });
     assert.equal(await page.locator("#page-loader").isVisible(), false);
-    assert.equal(await page.locator("#root").evaluate((root) => root.inert), false, "Revealing restores normal keyboard interaction");
+    assert.equal(await page.locator("#root").evaluate((root) => root.inert), inert, "Revealing releases its own keyboard isolation without overriding another modal");
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "The loader creates no horizontal page overflow");
 }
 
@@ -167,6 +167,43 @@ try {
                 }
             }, { reducedMotion: setting === "reduced" ? "reduce" : "no-preference" });
         }
+
+        await run(viewport, async (page) => {
+            await page.goto(`${baseURL}/text`);
+            await revealed(page);
+            await page.getByRole("navigation", { name: "Tool hubs" }).getByRole("link", { name: "Image", exact: true }).click();
+            await revealed(page);
+            await page.getByRole("button", { name: "Privacy Policy", exact: true }).click();
+            const dialog = page.getByRole("dialog", { name: "Privacy Policy", exact: true });
+            await dialog.waitFor();
+            await page.goBack();
+            await page.waitForURL(`${baseURL}/text`);
+            await revealed(page, { inert: true });
+            assert.equal(await dialog.isVisible(), true, "The legal document survives same-shell history navigation");
+            await page.keyboard.press("Tab");
+            assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true, "History navigation preserves the document's focus isolation");
+            await page.keyboard.press("Escape");
+            await dialog.waitFor({ state: "detached" });
+            assert.equal(await page.locator("#root").evaluate((root) => root.inert), false);
+            await page.getByRole("combobox", { name: "Search tools" }).fill("text counter");
+            await page.getByRole("button", { name: "Clear search", exact: true }).click();
+
+            await page.getByRole("navigation", { name: "Tool hubs" }).getByRole("link", { name: "Image", exact: true }).click();
+            await revealed(page);
+            await page.getByRole("button", { name: "Privacy Policy", exact: true }).click();
+            await dialog.waitFor();
+            // Expand the real reveal transition's short overlap so closing a
+            // legal modal during a still-covered history change is deterministic.
+            await page.addStyleTag({ content: '.page-loader[data-state="revealing"] { transition-duration: 1s !important; }' });
+            await page.goBack();
+            await page.waitForURL(`${baseURL}/text`);
+            await page.locator('#page-loader[data-state="revealing"]').waitFor({ state: "attached" });
+            await dialog.getByRole("button", { name: "Close document", exact: true }).click();
+            await dialog.waitFor({ state: "detached" });
+            assert.equal(await page.locator("#root").evaluate((root) => root.inert), true, "Closing a legal modal cannot release a loader that is still covering the page");
+            await revealed(page);
+            await page.getByRole("combobox", { name: "Search tools" }).fill("text counter");
+        });
         console.log(`Loading logo, deferred scenes, route recovery, keyboard isolation and motion preferences passed at ${viewport.width}px`);
     }
 
