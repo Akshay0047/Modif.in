@@ -47,12 +47,18 @@ await withBrowser(async (page) => {
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
     await page.goto(`${baseURL}/image/base64-encoder-decoder`);
+    const encodeMode = page.getByRole("button", { name: "Image to Base64", exact: true });
+    const decodeMode = page.getByRole("button", { name: "Base64 to Image", exact: true });
+    assert.equal(await encodeMode.getAttribute("aria-pressed"), "true");
+    assert.equal(await decodeMode.getAttribute("aria-pressed"), "false");
     await page.locator('input[type="file"]').setInputFiles(file);
     const encoded = page.locator("textarea[readonly]");
     const dataUri = `data:image/png;base64,${fixture.toString("base64")}`;
     await page.waitForFunction((expected) => document.querySelector("textarea[readonly]")?.value === expected, dataUri);
     assert.equal(await encoded.inputValue(), dataUri, "Base64 encoding retains exact file bytes");
-    await page.getByRole("tab", { name: "Base64 to Image", exact: true }).click();
+    await decodeMode.click();
+    assert.equal(await encodeMode.getAttribute("aria-pressed"), "false");
+    assert.equal(await decodeMode.getAttribute("aria-pressed"), "true");
     await page.locator("textarea:not([readonly])").fill(dataUri);
     const decoded = await download(page, "Download Decoded File");
     await inspectImage(page, decoded, "image/png", 96, 64, colors);
