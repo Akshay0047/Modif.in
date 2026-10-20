@@ -12,6 +12,7 @@ function CsvConverter() {
     const [format, setFormat] = useState("json");
     const [output, setOutput] = useState("");
     const [status, setStatus] = useState("");
+    const [running, setRunning] = useState(false);
 
     const handleFile = async (files) => {
         const next = files[0] ?? null;
@@ -24,9 +25,10 @@ function CsvConverter() {
         }
     };
 
-    const handleConvert = () => {
-        if (!text) return;
-        setStatus("");
+    const handleConvert = async () => {
+        if (!text || running) return;
+        setRunning(true);
+        setStatus("Converting…");
 
         try {
             if (format === "json") {
@@ -35,7 +37,7 @@ function CsvConverter() {
             } else if (format === "xml") {
                 setOutput(csvToXml(text));
             } else if (format === "xlsx") {
-                const bytes = csvToExcel(text);
+                const bytes = await csvToExcel(text);
                 downloadBytes(bytes, `${file?.name?.replace(/\.csv$/i, "") || "data"}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
                 setStatus("Excel file downloaded.");
                 return;
@@ -43,6 +45,8 @@ function CsvConverter() {
             setStatus("Conversion complete.");
         } catch (error) {
             setStatus(error?.message ?? "Conversion failed.");
+        } finally {
+            setRunning(false);
         }
     };
 
@@ -66,6 +70,7 @@ function CsvConverter() {
                             key={f}
                             type="button"
                             className={`doc-tool-button cursor-target${format === f ? " is-active" : ""}`}
+                            disabled={running}
                             onClick={() => setFormat(f)}
                         >
                             {f.toUpperCase()}
@@ -75,7 +80,8 @@ function CsvConverter() {
                         type="button"
                         className="doc-tool-button doc-tool-button--primary cursor-target"
                         onClick={handleConvert}
-                        disabled={!text}
+                        disabled={!text || running}
+                        aria-busy={running}
                     >
                         Convert
                     </button>

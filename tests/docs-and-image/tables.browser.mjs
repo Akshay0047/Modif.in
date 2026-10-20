@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import Papa from "papaparse";
+import { parseExcel } from "../../src/modules/docs/_shared/csvUtils.js";
 import { baseURL, withBrowser } from "../text-and-shell/browserHarness.mjs";
 
 // Run against a Vite dev/preview server using MODIF_BASE_URL when needed.
@@ -24,6 +25,10 @@ const expectedRows = [
 
 await withBrowser(async (page) => {
     const errors = [];
+    const spreadsheetRequests = [];
+    page.on("request", (request) => {
+        if (/\/[^/]*xlsx[^/]*\.m?js(?:\?|$)/i.test(request.url())) spreadsheetRequests.push(request.url());
+    });
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${baseURL}/doc/table-extractor`);
     await page.locator(".doc-tool-dropzone input[type=file]").setInputFiles({
@@ -65,6 +70,15 @@ await withBrowser(async (page) => {
     const xml = await page.locator("textarea[readonly]").inputValue();
     assert.match(xml, /<field name="First">Alice<\/field>/);
     assert.match(xml, /<field name="Last">Brown<\/field>/);
+    assert.deepEqual(spreadsheetRequests, [], "PDF/CSV/XML work does not download the Excel engine");
+    await page.getByRole("button", { name: "XLSX", exact: true }).click();
+    assert.deepEqual(spreadsheetRequests, [], "Selecting Excel format alone does not download its engine");
+    const exported = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Convert", exact: true }).click();
+    const workbook = await exported;
+    assert.equal(workbook.suggestedFilename(), "valid.xlsx");
+    assert.deepEqual(await parseExcel(await readFile(await workbook.path())), [{ First: "Alice", Last: "Brown" }]);
+    assert.ok(spreadsheetRequests.length > 0, "Excel processing loads its engine on demand");
     assert.deepEqual(errors, []);
     console.log(`Table extraction, format toggles/download and CSV width validation passed at ${page.viewportSize().width}px`);
 });

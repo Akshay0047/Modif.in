@@ -1,5 +1,4 @@
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
 
 export function parseCsv(text, options = {}) {
     const result = Papa.parse(text, {
@@ -66,8 +65,9 @@ export function csvToXml(data) {
     return `<?xml version="1.0" encoding="UTF-8"?>\n<data>\n${body}\n</data>`;
 }
 
-export function csvToExcel(data) {
+export async function csvToExcel(data) {
     const rows = Array.isArray(data) ? data : parseCsv(data, { header: true });
+    const XLSX = await import("xlsx");
     const sheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, "Sheet1");
@@ -75,6 +75,7 @@ export function csvToExcel(data) {
 }
 
 export async function parseExcel(arrayBuffer) {
+    const XLSX = await import("xlsx");
     const workbook = XLSX.read(arrayBuffer, { type: "array" });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];

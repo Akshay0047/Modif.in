@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { csvToXml, toMarkdownTable } from "../../src/modules/docs/_shared/csvUtils.js";
+import { csvToExcel, csvToXml, parseExcel, toMarkdownTable } from "../../src/modules/docs/_shared/csvUtils.js";
 import { formatExtractedTable, groupIntoTable, rowsFromPages } from "../../src/modules/docs/table-extractor/tableRows.js";
 
 test("markdown cells keep multiline text inside one row", () => {
@@ -73,4 +73,15 @@ test("CSV to XML rejects inconsistent field counts instead of losing data", () =
     assert.throws(() => csvToXml("First,Middle,Last\nAlice,Brown\n"), /2 fields; expected 3/);
     const valid = csvToXml("First,Last\nAlice,\n");
     assert.match(valid, /<field name="Last"><\/field>/);
+});
+
+test("lazy Excel conversion preserves quoted cells, Unicode and blank values", async () => {
+    const source = 'Name,Notes,Blank\n"José, Jr.","line 1\nline 2",\n名前,"quoted ""value""",\n';
+    const bytes = await csvToExcel(source);
+    assert.ok(bytes instanceof ArrayBuffer || ArrayBuffer.isView(bytes));
+    assert.deepEqual(await parseExcel(bytes), [
+        { Name: "José, Jr.", Notes: "line 1\nline 2", Blank: "" },
+        { Name: "名前", Notes: 'quoted "value"', Blank: "" },
+    ]);
+    await assert.rejects(csvToExcel("Name,Age\nAlice,30,Unexpected\n"), /fields/i);
 });
