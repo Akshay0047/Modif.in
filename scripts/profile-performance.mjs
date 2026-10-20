@@ -326,6 +326,7 @@ export function summarize(result) {
       group[key].decodedBodyBytes += request.decodedBodyBytes || 0;
     }
   }
+  const transferPhases = classifyRequestTransfers(result);
   return {
     fcpMs: round(fcp),
     lcpMs: round(lcp),
@@ -370,9 +371,61 @@ export function summarize(result) {
       (sum, request) => sum + (request.encodedTransferBytes || 0),
       0,
     ),
+    completedBeforeInteractionBytes:
+      transferPhases.completedBeforeInteractionBytes,
+    completedBeforeUsefulControlsBytes:
+      transferPhases.completedBeforeUsefulControlsBytes,
+    transferPhases,
+    unfinishedFirstPartyRequests: result.requests
+      .filter(
+        (request) =>
+          new URL(request.url).origin === new URL(result.url).origin &&
+          !Number.isFinite(request.endMs),
+      )
+      .map((request) => request.url),
     byOrigin,
     byType,
   };
+}
+
+export function classifyRequestTransfers(result) {
+  const interactionAt = result.firstInteractionAt;
+  const readyAt = result.observation?.readyAfterPaintMs;
+  const phases = {
+    completedBeforeInteractionBytes: 0,
+    completedBeforeUsefulControlsBytes: 0,
+    startedAfterInteractionBytes: 0,
+    inFlightAtInteractionBytes: 0,
+    unknownCompletionBytes: 0,
+    note: "Whole encoded responses classified by retained request timing, not a byte-level streaming snapshot or critical-path budget. Resource/Navigation Timing supplies page-origin timestamps where available; remaining requests use the CDP navigation-request-relative clock. Partial in-flight responses are not counted as completed before a cutoff.",
+  };
+  for (const request of result.requests) {
+    const candidates = (result.observation?.resources || [])
+      .filter((entry) => entry.name === request.url)
+      .sort(
+        (a, b) =>
+          Math.abs(a.startTime - request.startMs) -
+          Math.abs(b.startTime - request.startMs),
+      );
+    const timing =
+      request.resourceTiming ||
+      candidates[0] ||
+      result.observation?.navigation?.find(
+        (entry) => entry.name === request.url,
+      );
+    const start = timing?.startTime ?? request.startMs;
+    const end = timing?.responseEnd > 0 ? timing.responseEnd : request.endMs;
+    const bytes = request.encodedTransferBytes || 0;
+    if (Number.isFinite(end) && end <= readyAt)
+      phases.completedBeforeUsefulControlsBytes += bytes;
+    if (Number.isFinite(end) && end <= interactionAt)
+      phases.completedBeforeInteractionBytes += bytes;
+    else if (Number.isFinite(start) && start >= interactionAt)
+      phases.startedAfterInteractionBytes += bytes;
+    else if (Number.isFinite(end)) phases.inFlightAtInteractionBytes += bytes;
+    else phases.unknownCompletionBytes += bytes;
+  }
+  return phases;
 }
 
 export function completeWorkerTransfers(result) {
@@ -544,17 +597,29 @@ async function profileRoute(browser, route, profile) {
   const cacheEvents = [];
   const playwrightRequests = [];
   const pendingSizes = [];
+  const activeRequests = new Set();
+  let lastNetworkActivity = 0;
+  const tracksCompletion = (request) =>
+    /^https?:/.test(request.url()) &&
+    !/^https:\/\/(?:www\.)?google-analytics\.com\/g\/collect[?]/.test(
+      request.url(),
+    );
   let navigationTimestamp;
   let navigationWallTime;
-  context.on("request", (request) =>
+  context.on("request", (request) => {
     playwrightRequests.push({
       request,
       url: request.url(),
       type: request.resourceType(),
       startedAt: Date.now(),
-    }),
-  );
+    });
+    if (tracksCompletion(request)) {
+      activeRequests.add(request);
+      lastNetworkActivity = Date.now();
+    }
+  });
   context.on("requestfinished", (request) => {
+    if (activeRequests.delete(request)) lastNetworkActivity = Date.now();
     pendingSizes.push(
       (async () => {
         const record = playwrightRequests.find(
@@ -566,6 +631,9 @@ async function profileRoute(browser, route, profile) {
         record.response = await request.response();
       })().catch(() => {}),
     );
+  });
+  context.on("requestfailed", (request) => {
+    if (activeRequests.delete(request)) lastNetworkActivity = Date.now();
   });
   page.on("pageerror", (error) => {
     result.pageErrors.push(error.message);
@@ -671,6 +739,29 @@ async function profileRoute(browser, route, profile) {
     }
     result.firstInteractionAt = await page.evaluate(() => performance.now());
     result.interactions = await interactions(page, route);
+    // A previously fired Playwright networkidle lifecycle can resolve before
+    // a newly focused search's import completes. Observe actual request finish
+    // events instead, with a bounded 500 ms quiet period. Analytics beacons are
+    // retained in the waterfall but do not hold this completion boundary open.
+    const completionStarted = Date.now();
+    lastNetworkActivity = Math.max(lastNetworkActivity, completionStarted);
+    while (
+      Date.now() - completionStarted < 30000 &&
+      (activeRequests.size || Date.now() - lastNetworkActivity < 500)
+    )
+      await delay(100);
+    result.networkIdleAfterInteractions =
+      activeRequests.size === 0 && Date.now() - lastNetworkActivity >= 500;
+    result.postInteractionCompletion = {
+      waitedMs: Date.now() - completionStarted,
+      pendingRequests: [...activeRequests].map((request) => request.url()),
+      note: "500 ms quiet period from actual request completion; analytics collect beacons excluded from waiting, retained in raw waterfall.",
+    };
+    if (!result.networkIdleAfterInteractions) {
+      result.errors.push(
+        "Post-interaction network did not become idle within 30 seconds; session payload is an observed-window lower bound.",
+      );
+    }
     result.observation = await page.evaluate(() => ({
       ...window.__performanceProfile,
       navigation: performance
@@ -793,12 +884,12 @@ async function main() {
   const report = {
     startedAt: new Date().toISOString(),
     summaryVersion: 2,
-    instrumentationVersion: 3,
+    instrumentationVersion: 4,
     baseURL,
     profiles,
     routes,
     runs,
-    note: "Serial lab observations, not field INP/CrUX or a physical mobile device. Cold browser HTTP cache is cleared/disabled and service workers bypassed; DNS, TLS, GPU/shader, OS and CDN caches are not certified cold. TBT proxy spans FCP to the first synthetic interaction, not a measured TTI window. Controlled interactions follow the 5-second active-animation frame sample and bounded network-idle wait. Animation uses the normal user preference. WebGL in headless Chromium may use a software GPU.",
+    note: "Serial lab observations, not field INP/CrUX or a physical mobile device. Cold browser HTTP cache is cleared/disabled and service workers bypassed; DNS, TLS, GPU/shader, OS and CDN caches are not certified cold. TBT proxy spans FCP to the first synthetic interaction, not a measured TTI window. Controlled interactions follow the 5-second active-animation frame sample and bounded network-idle wait. A final bounded network-idle wait captures deferred interaction enhancement requests. Animation uses the normal user preference. WebGL in headless Chromium may use a software GPU.",
     results: [],
   };
   console.log(

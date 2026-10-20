@@ -60,7 +60,7 @@ const change = (before, after, digits = 2) => ({
       : null,
 });
 const legacyNodeObserverFailure = (report, result) =>
-  report.instrumentationVersion !== 3 &&
+  (report.instrumentationVersion || 0) < 3 &&
   result.pageErrors?.some((error) =>
     error.includes("Cannot read properties of undefined (reading 'slice')"),
   );
@@ -70,6 +70,8 @@ const metricValue = (result, metric) =>
     : result.summary[metric];
 const metrics = [
   "encodedTransferBytes",
+  "completedBeforeInteractionBytes",
+  "completedBeforeUsefulControlsBytes",
   "fcpMs",
   "lcpMs",
   "contentReadyAfterPaintMs",
@@ -179,6 +181,14 @@ for (const key of keys) {
   if ([...before, ...after].some((result) => !result.cacheProof?.verified))
     warnings.push("One or more cold-cache proofs failed or are missing.");
   if (
+    [...before, ...after].some(
+      (result) => result.summary.unfinishedFirstPartyRequests?.length,
+    )
+  )
+    warnings.push(
+      "Unfinished first-party requests remain at the observation boundary; affected total bytes are observed-window lower bounds. Completed-before-interaction bytes have their own cutoff.",
+    );
+  if (
     before.some((result) => legacyNodeObserverFailure(beforeReport, result)) ||
     after.some((result) => legacyNodeObserverFailure(afterReport, result))
   )
@@ -209,6 +219,12 @@ for (const key of keys) {
       (result) => result.cacheProof?.verified,
     ),
     warnings,
+    unfinishedBeforeRequests: before.flatMap(
+      (result) => result.summary.unfinishedFirstPartyRequests || [],
+    ),
+    unfinishedAfterRequests: after.flatMap(
+      (result) => result.summary.unfinishedFirstPartyRequests || [],
+    ),
     metrics: changes,
     payloadByOrigin: payloadBreakdown(before, after, "byOrigin"),
     payloadByType: payloadBreakdown(before, after, "byType"),
