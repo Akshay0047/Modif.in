@@ -120,7 +120,10 @@ async function assertAnimated(page, uniform) {
     try {
         await page.waitForFunction((name) => {
             const record = window.graphicsSnapshot(name).at(-1);
-            return record && record.draws > 20 && record.colorCount > 2 && record.hasNonblackPixels && record.frameVariants > 1 && record.uniforms[name].last[0] > record.uniforms[name].first[0];
+            // Sparse samples of the deliberately quantized Dither palette can
+            // contain only two colors. Changing spatial signatures and shader
+            // time still distinguish a moving effect from a static fallback.
+            return record && record.draws > 20 && record.colorCount >= 2 && record.hasNonblackPixels && record.frameVariants > 1 && record.uniforms[name].last[0] > record.uniforms[name].first[0];
         }, uniform, { timeout: 20000 });
     } catch (error) {
         console.log(JSON.stringify({ failedGraphics: page.url(), uniform, records: await page.evaluate((name) => window.graphicsSnapshot(name), uniform) }));
