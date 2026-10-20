@@ -7,7 +7,7 @@
   background-color: #021108;
 }
 
-/* Keep WebGL running on the homepage while the landing page covers it. */
+/* The hidden backdrop keeps its theme, without mounting a second WebGL scene. */
 .app-silk-backdrop--warmup {
   visibility: hidden;
 }

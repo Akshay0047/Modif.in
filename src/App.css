@@ -2,16 +2,20 @@
   position: relative;
 
   width: 100%;
-  height: 100vh;
   min-height: 100vh;
-
-  overflow: hidden;
+  min-height: 100svh;
+  padding-top: var(--app-header-height);
 
   background: #000;
   isolation: isolate;
 
   display: flex;
   flex-direction: column;
+}
+
+.app > main {
+  flex: 1;
+  min-width: 0;
 }
 
 @media (max-width: 700px) {
