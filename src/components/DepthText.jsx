@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { useAnimationSettings } from "../contexts/AnimationContext";
 import "./DepthText.css";
 
 const MAX_LAYERS = 64;
@@ -33,6 +34,7 @@ const DepthText = ({
     className = "",
     style = {},
 }) => {
+    const { active = true, reducedMotion: prefersReducedMotion } = useAnimationSettings();
     const rootRef = useRef(null);
     const stageRef = useRef(null);
 
@@ -78,6 +80,12 @@ const DepthText = ({
             return undefined;
         }
 
+        stage.style.transform = getTransform(baseRotation.x, baseRotation.y);
+        stage.style.willChange = "auto";
+        if (!active || prefersReducedMotion || (!pointerTracking && !autoOrbit)) {
+            return undefined;
+        }
+
         const reducedMotion = window.matchMedia(
             "(prefers-reduced-motion: reduce)",
         ).matches;
@@ -88,6 +96,7 @@ const DepthText = ({
 
         const canTrackPointer =
             pointerTracking && finePointer && !reducedMotion;
+        const canOrbit = autoOrbit && safeOrbitSpeed > 0 && safeTilt > 0;
 
         let frameId = 0;
         let activePointer = false;
@@ -100,7 +109,7 @@ const DepthText = ({
             stage.style.transform = getTransform(current.x, current.y);
         };
 
-        if (reducedMotion) {
+        if (reducedMotion || (!canTrackPointer && !canOrbit)) {
             stage.style.transform = getTransform(
                 baseRotation.x,
                 baseRotation.y,
@@ -134,12 +143,14 @@ const DepthText = ({
 
             target.x = baseRotation.x - y * safeTilt;
             target.y = baseRotation.y + x * safeTilt;
+            queueFrame();
         };
 
         const handlePointerLeave = () => {
             activePointer = false;
             target.x = baseRotation.x;
             target.y = baseRotation.y;
+            queueFrame();
         };
 
         if (canTrackPointer) {
@@ -149,7 +160,8 @@ const DepthText = ({
         }
 
         const tick = (now) => {
-            if ((!canTrackPointer || !activePointer) && autoOrbit) {
+            frameId = 0;
+            if ((!canTrackPointer || !activePointer) && canOrbit) {
                 const elapsed = (now - startTime) / 1000;
                 const orbit = elapsed * safeOrbitSpeed * Math.PI * 2;
 
@@ -170,11 +182,21 @@ const DepthText = ({
 
             applyTransform();
 
+            if (canOrbit || Math.abs(target.x - current.x) + Math.abs(target.y - current.y) > 0.001) {
+                queueFrame();
+            } else {
+                stage.style.willChange = "auto";
+            }
+        };
+
+        const queueFrame = () => {
+            if (frameId) return;
+            stage.style.willChange = "transform";
             frameId = requestAnimationFrame(tick);
         };
 
         applyTransform();
-        frameId = requestAnimationFrame(tick);
+        if (canOrbit) queueFrame();
 
         return () => {
             if (canTrackPointer) {
@@ -184,12 +206,15 @@ const DepthText = ({
             }
 
             cancelAnimationFrame(frameId);
+            stage.style.willChange = "auto";
             startTime = 0;
         };
     }, [
         autoOrbit,
+        active,
         baseRotation,
         pointerTracking,
+        prefersReducedMotion,
         safeOrbitSpeed,
         safeSmoothing,
         safeTilt,

@@ -1,7 +1,16 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { gsap } from "gsap";
+import { useAnimationSettings } from "../contexts/AnimationContext";
 import "./TargetCursor.css";
+
+const cursorQuery = "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)";
+const subscribeCursorSupport = (listener) => {
+    const media = window.matchMedia(cursorQuery);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+};
+const getCursorSupport = () => window.matchMedia(cursorQuery).matches;
 
 // A position: fixed element is positioned relative to the viewport UNLESS an
 // ancestor establishes a containing block (transform, perspective, filter,
@@ -41,6 +50,9 @@ const TargetCursor = ({
     cursorColor = "#ffffff",
     cursorColorOnTarget,
 }) => {
+    const { active = true, reducedMotion } = useAnimationSettings();
+    const supported = useSyncExternalStore(subscribeCursorSupport, getCursorSupport, () => false);
+    const enabled = active && supported && !reducedMotion;
     const cursorRef = useRef(null);
     const cornersRef = useRef(null);
     const spinTl = useRef(null);
@@ -48,19 +60,6 @@ const TargetCursor = ({
     const containingBlockRef = useRef(null);
 
     const isActiveRef = useRef(false);
-
-    const isMobile = useMemo(() => {
-        if (typeof window === "undefined") return false;
-        const hasTouchScreen =
-            "ontouchstart" in window || navigator.maxTouchPoints > 0;
-        const isSmallScreen = window.innerWidth <= 768;
-        const userAgent =
-            navigator.userAgent || navigator.vendor || window.opera;
-        const mobileRegex =
-            /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
-        const isMobileUserAgent = mobileRegex.test(userAgent.toLowerCase());
-        return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
-    }, []);
 
     const constants = useMemo(
         () => ({
@@ -71,7 +70,7 @@ const TargetCursor = ({
     );
 
     useEffect(() => {
-        if (isMobile || !cursorRef.current) return;
+        if (!enabled || !cursorRef.current) return;
 
         const originalCursor = document.body.style.cursor;
         if (hideDefaultCursor) {
@@ -80,6 +79,7 @@ const TargetCursor = ({
         }
 
         const cursor = cursorRef.current;
+        const dot = dotRef.current;
         cornersRef.current = cursor.querySelectorAll(".target-cursor-corner");
 
         containingBlockRef.current = getContainingBlock(cursor);
@@ -89,6 +89,7 @@ const TargetCursor = ({
         let activeTarget = null;
         let currentLeaveHandler = null;
         let resumeTimeout = null;
+        let clickFrame = 0;
         let lastPointer = {
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
@@ -388,7 +389,8 @@ const TargetCursor = ({
         window.addEventListener("scroll", scrollHandler, { passive: true });
 
         const clickHandler = () => {
-            requestAnimationFrame(() => {
+            cancelAnimationFrame(clickFrame);
+            clickFrame = requestAnimationFrame(() => {
                 if (activeTarget && !document.body.contains(activeTarget)) {
                     resetActiveTarget();
                 }
@@ -494,6 +496,7 @@ const TargetCursor = ({
         window.addEventListener("resize", resizeHandler);
 
         return () => {
+            cancelAnimationFrame(clickFrame);
             mutationObserver.disconnect();
             window.removeEventListener("mousemove", moveHandler);
             window.removeEventListener("mouseover", enterHandler);
@@ -513,6 +516,8 @@ const TargetCursor = ({
             }
 
             spinTl.current?.kill();
+            spinTl.current = null;
+            gsap.killTweensOf([cursor, ...cornersRef.current, dot].filter(Boolean));
 
             if (hideDefaultCursor) {
                 document.body.style.cursor = originalCursor;
@@ -526,32 +531,18 @@ const TargetCursor = ({
         spinDuration,
         constants,
         hideDefaultCursor,
-        isMobile,
+        enabled,
         hoverDuration,
         cursorColor,
         cursorColorOnTarget,
     ]);
 
-    useEffect(() => {
-        if (isMobile || !cursorRef.current || !spinTl.current) return;
-        if (spinTl.current.isActive()) {
-            spinTl.current.kill();
-            spinTl.current = gsap
-                .timeline({ repeat: -1 })
-                .to(cursorRef.current, {
-                    rotation: "+=360",
-                    duration: spinDuration,
-                    ease: "none",
-                });
-        }
-    }, [spinDuration, isMobile]);
-
-    if (isMobile || typeof document === "undefined") {
+    if (!enabled || typeof document === "undefined") {
         return null;
     }
 
     return createPortal(
-        <div ref={cursorRef} className="target-cursor-wrapper">
+        <div ref={cursorRef} className="target-cursor-wrapper" aria-hidden="true">
             <div
                 ref={dotRef}
                 className="target-cursor-dot"

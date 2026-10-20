@@ -12,11 +12,11 @@
   transform-style: preserve-3d;
   transform: rotateX(-2.4deg) rotateY(3.15deg);
   transform-origin: 50% 50%;
-  will-change: transform;
 }
 
 .depth-text__layer,
 .depth-text__face {
+  font-family: "IBM Plex Sans", sans-serif;
   grid-area: 1 / 1;
   display: inline-block;
   font-size: var(--depth-text-font-size);
@@ -57,21 +57,4 @@
   .depth-text__stage {
     will-change: auto;
   }
-}
-
-.depth-text__layer,
-.depth-text__face {
-  font-family: "IBM Plex Sans", sans-serif;
-  grid-area: 1 / 1;
-  display: inline-block;
-  font-size: var(--depth-text-font-size);
-  font-weight: var(--depth-text-font-weight);
-  line-height: 0.86;
-  letter-spacing: -0.065em;
-  white-space: nowrap;
-  user-select: none;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  font-kerning: normal;
-  text-rendering: geometricPrecision;
 }
