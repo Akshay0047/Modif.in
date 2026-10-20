@@ -82,3 +82,13 @@ The route and browser checks now await reveal before inspecting or typing into f
 Validation passed: production build, project ESLint, 65 Text/shared-lock unit tests, 45 Docs/Image unit tests, all 24 Text/shell browser suites across targeted/resumed batches, and all eight Docs/Image browser suites. The HEIC interception suite uses the development server; production preview serves the remaining Docs/Image checks. The graphics checks also use the separately running skeleton fixture.
 
 Static checks introduce no loader findings. The premium scanner still reports the previously documented 101 textarea-resizing heuristics and one unused scrollbar utility; these unrelated contract differences are not misreported as a clean static scan. Design-system lint retains zero errors and 17 existing advisories.
+
+## Shared translucent footer
+
+The footer snapshot at `29b5b70` passed **354/354 viewport checks and 236 axe scans**, with no findings. The same shared footer covers the homepage, all hubs and tools, and the 404 layout. Desktop, mobile, and 320px captures passed an independent scoped visual review. Reports and captures are retained locally under `.git/frontend-audit/footer/`.
+
+The footer uses dark translucent slate over the existing atmospheric backgrounds, the existing favicon logo, tool-hub and common-task links, legal documents, a confirmed support email, copyright, and creator credits. Repository links are omitted for the closed-source product. Footer controls are checked individually while scrolling so the audit measures reachability when a multirow footer exceeds the viewport. Legal Markdown and dialog focus, inertness, Escape dismissal, and restoration remain intact. Production computed styles confirm the 12px backdrop blur; the prefixed declaration precedes the standard property so minification retains browser support.
+
+Validation passed: project ESLint, production build, 65 Text/shared unit tests, 45 Docs/Image unit tests, all 24 Text/shell browser suites across completed/resumed batches, and the shared legal-dialog browser suite at desktop and mobile sizes. The graphics fixture used port 4186 because the existing 4184 server served the main app. Design-system lint has zero errors. The generic premium scanner retains the same 102 unrelated findings documented above; none concern the footer.
+
+The follow-up at `bf0e89e` changes only the URL Sanitizer's initial sample to the requested LinkedIn URL. After rebuilding, browser checks verified the exact input and tracking-free output at 1440px, 390px, and 320px; its targeted route audit passed all three viewports and both axe scans. Tool processing logic is unchanged.
