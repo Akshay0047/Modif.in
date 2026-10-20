@@ -5,8 +5,8 @@
   z-index: 100;
   background: rgba(15, 20, 35, 0.8);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: #cbd5e1;
   font-family: "IBM Plex Sans", sans-serif;
   box-sizing: border-box;
@@ -262,8 +262,8 @@
     ),
     rgba(0, 0, 0, 0.72);
 
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .document-modal {
@@ -309,8 +309,8 @@
   background: rgba(7, 7, 10, 0.94);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .document-modal-header h2 {
