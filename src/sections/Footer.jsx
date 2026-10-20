@@ -25,8 +25,6 @@ const documents = {
   },
 };
 
-const projectUrl = "https://github.com/Akshay0047/Modif.in";
-
 function ExternalFooterLink({ href, children }) {
   return (
     <a
@@ -137,12 +135,12 @@ function Footer() {
               </ul>
             </nav>
 
-            <nav className="footer-group" aria-label="Project and support">
-              <h2>Project</h2>
+            <nav className="footer-group" aria-label="Common tasks">
+              <h2>Common tasks</h2>
               <ul>
-                <li><ExternalFooterLink href={projectUrl}>Source on GitHub</ExternalFooterLink></li>
-                <li><ExternalFooterLink href={`${projectUrl}/issues/new`}>Report an issue</ExternalFooterLink></li>
-                <li><ExternalFooterLink href={`${projectUrl}/issues/new?title=Tool%20suggestion`}>Suggest a tool</ExternalFooterLink></li>
+                <li><Link to="/text/text-counter" className="cursor-target footer-link">Count words</Link></li>
+                <li><Link to="/image/compress-image" className="cursor-target footer-link">Compress image</Link></li>
+                <li><Link to="/doc/pdf-merger" className="cursor-target footer-link">Merge PDFs</Link></li>
               </ul>
             </nav>
 
