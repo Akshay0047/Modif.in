@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { baseURL, withBrowser } from "./browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "./browserHarness.mjs";
 
 await withBrowser(async (page, context) => {
     await context.addInitScript(() => {
@@ -14,6 +14,7 @@ await withBrowser(async (page, context) => {
 
     for (const route of ["/text/case-converter", "/doc/csv-converter", "/doc/table-to-markdown"]) {
         await page.goto(baseURL + route);
+        await waitForPageReveal(page);
         if (route.startsWith("/text")) {
             await page.locator("#case-converter-input").fill("Hello, 😀 world\nSecond line");
         } else {
@@ -45,6 +46,7 @@ await withBrowser(async (page, context) => {
     }
     for (const route of ["ocr", "text-extractor", "table-extractor"]) {
         await page.goto(`${baseURL}/doc/${route}`);
+        await waitForPageReveal(page);
         await page.locator('.doc-tool-page input[type="file"]').waitFor({ state: "attached" });
         assert.equal(await page.locator('input[type="file"]').count(), 1);
     }

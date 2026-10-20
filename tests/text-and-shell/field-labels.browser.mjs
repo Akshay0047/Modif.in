@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { waitForPageReveal } from "./browserHarness.mjs";
 import { readdir, writeFile } from "node:fs/promises";
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
@@ -71,6 +72,7 @@ try {
                 page.on("pageerror", onError);
                 try {
                     await page.goto(`${baseURL}/text/${slug}`);
+                    await waitForPageReveal(page);
                     await page.locator(".text-tool-page").waitFor();
                     const signatures = new Set();
                     const states = ["default"];

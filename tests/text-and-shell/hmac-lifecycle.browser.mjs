@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { baseURL, withBrowser } from "./browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "./browserHarness.mjs";
 
 await withBrowser(async (page, context) => {
     await context.addInitScript(() => {
@@ -16,6 +16,7 @@ await withBrowser(async (page, context) => {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(baseURL + "/text/hmac-generator");
+    await waitForPageReveal(page);
     const message = page.getByLabel("Message", { exact: true });
     const secret = page.getByLabel("Secret key", { exact: true });
     const output = page.getByRole("textbox", { name: "HMAC signature", exact: true });

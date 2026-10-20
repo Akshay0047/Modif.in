@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { waitForPageReveal } from "./browserHarness.mjs";
 import { pathToFileURL } from "node:url";
 
 const modulePath = process.env.PLAYWRIGHT_MODULE;
@@ -15,6 +16,7 @@ try {
         page.on("pageerror", (error) => errors.push(error.message));
         for (const route of routes) {
             await page.goto(`${baseURL}/text/${route}`, { waitUntil: "domcontentloaded" });
+            await waitForPageReveal(page);
             const output = page.locator("textarea[readonly]").first();
             await output.waitFor();
             assert.ok((await output.inputValue()).length > 0, `${route} starts with generated output`);
@@ -40,6 +42,7 @@ try {
         }
 
         await page.goto(`${baseURL}/text/random-generator`, { waitUntil: "domcontentloaded" });
+        await waitForPageReveal(page);
         await page.getByRole("button", { name: "Random numbers", exact: true }).click();
         const minimum = page.locator("#random-min"), maximum = page.locator("#random-max");
         const output = page.locator("textarea[readonly]").first();

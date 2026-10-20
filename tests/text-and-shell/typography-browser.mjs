@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { waitForPageReveal } from "./browserHarness.mjs";
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 const browser = await chromium.launch({ channel: "msedge", headless: true });
@@ -10,12 +11,14 @@ try {
         const errors = [];
         page.on("pageerror", (error) => errors.push(error.message));
         await page.goto(`${baseURL}/text/text-reverser`);
+        await waitForPageReveal(page);
         await page.locator("#text-reverser-input").fill("a👨‍👩‍👧‍👦b");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "b👨‍👩‍👧‍👦a");
         await page.getByRole("button", { name: "Reverse characters", exact: true }).click();
         await page.locator("#text-reverser-input").fill("ae\u0301🇮🇳👍🏽b");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "b👍🏽🇮🇳e\u0301a");
         await page.goto(`${baseURL}/text/find-replace`);
+        await waitForPageReveal(page);
         await page.locator("#find-replace-input").fill("hello");
         await page.locator("#find-replace-find").fill("[");
         await page.locator("#find-replace-replace").fill("x");
@@ -37,12 +40,14 @@ try {
         await page.locator("#find-replace-patterns").fill("hello|world");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "world");
         await page.goto(`${baseURL}/text/case-converter`);
+        await waitForPageReveal(page);
         await page.locator("#case-converter-input").fill("élan über déjà");
         await page.getByRole("button", { name: "Title Case", exact: true }).click();
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "Élan Über Déjà");
         await page.locator("#case-converter-input").fill("e\u0301LAN — ПРИВЕТ" );
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "E\u0301lan — Привет");
         await page.goto(`${baseURL}/text/fancy-text-converter`);
+        await waitForPageReveal(page);
         await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
         await page.locator("#fancy-text-converter-input").fill("h Hello");
         const italic = page.locator(".text-tool-result-card").filter({ hasText: "Italic-style Unicode" });

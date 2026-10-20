@@ -2,7 +2,7 @@
 // PLAYWRIGHT_MODULE may point to external QA tooling; fixtures/downloads stay in OS temp.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { baseURL, withBrowser } from "./browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "./browserHarness.mjs";
 
 // Independently encoded 96×64 RGBA PNG: red/green top quadrants, blue/yellow bottom.
 const fixture = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAGAAAABACAYAAADlNHIOAAAA2ElEQVR4nO3RwREDMQCDQPfftFNEHhgdo1ED7LnnXPMHxkcMQPyB8REDEH9gfMQAxB8YHzEA8QfGRwxA/IHxEQMQf2B8xADEHxgfMQDxB8ZHDED8gfERAxB/YHzEAMQfGB8xAPEHxkcMQPyB8REDEH9gfMQAxB8YH/HTAA80/Ov3HvUDCCAAPGIA4tMBA3ggYgDiBxBAAHjEAMSnAwbwQMQAxA8ggADwiAGITwcM4IGIAYgfQAAB4BEDEJ8OGMADEQMQP4AAAsAjBiA+HTCAByIGIH4AlwX4AXT0zRyGZp+BAAAAAElFTkSuQmCC", "base64");
@@ -47,6 +47,7 @@ await withBrowser(async (page) => {
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
     await page.goto(`${baseURL}/image/base64-encoder-decoder`);
+    await waitForPageReveal(page);
     const encodeMode = page.getByRole("button", { name: "Image to Base64", exact: true });
     const decodeMode = page.getByRole("button", { name: "Base64 to Image", exact: true });
     assert.equal(await encodeMode.getAttribute("aria-pressed"), "true");
@@ -64,6 +65,7 @@ await withBrowser(async (page) => {
     await inspectImage(page, decoded, "image/png", 96, 64, colors);
 
     await page.goto(`${baseURL}/image/convert-to-jpg-png`);
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles(file);
     const jpeg = await download(page);
     await inspectImage(page, jpeg, "image/jpeg", 96, 64, colors, 8);
@@ -74,6 +76,7 @@ await withBrowser(async (page) => {
     await inspectImage(page, png, "image/png", 96, 64, colors);
 
     await page.goto(`${baseURL}/image/crop-resize`);
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles(file);
     await page.getByRole("button", { name: "1:1", exact: true }).click();
     await page.getByRole("button", { name: "Apply", exact: true }).click();
@@ -81,6 +84,7 @@ await withBrowser(async (page) => {
     await inspectImage(page, cropped, "image/png", 64, 64, colors);
 
     await page.goto(`${baseURL}/image/crop-resize`);
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles(file);
     await page.getByRole("button", { name: "Resize", exact: true }).click();
     const dimensions = page.locator('input[type="number"]');
@@ -97,6 +101,7 @@ await withBrowser(async (page) => {
         ["Vertical", 96, 64, [colors[2], colors[3], colors[0], colors[1]]],
     ]) {
         await page.goto(`${baseURL}/image/rotate-flip`);
+        await waitForPageReveal(page);
         await page.locator('input[type="file"]').setInputFiles(file);
         await page.getByRole("button", { name: action, exact: true }).click();
         const rotated = await download(page);

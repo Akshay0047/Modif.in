@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { auditAccessibility, baseURL, withBrowser } from "./browserHarness.mjs";
+import { auditAccessibility, baseURL, withBrowser, waitForPageReveal } from "./browserHarness.mjs";
 
 await withBrowser(async (page) => {
     for (const hub of ["text", "image", "doc"]) {
         await page.goto(`${baseURL}/${hub}`);
+        await waitForPageReveal(page);
         const input = page.getByRole("combobox", { name: "Search tools" });
         await input.fill("converter");
         await page.getByRole("listbox", { name: "Matching tools" }).waitFor();
@@ -38,12 +39,14 @@ await withBrowser(async (page) => {
         await input.press("Enter");
         await page.waitForURL(new RegExp(`/${hub}/[^/]+$`));
         await page.goBack();
+        await waitForPageReveal(page);
         await input.fill("converter");
         await page.getByRole("option").first().click();
         await page.waitForURL(new RegExp(`/${hub}/[^/]+$`));
     }
     // Enter during IME composition must leave the query unsubmitted.
     await page.goto(baseURL + "/text");
+    await waitForPageReveal(page);
     const input = page.getByRole("combobox", { name: "Search tools" });
     await input.fill("text counter");
     assert.equal(await page.getByRole("option").count(), 1);

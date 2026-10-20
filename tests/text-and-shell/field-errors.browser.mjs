@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { waitForPageReveal } from "./browserHarness.mjs";
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 const browser = await chromium.launch({ channel: "msedge", headless: true });
@@ -32,6 +33,7 @@ try {
             currentCase = `${slug}/${id} at ${width}px`;
             if (process.env.DEBUG_LABELS) console.log(currentCase);
             await page.goto(`${baseURL}/text/${slug}`);
+            await waitForPageReveal(page);
             await page.locator(".text-tool-page").waitFor();
             if (button) await page.getByRole("button", { name: button, exact: true }).click();
             const field = page.locator(`#${id}`);

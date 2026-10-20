@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { baseURL, withBrowser } from "./browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "./browserHarness.mjs";
 
 const animationChunk = /\/(?:assets\/AnimatedList-[^/]+\.js|src\/components\/AnimatedList\.jsx)(?:\?.*)?$/;
 
@@ -10,6 +10,7 @@ await withBrowser(async (page) => {
     const gate = new Promise((resolve) => { release = resolve; });
     await page.route(animationChunk, async (route) => { await gate; await route.continue(); });
     await page.goto(`${baseURL}/text`);
+    await waitForPageReveal(page);
     const input = page.getByRole("combobox", { name: "Search tools" });
     await input.waitFor();
     assert.equal(await page.evaluate(() => performance.getEntriesByType("resource").filter((entry) => /\/AnimatedList-/.test(entry.name)).length), 0);
@@ -31,6 +32,7 @@ await withBrowser(async (page) => {
     await page.unroute(animationChunk);
     await page.route(animationChunk, (route) => route.abort("failed"));
     await page.goto(`${baseURL}/text`);
+    await waitForPageReveal(page);
     const failedRequest = page.waitForRequest(animationChunk);
     await input.fill("text counter");
     await failedRequest;

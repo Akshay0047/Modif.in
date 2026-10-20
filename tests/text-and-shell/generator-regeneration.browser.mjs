@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { withBrowser, baseURL } from "./browserHarness.mjs";
+import { withBrowser, baseURL, waitForPageReveal } from "./browserHarness.mjs";
 
 await withBrowser(async (page, context) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -20,6 +20,7 @@ await withBrowser(async (page, context) => {
     ];
     for (const [slug, setting, expected] of cases) {
         await page.goto(`${baseURL}/text/${slug}`, { waitUntil: "domcontentloaded" });
+        await waitForPageReveal(page);
         const output = page.locator("textarea[readonly]").first();
         await output.waitFor();
         const initial = await output.inputValue();
@@ -44,6 +45,7 @@ await withBrowser(async (page, context) => {
         else assert.equal(changed.split("\n").length, expected);
     }
     await page.goto(`${baseURL}/text/token-generator`);
+    await waitForPageReveal(page);
     const token = page.getByRole("textbox", { name: "Generated token", exact: true });
     const length = page.locator("#token-length");
     await token.waitFor();
@@ -54,6 +56,7 @@ await withBrowser(async (page, context) => {
     ]) {
         // A fresh route restores the default length before each mode sweep.
         await page.goto(`${baseURL}/text/token-generator`);
+        await waitForPageReveal(page);
         await page.getByRole("button", { name: mode, exact: true }).click();
         for (const [index, key] of [null, "ArrowRight", "End", "Home", "ArrowRight"].entries()) {
             if (key) await length.press(key);

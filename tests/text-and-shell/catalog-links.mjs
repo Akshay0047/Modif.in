@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { baseURL, withBrowser } from "./browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "./browserHarness.mjs";
 
 await withBrowser(async (page, context) => {
     for (const hub of ["text", "image", "doc"]) {
         await page.goto(`${baseURL}/${hub}`);
+        await waitForPageReveal(page);
         const links = page.locator("a.tool-button");
         await links.first().waitFor();
         assert.equal(await page.locator("button.tool-button").count(), 0);

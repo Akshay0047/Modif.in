@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { baseURL, withBrowser } from "./browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "./browserHarness.mjs";
 
 await withBrowser(async (page) => {
     for (const [route, selector, value] of [
@@ -10,6 +10,7 @@ await withBrowser(async (page) => {
         ["ascii-kaomoji", "#ascii-kaomoji-search", "happy"],
     ]) {
         await page.goto(`${baseURL}/text/${route}`);
+        await waitForPageReveal(page);
         const field = page.locator(selector).first();
         await field.fill(value);
         await field.press("Tab");

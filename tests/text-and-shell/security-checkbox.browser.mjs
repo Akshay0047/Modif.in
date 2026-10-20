@@ -2,6 +2,7 @@
 // @axe-core/playwright available. Module URLs can point to external QA tooling
 // via MODIF_PLAYWRIGHT_MODULE / MODIF_AXE_MODULE; MODIF_QA_URL selects the preview.
 import assert from "node:assert/strict";
+import { waitForPageReveal } from "./browserHarness.mjs";
 
 const { chromium } = await import(process.env.MODIF_PLAYWRIGHT_MODULE || "playwright");
 const { default: AxeBuilder } = await import(process.env.MODIF_AXE_MODULE || "@axe-core/playwright");
@@ -22,6 +23,7 @@ try {
         page.on("pageerror", (error) => errors.push(error.message));
         for (const route of ["test-data-generator", "password-generator"]) {
             await page.goto(`${baseUrl}/text/${route}`);
+            await waitForPageReveal(page);
             const modes = route === "password-generator" ? ["Password", "Passphrase"] : [null];
             for (const mode of modes) {
                 if (mode) {
