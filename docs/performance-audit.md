@@ -2,6 +2,8 @@
 
 The original and updated public deployments were measured on 20 October 2026 with empty browser HTTP caches. The updated deployment preserves the Reactbits effects. Three mobile trials reduced median useful-control time from 3,573 to 2,060 ms on Home and from 6,832 to 2,911 ms on PDF Merger; Merger's observed encoded responses fell 70.09%. These are descriptive lab results, not field INP or a guarantee for every device or connection.
 
+These measurements describe the frozen source below, before the subsequent branded page-loading cover. Current profiler version 5 records controls as ready only after the cover is hidden and their inert lock is released; it does not count controls mounted behind the cover as usable. Rerun the profiler when comparing current reveal times rather than treating the historical values as measurements of the new loading screen.
+
 ## Measurement method
 
 - Serial Microsoft Edge/Chromium lab runs, with a new isolated browser context for every route and trial. HTTP cache is cleared and disabled through CDP; service workers are blocked and bypassed. Every retained case includes explicit memory/disk/service-worker/prefetch cache checks.

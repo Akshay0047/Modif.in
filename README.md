@@ -69,6 +69,8 @@ IBM Plex Sans is self-hosted as unmodified variable WOFF2 files from the existin
 
 Silk uses its original shader and uniform behavior with a lightweight OGL renderer. Dither retains React Three Fiber and its postprocessing pipeline. These rendering changes preserve the effects, module colors, still frames, and motion controls.
 
+Initial loads and page navigation use a fading MODIF.in wordmark on an opaque cover while page content, fonts, visible images, and the background's first frame settle. The cover respects motion preferences, preserves accessible error recovery, and adds no fixed minimum wait. Its initial markup/styles live in `index.html`; `PageLoadingScreen` owns readiness and reveal.
+
 The frontend targets WCAG 2.2 AA. Automated route/accessibility tests and targeted workflows support that goal; they do not certify every browser, assistive technology, file format, or device.
 
 ## Maintained references
