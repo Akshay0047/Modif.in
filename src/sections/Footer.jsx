@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "./Footer.css";
 
 import privacyPolicy from "../footer/privacypolicy.md?raw";
 import termsOfService from "../footer/termsofservice.md?raw";
 import disclaimer from "../footer/disclaimer.md?raw";
+
+const ReactMarkdown = lazy(() => import("react-markdown"));
 
 const documents = {
   privacy: {
@@ -37,6 +39,8 @@ function Footer() {
     const inertHosts = parent
       ? [...parent.children].filter((child) => child !== overlay)
       : [];
+    const previousInert = inertHosts.map((child) => child.inert);
+    const previousOverflow = document.body.style.overflow;
     inertHosts.forEach((child) => {
       child.inert = true;
     });
@@ -70,10 +74,10 @@ function Footer() {
     focusable()[0]?.focus();
 
     return () => {
-      inertHosts.forEach((child) => {
-        child.inert = false;
+      inertHosts.forEach((child, index) => {
+        child.inert = previousInert[index];
       });
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
       openerRef.current?.focus();
     };
@@ -104,7 +108,7 @@ function Footer() {
             <a
               href="https://junaidahamed.runs-on.dev"
               className="cursor-target footer-link"
-              target = "_blank"
+              target="_blank" rel="noopener noreferrer"
             >
               Junaid
             </a>
@@ -114,7 +118,7 @@ function Footer() {
             <a
               href="https://akshaysuresh.runs-on.dev"
               className="cursor-target footer-link"
-              target = "_blank"
+              target="_blank" rel="noopener noreferrer"
             >
               Akshay
             </a>
@@ -152,7 +156,7 @@ function Footer() {
         </div>
       </footer>
 
-      {activeDocument && (
+      {activeDocument && createPortal(
         <div
           className="document-overlay"
           ref={overlayRef}
@@ -182,12 +186,12 @@ function Footer() {
             </div>
 
             <div className="document-content">
-              <ReactMarkdown>
+              <Suspense fallback={<p role="status">Loading document…</p>}><ReactMarkdown>
                 {activeDocument.content}
-              </ReactMarkdown>
+              </ReactMarkdown></Suspense>
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
     </>
   );

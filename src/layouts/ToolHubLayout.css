@@ -1,4 +1,6 @@
 .tool-hub-layout {
+  display: flex;
+  flex-direction: column;
   position: relative;
   width: 100%;
   min-height: 100vh;
@@ -7,6 +9,8 @@
   padding-top: var(--app-header-height);
   box-sizing: border-box;
 }
+
+.tool-hub-layout > main { flex: 1; min-width: 0; }
 
 .tool-hub-layout__background {
   position: fixed;
