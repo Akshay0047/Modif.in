@@ -76,7 +76,7 @@ const readySelector = (route) =>
           ? ".img-tool__dropzone"
           : ".doc-tool-dropzone";
 
-function installObservers({ selector }) {
+export function installObservers({ selector }) {
   const record = (window.__performanceProfile = {
     readyMs: null,
     readyAfterPaintMs: null,
@@ -86,11 +86,20 @@ function installObservers({ selector }) {
     longTasks: [],
     events: [],
     inputs: [],
+    observerErrors: [],
   });
+  const nodePreview = (node, limit) =>
+    String(node?.outerHTML ?? node?.textContent ?? "").slice(0, limit);
   const observe = (type, target, transform, options = {}) => {
     try {
       new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) target.push(transform(entry));
+        for (const entry of list.getEntries()) {
+          try {
+            target.push(transform(entry));
+          } catch (error) {
+            record.observerErrors.push({ type, message: error.message });
+          }
+        }
       }).observe({ type, buffered: true, ...options });
     } catch {
       record.unsupported = [...(record.unsupported || []), type];
@@ -106,15 +115,13 @@ function installObservers({ selector }) {
     loadTime: entry.loadTime,
     size: entry.size,
     url: entry.url,
-    element: entry.element?.outerHTML.slice(0, 300),
+    element: nodePreview(entry.element, 300),
   }));
   observe("layout-shift", record.shifts, (entry) => ({
     startTime: entry.startTime,
     value: entry.value,
     hadRecentInput: entry.hadRecentInput,
-    sources: entry.sources?.map((source) =>
-      source.node?.outerHTML.slice(0, 200),
-    ),
+    sources: entry.sources?.map((source) => nodePreview(source.node, 200)),
   }));
   observe("longtask", record.longTasks, (entry) => ({
     startTime: entry.startTime,
@@ -500,7 +507,13 @@ async function verifyDeployment() {
     if (check.matched) break;
     if (attempt < checks) await delay(delayMs);
   }
-  if (!report.checks.some((check) => check.matched))
+  report.matched = report.checks.some((check) => check.matched);
+  report.finishedAt = new Date().toISOString();
+  await writeFile(
+    resolve(output, "deployment-verification.json"),
+    JSON.stringify(report, null, 2),
+  );
+  if (!report.matched)
     console.log(
       "Deployment did not match within the bounded checks; no later action is scheduled.",
     );
@@ -514,6 +527,7 @@ async function profileRoute(browser, route, profile) {
     startedAt: new Date().toISOString(),
     requests: [],
     pageErrors: [],
+    pageErrorDetails: [],
     errors: [],
   };
   const context = await browser.newContext({
@@ -553,7 +567,13 @@ async function profileRoute(browser, route, profile) {
       })().catch(() => {}),
     );
   });
-  page.on("pageerror", (error) => result.pageErrors.push(error.message));
+  page.on("pageerror", (error) => {
+    result.pageErrors.push(error.message);
+    result.pageErrorDetails.push({
+      message: error.message,
+      stack: error.stack,
+    });
+  });
   cdp.on("Network.requestWillBeSent", (event) => {
     if (navigationTimestamp === undefined && event.type === "Document") {
       navigationTimestamp = event.timestamp;
@@ -773,11 +793,12 @@ async function main() {
   const report = {
     startedAt: new Date().toISOString(),
     summaryVersion: 2,
+    instrumentationVersion: 3,
     baseURL,
     profiles,
     routes,
     runs,
-    note: "Serial lab observations, not field INP/CrUX or a physical mobile device. Cold browser HTTP cache is cleared/disabled and service workers bypassed; DNS, TLS, GPU/shader, OS and CDN caches are not certified cold. TBT proxy spans FCP to the first synthetic interaction, not a measured TTI window. Animation uses the normal user preference. WebGL in headless Chromium may use a software GPU.",
+    note: "Serial lab observations, not field INP/CrUX or a physical mobile device. Cold browser HTTP cache is cleared/disabled and service workers bypassed; DNS, TLS, GPU/shader, OS and CDN caches are not certified cold. TBT proxy spans FCP to the first synthetic interaction, not a measured TTI window. Controlled interactions follow the 5-second active-animation frame sample and bounded network-idle wait. Animation uses the normal user preference. WebGL in headless Chromium may use a software GPU.",
     results: [],
   };
   console.log(
@@ -824,7 +845,8 @@ async function main() {
       (result) =>
         !result.cacheProof?.verified ||
         result.errors.length ||
-        result.pageErrors.length,
+        result.pageErrors.length ||
+        result.observation?.observerErrors?.length,
     )
   )
     console.log(
