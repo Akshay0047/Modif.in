@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -526,7 +527,8 @@ function SvgToPngJpg() {
                     onClick={() => {
                         if (!isProcessing) fileInputRef.current?.click();
                     }}
-                    role="button"
+                    onKeyDown={handleFilePickerKeyDown}
+                role="button"
                     tabIndex={isProcessing ? -1 : 0}
                 >
                     <input

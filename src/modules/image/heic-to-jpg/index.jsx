@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -347,6 +348,7 @@ function HeicToJpg() {
                 onClick={() => {
                     if (!isProcessing && files.length < MAX_FILES) fileInputRef.current?.click();
                 }}
+                onKeyDown={handleFilePickerKeyDown}
                 role="button"
                 tabIndex={isProcessing ? -1 : 0}
             >

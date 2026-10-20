@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import ImageToolShell from "../_shared/ImageToolShell";
@@ -397,13 +398,7 @@ function ConvertToJpgPng() {
                             onClick={() => {
                                 if (!isProcessing) fileInputRef.current?.click();
                             }}
-                            onKeyDown={(event) => {
-                                if (isProcessing) return;
-                                if (event.key === "Enter" || event.key === " ") {
-                                    event.preventDefault();
-                                    fileInputRef.current?.click();
-                                }
-                            }}
+                            onKeyDown={handleFilePickerKeyDown}
                             role="button"
                             tabIndex={isProcessing ? -1 : 0}
                             aria-disabled={isProcessing}

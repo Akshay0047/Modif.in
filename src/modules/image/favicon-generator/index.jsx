@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -298,7 +299,7 @@ function FaviconGenerator() {
                         if (file) processFile(file);
                     }}
                     onClick={() => fileInputRef.current?.click()}
-                    onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+                    onKeyDown={handleFilePickerKeyDown}
                     role="button"
                     tabIndex={0}
                 >

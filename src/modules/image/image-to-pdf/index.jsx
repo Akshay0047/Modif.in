@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -556,6 +557,7 @@ function ImageToPdf() {
                 onClick={() => {
                     if (!isGenerating && items.length < MAX_FILES) fileInputRef.current?.click();
                 }}
+                onKeyDown={handleFilePickerKeyDown}
                 role="button"
                 tabIndex={isGenerating ? -1 : 0}
             >

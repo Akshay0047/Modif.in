@@ -23,6 +23,17 @@ export function preventDragDefaults(event) {
     event.stopPropagation();
 }
 
+/** Give custom file-picker panels the same activation keys as a button. */
+export function handleFilePickerKeyDown(event) {
+    if (event.target !== event.currentTarget || event.repeat) return;
+    if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        if (event.currentTarget.getAttribute("aria-disabled") !== "true") {
+            event.currentTarget.click();
+        }
+    }
+}
+
 export function createDropzoneHandlers({ onFile, disabled = false, setDragging, multiple = false }) {
     return {
         onDragEnter: (event) => {

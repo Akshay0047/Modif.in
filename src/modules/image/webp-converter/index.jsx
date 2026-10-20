@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -407,13 +408,7 @@ function WebpConverter() {
                 onClick={() => {
                     if (!isProcessing) fileInputRef.current?.click();
                 }}
-                onKeyDown={(e) => {
-                    if (isProcessing) return;
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        fileInputRef.current?.click();
-                    }
-                }}
+                onKeyDown={handleFilePickerKeyDown}
                 role="button"
                 tabIndex={isProcessing ? -1 : 0}
                 aria-disabled={isProcessing}

@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useMemo, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import {copyTextToClipboard,
@@ -164,7 +165,7 @@ function Base64EncoderDecoder() {
                         onDragLeave={() => setIsDragging(false)}
                         onDrop={onDrop}
                         onClick={() => fileInputRef.current?.click()}
-                        onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+                        onKeyDown={handleFilePickerKeyDown}
                         role="button"
                         tabIndex={0}
                     >
