@@ -94,8 +94,8 @@ function PdfSecurity() {
 
                 <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                     <div>
-                        <label className="doc-tool-label">User password</label>
-                        <input
+                        <label htmlFor="pdf-user-password" className="doc-tool-label">User password</label>
+                        <input id="pdf-user-password"
                             type="password"
                             className="doc-tool-input cursor-target"
                             value={userPassword}
@@ -104,8 +104,8 @@ function PdfSecurity() {
                         />
                     </div>
                     <div>
-                        <label className="doc-tool-label">Owner password</label>
-                        <input
+                        <label htmlFor="pdf-owner-password" className="doc-tool-label">Owner password</label>
+                        <input id="pdf-owner-password"
                             type="password"
                             className="doc-tool-input cursor-target"
                             value={ownerPassword}

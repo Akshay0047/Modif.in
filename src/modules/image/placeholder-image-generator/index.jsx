@@ -476,7 +476,7 @@ function PlaceholderImageGenerator() {
             {borderWidth > 0 && (
                 <>
                     <div className="img-tool__color-row">
-                        <input
+                        <input aria-label="Border color"
                             type="color"
                             className="img-tool__color-input"
                             value={safeBorder}

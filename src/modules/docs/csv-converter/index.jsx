@@ -88,7 +88,7 @@ function CsvConverter() {
                         <h2 className="doc-tool-section-title">Output</h2>
                         <CopyButton text={output} />
                     </div>
-                    <textarea className="doc-tool-textarea" value={output} readOnly />
+                    <textarea aria-label="Converted document output" className="doc-tool-textarea" value={output} readOnly />
                 </div>
             ) : null}
 

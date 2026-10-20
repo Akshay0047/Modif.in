@@ -542,16 +542,16 @@ export default function FiltersEffectsTool() {
             {preset === "duotone" ? (
                 <>
                     <div>
-                        <label className="img-tool__label">Shadow color</label>
+                        <label className="img-tool__label" htmlFor="filter-shadow-color">Shadow color</label>
                         <div className="img-tool__color-row">
-                            <input
+                            <input id="filter-shadow-color" aria-label="Shadow color"
                                 type="color"
                                 className="img-tool__color-input"
                                 value={duoA}
                                 disabled={!imageSize}
                                 onChange={(e) => setDuoA(e.target.value)}
                             />
-                            <input
+                            <input aria-label="Shadow color hex value"
                                 className="img-tool__input"
                                 value={duoA}
                                 disabled={!imageSize}
@@ -560,16 +560,16 @@ export default function FiltersEffectsTool() {
                         </div>
                     </div>
                     <div>
-                        <label className="img-tool__label">Highlight color</label>
+                        <label className="img-tool__label" htmlFor="filter-highlight-color">Highlight color</label>
                         <div className="img-tool__color-row">
-                            <input
+                            <input id="filter-highlight-color" aria-label="Highlight color"
                                 type="color"
                                 className="img-tool__color-input"
                                 value={duoB}
                                 disabled={!imageSize}
                                 onChange={(e) => setDuoB(e.target.value)}
                             />
-                            <input
+                            <input aria-label="Highlight color hex value"
                                 className="img-tool__input"
                                 value={duoB}
                                 disabled={!imageSize}

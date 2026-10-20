@@ -137,7 +137,7 @@ function Ocr() {
                             <ReactMarkdown>{markdown}</ReactMarkdown>
                         </div>
                     ) : (
-                        <textarea className="doc-tool-textarea" value={text} readOnly />
+                        <textarea aria-label="Recognized text" className="doc-tool-textarea" value={text} readOnly />
                     )}
                 </div>
             ) : null}

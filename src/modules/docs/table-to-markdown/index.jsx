@@ -50,7 +50,7 @@ function TableToMarkdown() {
                         <h2 className="doc-tool-section-title">Markdown Output</h2>
                         <CopyButton text={output} />
                     </div>
-                    <textarea className="doc-tool-textarea" value={output} readOnly />
+                    <textarea aria-label="Markdown table output" className="doc-tool-textarea" value={output} readOnly />
                 </div>
             ) : null}
 

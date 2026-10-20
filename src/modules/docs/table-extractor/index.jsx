@@ -103,7 +103,7 @@ function TableExtractor() {
                             </button>
                         </div>
                     </div>
-                    <textarea className="doc-tool-textarea" value={output} readOnly />
+                    <textarea aria-label="Extracted table output" className="doc-tool-textarea" value={output} readOnly />
                 </div>
             ) : null}
 

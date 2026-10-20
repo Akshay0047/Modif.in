@@ -74,7 +74,7 @@ function TextExtractor() {
                         <h2 className="doc-tool-section-title">Extracted Text</h2>
                         <CopyButton text={text} />
                     </div>
-                    <textarea className="doc-tool-textarea" value={text} readOnly />
+                    <textarea aria-label="Extracted document text" className="doc-tool-textarea" value={text} readOnly />
                 </div>
             ) : null}
 

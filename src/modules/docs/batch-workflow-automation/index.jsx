@@ -177,8 +177,8 @@ function BatchWorkflowAutomation() {
                 {pipeline.includes("watermark") ? (
                     <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "0.5rem" }}>
                         <div>
-                            <label className="doc-tool-label">Watermark text</label>
-                            <input
+                            <label htmlFor="batch-watermark-text" className="doc-tool-label">Watermark text</label>
+                            <input id="batch-watermark-text"
                                 className="doc-tool-input cursor-target"
                                 value={watermark.text}
                                 onChange={(e) => {
@@ -188,8 +188,8 @@ function BatchWorkflowAutomation() {
                             />
                         </div>
                         <div>
-                            <label className="doc-tool-label">Orientation ({watermark.angle}°)</label>
-                            <input
+                            <label htmlFor="batch-watermark-angle" className="doc-tool-label">Orientation ({watermark.angle}°)</label>
+                            <input id="batch-watermark-angle"
                                 className="doc-tool-range cursor-target"
                                 type="range"
                                 min="-90"
@@ -202,8 +202,8 @@ function BatchWorkflowAutomation() {
                             />
                         </div>
                         <div>
-                            <label className="doc-tool-label">Opacity ({watermark.opacity})</label>
-                            <input
+                            <label htmlFor="batch-watermark-opacity" className="doc-tool-label">Opacity ({watermark.opacity})</label>
+                            <input id="batch-watermark-opacity"
                                 className="doc-tool-range cursor-target"
                                 type="range"
                                 min="0.1"
@@ -217,8 +217,8 @@ function BatchWorkflowAutomation() {
                             />
                         </div>
                         <div>
-                            <label className="doc-tool-label">Color</label>
-                            <input
+                            <label htmlFor="batch-watermark-color" className="doc-tool-label">Color</label>
+                            <input id="batch-watermark-color"
                                 className="doc-tool-input cursor-target"
                                 type="color"
                                 value={watermark.color}

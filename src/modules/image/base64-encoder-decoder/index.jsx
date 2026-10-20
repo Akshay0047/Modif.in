@@ -236,8 +236,8 @@ function Base64EncoderDecoder() {
             ) : (
                 <>
                     <div>
-                        <span className="img-tool__label">Paste Base64 or data URI</span>
-                        <textarea
+                        <label htmlFor="image-base64-input" className="img-tool__label">Paste Base64 or data URI</label>
+                        <textarea id="image-base64-input"
                             className="img-tool__textarea"
                             value={decodeInput}
                             onChange={(e) => setDecodeInput(e.target.value)}
@@ -285,7 +285,7 @@ function Base64EncoderDecoder() {
                             </span>
                         ) : null}
                     </div>
-                    <textarea
+                    <textarea aria-label="Encoded image output"
                         className="img-tool__textarea"
                         value={outputText}
                         readOnly

@@ -71,8 +71,8 @@ function CsvEditorTransformer() {
                     <>
                         <div className="doc-tool-grid doc-tool-grid--2" style={{ marginTop: "1rem" }}>
                             <div>
-                                <label className="doc-tool-label">Search rows</label>
-                                <input
+                                <label htmlFor="csv-row-search" className="doc-tool-label">Search rows</label>
+                                <input id="csv-row-search"
                                     className="doc-tool-input cursor-target"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
@@ -80,8 +80,8 @@ function CsvEditorTransformer() {
                                 />
                             </div>
                             <div>
-                                <label className="doc-tool-label">Dedupe by column</label>
-                                <select
+                                <label htmlFor="csv-dedupe-column" className="doc-tool-label">Dedupe by column</label>
+                                <select id="csv-dedupe-column"
                                     className="doc-tool-select cursor-target"
                                     value={dedupeKey}
                                     onChange={(e) => setDedupeKey(e.target.value)}

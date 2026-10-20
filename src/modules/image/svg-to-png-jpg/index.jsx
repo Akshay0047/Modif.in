@@ -404,7 +404,7 @@ function SvgToPngJpg() {
                         onChange={(e) => setBgColor(e.target.value)}
                         aria-label="Background color"
                     />
-                    <input
+                    <input aria-label="Background color hex value"
                         className="img-tool__input"
                         type="text"
                         value={bgColor}
@@ -561,7 +561,7 @@ function SvgToPngJpg() {
                 </div>
             ) : (
                 <>
-                    <textarea
+                    <textarea aria-label="SVG source code"
                         className="img-tool__textarea"
                         placeholder="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; ...>"
                         value={svgText}

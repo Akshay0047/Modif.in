@@ -608,48 +608,60 @@ function PdfEditor() {
 
                         {tool === "text" ? (
                             <div className="doc-tool-grid doc-tool-grid--3" style={{ marginTop: "0.75rem" }}>
-                                <input
-                                    className="doc-tool-input cursor-target"
-                                    value={selected?.type === "text" ? selected.text : textInput}
-                                    onChange={(e) => {
-                                        if (selected?.type === "text") updateSelected({ text: e.target.value });
-                                        else setTextInput(e.target.value);
-                                    }}
-                                    placeholder="Text to place — click on page"
-                                />
-                                <select
-                                    className="doc-tool-select cursor-target"
-                                    value={selected?.fontId ?? fontId}
-                                    onChange={(e) => {
-                                        setFontId(e.target.value);
-                                        if (selected?.type === "text") updateSelected({ fontId: e.target.value });
-                                    }}
-                                >
-                                    {FONTS.map((font) => (
-                                        <option key={font.id} value={font.id}>{font.label}</option>
-                                    ))}
-                                </select>
-                                <input
-                                    className="doc-tool-input cursor-target"
-                                    type="color"
-                                    value={selected?.color ?? textColor}
-                                    onChange={(e) => {
-                                        setTextColor(e.target.value);
-                                        if (selected?.type === "text") updateSelected({ color: e.target.value });
-                                    }}
-                                />
-                                <input
-                                    className="doc-tool-range cursor-target"
-                                    type="range"
-                                    min="10"
-                                    max="72"
-                                    value={selected?.size ?? fontSize}
-                                    onChange={(e) => {
-                                        const size = Number(e.target.value);
-                                        setFontSize(size);
-                                        if (selected?.type === "text") updateSelected({ size });
-                                    }}
-                                />
+                                <label className="doc-tool-label">
+                                    Text to place
+                                    <input aria-label="Text to place"
+                                        className="doc-tool-input cursor-target"
+                                        value={selected?.type === "text" ? selected.text : textInput}
+                                        onChange={(e) => {
+                                            if (selected?.type === "text") updateSelected({ text: e.target.value });
+                                            else setTextInput(e.target.value);
+                                        }}
+                                        placeholder="Text to place — click on page"
+                                    />
+                                </label>
+                                <label className="doc-tool-label">
+                                    Font
+                                    <select aria-label="Font"
+                                        className="doc-tool-select cursor-target"
+                                        value={selected?.fontId ?? fontId}
+                                        onChange={(e) => {
+                                            setFontId(e.target.value);
+                                            if (selected?.type === "text") updateSelected({ fontId: e.target.value });
+                                        }}
+                                    >
+                                        {FONTS.map((font) => (
+                                            <option key={font.id} value={font.id}>{font.label}</option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <label className="doc-tool-label">
+                                    Text color
+                                    <input aria-label="Text color"
+                                        className="doc-tool-input cursor-target"
+                                        type="color"
+                                        value={selected?.color ?? textColor}
+                                        onChange={(e) => {
+                                            setTextColor(e.target.value);
+                                            if (selected?.type === "text") updateSelected({ color: e.target.value });
+                                        }}
+                                    />
+                                </label>
+                                <label className="doc-tool-label">
+                                    Font size
+                                    <input aria-label="Font size"
+                                        className="doc-tool-range cursor-target"
+                                        type="range"
+                                        min="10"
+                                        max="72"
+                                        value={selected?.size ?? fontSize}
+                                        onChange={(e) => {
+                                            const size = Number(e.target.value);
+                                            setFontSize(size);
+                                            if (selected?.type === "text") updateSelected({ size });
+                                        }}
+                                    />
+                                </label>
                             </div>
                         ) : null}
 
@@ -677,10 +689,10 @@ function PdfEditor() {
                                         />
                                     ))}
                                 </div>
-                                <label className="doc-tool-label" style={{ margin: 0 }}>
+                                <label htmlFor="pdf-brush-size" className="doc-tool-label" style={{ margin: 0 }}>
                                     Size {drawSize}px
                                 </label>
-                                <input
+                                <input id="pdf-brush-size"
                                     className="doc-tool-range cursor-target"
                                     type="range"
                                     min="1"
@@ -689,10 +701,10 @@ function PdfEditor() {
                                     onChange={(e) => setDrawSize(Number(e.target.value))}
                                     style={{ maxWidth: 140 }}
                                 />
-                                <label className="doc-tool-label" style={{ margin: 0 }}>
+                                <label htmlFor="pdf-brush-opacity" className="doc-tool-label" style={{ margin: 0 }}>
                                     Opacity {Math.round(drawOpacity * 100)}%
                                 </label>
-                                <input
+                                <input id="pdf-brush-opacity"
                                     className="doc-tool-range cursor-target"
                                     type="range"
                                     min="0.15"

@@ -714,8 +714,8 @@ export default function CropResizeTool() {
             {(mode === "resize" || mode === "both") && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                     <div>
-                        <label className="img-tool__label">Width (px)</label>
-                        <input
+                        <label htmlFor="crop-output-width" className="img-tool__label">Width (px)</label>
+                        <input id="crop-output-width"
                             className="img-tool__input"
                             type="number"
                             min={1}
@@ -726,8 +726,8 @@ export default function CropResizeTool() {
                         />
                     </div>
                     <div>
-                        <label className="img-tool__label">Height (px)</label>
-                        <input
+                        <label htmlFor="crop-output-height" className="img-tool__label">Height (px)</label>
+                        <input id="crop-output-height"
                             className="img-tool__input"
                             type="number"
                             min={1}

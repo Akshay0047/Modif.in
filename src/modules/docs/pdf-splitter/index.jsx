@@ -122,7 +122,7 @@ function PdfSplitter() {
                 {pageCount > 0 ? (
                     <>
                         <div className="doc-tool-controls" style={{ marginTop: "1rem" }}>
-                            <input
+                            <input aria-label="Page ranges"
                                 className="doc-tool-input"
                                 value={rangeInput}
                                 onChange={(e) => setRangeInput(e.target.value)}
