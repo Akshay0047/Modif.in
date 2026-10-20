@@ -1,16 +1,9 @@
-import { useEffect, useRef, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { gsap } from "gsap";
 import { useAnimationSettings } from "../contexts/AnimationContext";
+import useCursorSupport from "../hooks/useCursorSupport";
 import "./TargetCursor.css";
-
-const cursorQuery = "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)";
-const subscribeCursorSupport = (listener) => {
-    const media = window.matchMedia(cursorQuery);
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
-};
-const getCursorSupport = () => window.matchMedia(cursorQuery).matches;
 
 // A position: fixed element is positioned relative to the viewport UNLESS an
 // ancestor establishes a containing block (transform, perspective, filter,
@@ -51,7 +44,7 @@ const TargetCursor = ({
     cursorColorOnTarget,
 }) => {
     const { active = true, reducedMotion } = useAnimationSettings();
-    const supported = useSyncExternalStore(subscribeCursorSupport, getCursorSupport, () => false);
+    const supported = useCursorSupport();
     const enabled = active && supported && !reducedMotion;
     const cursorRef = useRef(null);
     const cornersRef = useRef(null);

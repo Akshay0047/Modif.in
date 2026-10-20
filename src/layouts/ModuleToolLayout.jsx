@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
-import TargetCursor from "../components/TargetCursor";
+import CursorLayer from "../components/CursorLayer";
 import Footer from "../sections/Footer";
 import { useToolPageScroll } from "../hooks/useToolPageScroll";
 import { getModuleLayoutKey } from "../utils/moduleTheme";
@@ -14,7 +14,7 @@ function ModuleToolLayout() {
 
     return (
         <div className="tool-hub-layout">
-            <TargetCursor
+            <CursorLayer
                 spinDuration={6.4}
                 hideDefaultCursor
                 parallaxOn

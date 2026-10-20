@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import TargetCursor from "../components/TargetCursor";
+import CursorLayer from "../components/CursorLayer";
 import Hero from "../sections/Hero";
 import Footer from "../sections/Footer";
 
@@ -22,7 +22,7 @@ function LandingPage() {
                 backgroundColor={[0, 0, 0]}
             /></Suspense>
 
-            <TargetCursor
+            <CursorLayer
                 spinDuration={6.4}
                 hideDefaultCursor
                 parallaxOn

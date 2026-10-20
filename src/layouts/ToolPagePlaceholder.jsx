@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Silk from "../components/Silk";
 import DepthText from "../components/DepthText";
-import TargetCursor from "../components/TargetCursor";
+import CursorLayer from "../components/CursorLayer";
 import Footer from "../sections/Footer";
 import "./ToolHubLayout.css";
 import "./ToolPagePlaceholder.css";
@@ -80,7 +80,7 @@ function ToolPagePlaceholder({ module = "text", toolName = "Tool" }) {
                 />
             </div>
 
-            <TargetCursor
+            <CursorLayer
                 spinDuration={6.4}
                 hideDefaultCursor
                 parallaxOn

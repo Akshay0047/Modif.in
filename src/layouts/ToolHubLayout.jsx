@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Silk from "../components/Silk";
 import DepthText from "../components/DepthText";
-import TargetCursor from "../components/TargetCursor";
+import CursorLayer from "../components/CursorLayer";
 import ToolHub from "../sections/ToolHub";
 import Footer from "../sections/Footer";
 import "./ToolHubLayout.css";
@@ -81,7 +81,7 @@ function ToolHubLayout({
                 />
             </div>
 
-            <TargetCursor
+            <CursorLayer
                 spinDuration={6.4}
                 hideDefaultCursor
                 parallaxOn
