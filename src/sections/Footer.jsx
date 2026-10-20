@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { acquireInert } from "../utils/inertLock";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import "./Footer.css";
 
 import privacyPolicy from "../footer/privacypolicy.md?raw";
@@ -23,6 +24,25 @@ const documents = {
     content: disclaimer,
   },
 };
+
+const projectUrl = "https://github.com/Akshay0047/Modif.in";
+
+function ExternalFooterLink({ href, children }) {
+  return (
+    <a
+      href={href}
+      className="cursor-target footer-link"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {children}
+      <svg className="footer-external-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+        <path d="M7 17 17 7M7 7h10v10" />
+      </svg>
+      <span className="footer-sr-only"> (opens in a new tab)</span>
+    </a>
+  );
+}
 
 function Footer() {
   const [activeDocument, setActiveDocument] = useState(null);
@@ -98,57 +118,60 @@ function Footer() {
     <>
       <footer className="site-footer">
         <div className="footer-inner">
-          <div className="footer-credit">
-            <span>Built by </span>
+          <div className="footer-main">
+            <div className="footer-about">
+              <Link to="/" className="cursor-target footer-brand" aria-label="MODIF.in home">
+                <img src="/favicon.ico" width="48" height="48" alt="" />
+                <span translate="no">MODIF.in</span>
+              </Link>
+              <p className="footer-tagline">Simple tools for your digital world.</p>
+              <p className="footer-description">Everyday utilities for text, images, and documents. Free to use, with no account required.</p>
+            </div>
 
-            <a
-              href="https://junaidahamed.runs-on.dev"
-              className="cursor-target footer-link"
-              target="_blank" rel="noopener noreferrer"
-            >
-              Junaid
-            </a>
+            <nav className="footer-group" aria-label="Tool hubs">
+              <h2>Explore tools</h2>
+              <ul>
+                <li><Link to="/text" className="cursor-target footer-link">Text tools</Link></li>
+                <li><Link to="/image" className="cursor-target footer-link">Image tools</Link></li>
+                <li><Link to="/doc" className="cursor-target footer-link">Document tools</Link></li>
+              </ul>
+            </nav>
 
-            <span> and </span>
+            <nav className="footer-group" aria-label="Project and support">
+              <h2>Project</h2>
+              <ul>
+                <li><ExternalFooterLink href={projectUrl}>Source on GitHub</ExternalFooterLink></li>
+                <li><ExternalFooterLink href={`${projectUrl}/issues/new`}>Report an issue</ExternalFooterLink></li>
+                <li><ExternalFooterLink href={`${projectUrl}/issues/new?title=Tool%20suggestion`}>Suggest a tool</ExternalFooterLink></li>
+              </ul>
+            </nav>
 
-            <a
-              href="https://akshaysuresh.runs-on.dev"
-              className="cursor-target footer-link"
-              target="_blank" rel="noopener noreferrer"
-            >
-              Akshay
-            </a>
+            <nav className="footer-group footer-legal" aria-label="Legal">
+              <h2>Legal</h2>
+              <ul>
+                {Object.entries(documents).map(([key, { title }]) => (
+                  <li key={key}>
+                    <button
+                      type="button"
+                      className="cursor-target footer-button"
+                      aria-haspopup="dialog"
+                      onClick={(event) => openDocument(key, event)}
+                    >
+                      {title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
 
-          <nav className="footer-nav" aria-label="Legal">
-            <button
-              type="button"
-              className="cursor-target footer-button"
-              onClick={(event) => openDocument("privacy", event)}
-            >
-              Privacy Policy
-            </button>
-
-            <span className="footer-separator">.</span>
-
-            <button
-              type="button"
-              className="cursor-target footer-button"
-              onClick={(event) => openDocument("terms", event)}
-            >
-              Terms of Service
-            </button>
-
-            <span className="footer-separator">.</span>
-
-            <button
-              type="button"
-              className="cursor-target footer-button"
-              onClick={(event) => openDocument("disclaimer", event)}
-            >
-              Disclaimer
-            </button>
-          </nav>
+          <div className="footer-bottom">
+            <p className="footer-copyright">© {new Date().getFullYear()} MODIF.in</p>
+            <p className="footer-credit">
+              Built by <ExternalFooterLink href="https://junaidahamed.runs-on.dev">Junaid</ExternalFooterLink>
+              {" and "}<ExternalFooterLink href="https://akshaysuresh.runs-on.dev">Akshay</ExternalFooterLink>
+            </p>
+          </div>
         </div>
       </footer>
 
