@@ -159,6 +159,8 @@ Fluid sizes are recorded in the hierarchy below rather than frontmatter `fontSiz
 
 **The One Voice Sans Rule.** IBM Plex Sans is the only sans used for UI. Georgia appears only as a display headline role, never for buttons, labels, or dense control rows.
 
+**Font delivery.** `src/fonts.css` defines the same IBM Plex Sans variable family with unmodified local WOFF2 assets from `src/assets/fonts/`. Preserve all six original Unicode subsets, their `unicode-range` declarations, the variable 100–700 weight range, and `font-display: swap`. The Latin subset is preloaded; other subsets load when needed. Provenance and the SIL OFL license are maintained under `public/fonts/ibm-plex/`. Delivery changes must retain the established font family and typography roles.
+
 ## Layout
 
 - **Canvas model:** Full-viewport black stage with fixed atmospheric background (`position: fixed`, behind content).
@@ -222,6 +224,7 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 - **Header:** Fixed black bar with a readable DepthText brand, home link, current-hub state, and keyboard-accessible hub links.
 - **Footer:** Legal controls have 44px touch targets. Documents open in a body portal with a blurred scrim, background inertness, focus trapping/restoration, and Escape dismissal.
 - **Discovery:** Homepage cross-hub SearchBar, six common-task links, and three PixelCard navigation links. Hubs use SearchBar + categorized ToolButton grids and a native category disclosure above the Popular tools.
+- **Search suggestions:** Preserve AnimatedList's opacity animation and styling. Its Motion module loads on input focus. A shared `SuggestionList` renders the same immediately available options, active state, mouse behavior, and ARIA while animation loads or is unavailable; the combobox input remains the sole keyboard owner.
 
 ### TargetCursor (signature)
 
@@ -257,5 +260,9 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 ## Runtime ownership and audit changes
 
 Runtime styles remain canonical; this document mirrors their accepted values. `src/index.css` owns header height, global focus and scrollbar tokens; `src/components/AppHeader.css` consumes the header tokens; module shared CSS owns module control recipes. `AnimationContext.jsx` owns the user's local motion preference and visibility/reduced-motion state. This project does not generate CSS from DESIGN.md.
+
+`Silk.jsx` renders the original Silk shader and uniform semantics through OGL; `Dither.jsx` retains React Three Fiber and postprocessing. Keep the effect appearance, module tint updates, responsive sizing, paused still frames, and context cleanup/restoration when changing either renderer. Avoid coupling these decorative renderers to workspace or search readiness.
+
+Route loading feedback reserves the remaining viewport height through `RouteContent.css` so the in-flow footer does not first paint beside a short loading message and then move below the workspace. Heavy document engines and workers should initialize when processing starts; preview-only byte handling must stay independent of those engines. Reproducible measurement conditions and results belong in `docs/performance-audit.md`.
 
 The October 2026 audit intentionally changes fixed-footer/centered-header behavior for navigation and reflow, replaces marquee labels with wrapping text, and changes Image primary-action text for contrast. It retains the dark palette, IBM Plex Sans/Georgia roles, module accents, glass workspaces, and Reactbits effects. See `UX-CONTRACT.md` and `docs/frontend-audit.md` for verification scope.
