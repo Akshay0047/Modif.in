@@ -6,6 +6,12 @@ const { chromium } = await import(modulePath ? modulePath.startsWith("file:") ? 
 
 export const baseURL = process.env.MODIF_BASE_URL || "http://127.0.0.1:4173";
 
+// Raw CSS locators may find and edit mounted inputs while the reveal cover
+// still owns inertness. Finished-workspace tests must await that boundary.
+export async function waitForPageReveal(page) {
+    await page.locator('#page-loader[data-state="hidden"]').waitFor({ state: "attached", timeout: 20000 });
+}
+
 export async function auditAccessibility(page, selector) {
     const modulePath = process.env.AXE_MODULE;
     const { default: AxeBuilder } = await import(modulePath ? modulePath.startsWith("file:") ? modulePath : pathToFileURL(modulePath).href : "@axe-core/playwright");

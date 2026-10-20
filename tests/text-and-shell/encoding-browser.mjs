@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { waitForPageReveal } from "./browserHarness.mjs";
 
 // Use an existing Playwright installation without adding browser tooling to app dependencies.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
@@ -11,6 +12,7 @@ try {
         const errors = [];
         page.on("pageerror", (error) => errors.push(error.message));
         await page.goto(`${baseURL}/text/morse-code-converter`);
+        await waitForPageReveal(page);
         await page.getByRole("button", { name: "Morse → Text", exact: true }).click();
         await page.locator("textarea:not([readonly])").fill(".... . .-.. .-.. --- / .-- --- .-. .-.. -..");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "HELLO WORLD");
@@ -22,6 +24,7 @@ try {
             ["hex-text", "Hex → Text", "F0 9F 8C 8D"],
         ]) {
             await page.goto(`${baseURL}/text/${slug}`);
+            await waitForPageReveal(page);
             await page.locator("textarea:not([readonly])").fill("🌍");
             await page.waitForFunction((expected) => document.querySelector("textarea[readonly]")?.value === expected, encoded);
             await page.getByRole("button", { name: decode, exact: true }).click();
@@ -36,6 +39,7 @@ try {
             ["ascii-converter", "Decode", "not-a-number", "65", "A"],
         ]) {
             await page.goto(`${baseURL}/text/${slug}`);
+            await waitForPageReveal(page);
             await page.getByRole("button", { name: decode, exact: true }).click();
             const input = page.locator("textarea:not([readonly])");
             await input.fill(invalid);
@@ -50,6 +54,7 @@ try {
             assert.equal(await input.getAttribute("aria-invalid"), "false");
         }
         await page.goto(`${baseURL}/text/roman-numeral-converter`);
+        await waitForPageReveal(page);
         await page.locator("#roman-input").fill("3.5");
         await page.getByRole("alert").waitFor();
         assert.equal(await page.locator("#roman-input").getAttribute("aria-describedby"), "roman-error");
@@ -60,6 +65,7 @@ try {
         await page.locator("#roman-input").fill("IV");
         await page.waitForFunction(() => document.querySelector("textarea[readonly]")?.value === "4");
         await page.goto(`${baseURL}/text/number-base-converter`);
+        await waitForPageReveal(page);
         await page.getByRole("button", { name: "Binary", exact: true }).click();
         await page.locator("#number-base-input").fill("102");
         await page.getByRole("alert").waitFor();
