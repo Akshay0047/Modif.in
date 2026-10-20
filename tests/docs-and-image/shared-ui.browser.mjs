@@ -23,21 +23,26 @@ await withBrowser(async (page) => {
     assert.deepEqual(await page.screenshot({ clip }), imageBackground);
     await hideMain.evaluate((element) => element.remove());
 
-    const privacy = page.getByRole("button", { name: "Privacy Policy", exact: true });
-    await privacy.click();
-    const dialog = page.getByRole("dialog", { name: "Privacy Policy", exact: true });
-    await dialog.waitFor();
-    assert.equal(await page.getByRole("button", { name: "Close document", exact: true }).evaluate((element) => element === document.activeElement), true);
-    assert.equal(await privacy.evaluate((element) => element.closest("footer").inert), true);
-    await page.keyboard.press("Shift+Tab");
-    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true);
-    await page.keyboard.press("Tab");
-    assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true);
-    await page.keyboard.press("Escape");
-    await dialog.waitFor({ state: "detached" });
-    assert.equal(await privacy.evaluate((element) => element === document.activeElement), true);
-    assert.equal(await privacy.evaluate((element) => element.closest("footer").inert), false);
-    assert.equal(await page.evaluate(() => document.body.style.overflow), "");
+    for (const title of ["Privacy Policy", "Terms of Service", "Disclaimer"]) {
+        const opener = page.getByRole("button", { name: title, exact: true });
+        const openerHandle = await opener.elementHandle();
+        const previousOverflow = await page.evaluate(() => document.body.style.overflow);
+        await opener.click();
+        const dialog = page.getByRole("dialog", { name: title, exact: true });
+        await dialog.waitFor();
+        assert.equal(await page.getByRole("button", { name: "Close document", exact: true }).evaluate((element) => element === document.activeElement), true);
+        assert.equal(await openerHandle.evaluate((element) => element.closest("[inert]") !== null), true);
+        assert.equal(await page.locator(".app-header").evaluate((element) => element.closest("[inert]") !== null), true);
+        await page.keyboard.press("Shift+Tab");
+        assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true);
+        await page.keyboard.press("Tab");
+        assert.equal(await dialog.evaluate((element) => element.contains(document.activeElement)), true);
+        await page.keyboard.press("Escape");
+        await dialog.waitFor({ state: "detached" });
+        assert.equal(await openerHandle.evaluate((element) => element === document.activeElement), true);
+        assert.equal(await openerHandle.evaluate((element) => element.closest("[inert]") !== null), false);
+        assert.equal(await page.evaluate(() => document.body.style.overflow), previousOverflow);
+    }
 
     await page.goto(`${baseURL}/image/favicon-generator`);
     await page.getByRole("button", { name: "Back", exact: true }).click();
