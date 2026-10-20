@@ -2,15 +2,13 @@ import { lazy, Suspense } from "react";
 import TargetCursor from "../components/TargetCursor";
 import Hero from "../sections/Hero";
 import Footer from "../sections/Footer";
-import { useAnimationSettings } from "../contexts/AnimationContext";
 
 const DitherBackground = lazy(() => import("../components/Dither"));
 
 function LandingPage() {
-    const { active } = useAnimationSettings();
     return (
         <div className="app">
-            {active && <Suspense fallback={null}><DitherBackground
+            <Suspense fallback={null}><DitherBackground
                 waveColor={[
                     0.3215686274509804, 0.3607843137254902, 0.7764705882352941,
                 ]}
@@ -22,7 +20,7 @@ function LandingPage() {
                 waveFrequency={4.6}
                 waveSpeed={0.04}
                 backgroundColor={[0, 0, 0]}
-            /></Suspense>}
+            /></Suspense>
 
             <TargetCursor
                 spinDuration={6.4}

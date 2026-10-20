@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test": "node scripts/verify-text-and-shell.mjs",
     "test:browser": "node scripts/verify-text-and-shell.mjs --browser",
+    "audit:frontend": "node scripts/audit-frontend.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
