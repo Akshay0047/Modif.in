@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Renderer, Program, Mesh, Triangle, Texture } from 'ogl';
+import { useAnimationSettings } from '../contexts/AnimationContext';
 import './WarpText.css';
 
 const vertex = `#version 300 es
@@ -112,6 +113,7 @@ void main() {
 `;
 
 const getFontValue = (value) => (typeof value === 'number' ? `${value}px` : value);
+const getDpr = () => Math.min(window.devicePixelRatio || 1, window.matchMedia('(pointer: coarse)').matches ? 1 : 1.5);
 
 const measureLine = (ctx, line, letterSpacing) => {
     const chars = Array.from(line);
@@ -225,6 +227,9 @@ export default function WarpText({
     className = '',
     style,
 }) {
+    const { active = true, reducedMotion } = useAnimationSettings();
+    const [rendered, setRendered] = useState(false);
+    const animationAllowedRef = useRef(active && !reducedMotion);
     const containerRef = useRef(null);
     const propsRef = useRef({
         text,
@@ -243,6 +248,11 @@ export default function WarpText({
         ripple,
     });
     const contextRef = useRef(null);
+
+    useEffect(() => {
+        animationAllowedRef.current = active && !reducedMotion;
+        contextRef.current?.setActive(animationAllowedRef.current);
+    }, [active, reducedMotion]);
 
     useEffect(() => {
         propsRef.current = {
@@ -301,10 +311,12 @@ export default function WarpText({
         let visible = true;
         let pageVisible = !document.hidden;
         let reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+        let animationAllowed = animationAllowedRef.current;
         let rasterVersion = 0;
+        let elapsed = 0;
+        let previousFrame = null;
 
         const pointer = { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5, active: 0, activeTarget: 0 };
-        const startTime = performance.now();
 
         try {
             renderer = new Renderer({
@@ -312,7 +324,7 @@ export default function WarpText({
                 alpha: true,
                 premultipliedAlpha: false,
                 antialias: true,
-                dpr: Math.min(window.devicePixelRatio || 1, 2),
+                dpr: getDpr(),
             });
             gl = renderer.gl;
         } catch (error) {
@@ -364,7 +376,7 @@ export default function WarpText({
         mesh = new Mesh(gl, { geometry, program });
 
         const renderOnce = () => {
-            if (disposed || contextLost) return;
+            if (disposed || contextLost || !pageVisible || !visible) return;
             renderer.render({ scene: mesh });
         };
 
@@ -382,7 +394,7 @@ export default function WarpText({
             const rect = container.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) return;
 
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const dpr = getDpr();
             const textCanvas = buildTextCanvas({
                 container,
                 width: rect.width,
@@ -393,6 +405,7 @@ export default function WarpText({
             texture.image = textCanvas;
             texture.needsUpdate = true;
             renderOnce();
+            setRendered(true);
         };
 
         const resize = () => {
@@ -400,7 +413,7 @@ export default function WarpText({
             const rect = container.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) return;
 
-            renderer.dpr = Math.min(window.devicePixelRatio || 1, 2);
+            renderer.dpr = getDpr();
             renderer.setSize(rect.width, rect.height);
             program.uniforms.uResolution.value[0] = gl.drawingBufferWidth;
             program.uniforms.uResolution.value[1] = gl.drawingBufferHeight;
@@ -408,7 +421,7 @@ export default function WarpText({
         };
 
         const onPointerMove = (event) => {
-            if (event.pointerType === 'touch') return;
+            if (event.pointerType === 'touch' || !animationAllowed || reduceMotion || !pageVisible) return;
             const rect = canvas.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) return;
             pointer.tx = (event.clientX - rect.left) / rect.width;
@@ -423,30 +436,31 @@ export default function WarpText({
         const onContextLost = (event) => {
             event.preventDefault();
             contextLost = true;
+            canvas.style.display = 'none';
+            setRendered(false);
             if (raf) cancelAnimationFrame(raf);
             raf = 0;
         };
 
         const onVisibility = () => {
             pageVisible = !document.hidden;
-            if (pageVisible && visible && !raf) raf = requestAnimationFrame(loop);
-            if (!pageVisible && raf) {
-                cancelAnimationFrame(raf);
-                raf = 0;
-            }
+            updateAnimation();
         };
 
         const mediaQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
         const onReducedMotion = (event) => {
             reduceMotion = event.matches;
             program.uniforms.uMotion.value = reduceMotion ? 0 : 1;
-            renderOnce();
+            if (reduceMotion) program.uniforms.uPointerActive.value = 0;
+            updateAnimation();
         };
 
         const loop = (now) => {
-            if (disposed || contextLost) return;
+            raf = 0;
+            if (!canAnimate()) return;
 
-            const elapsed = (now - startTime) * 0.001;
+            if (previousFrame !== null) elapsed += Math.min((now - previousFrame) * 0.001, 0.1);
+            previousFrame = now;
             const idleX = 0.5 + Math.sin(elapsed * 0.33) * 0.12;
             const idleY = 0.5 + Math.cos(elapsed * 0.27) * 0.1;
             const targetX = pointer.activeTarget > 0 ? pointer.tx : idleX;
@@ -459,11 +473,23 @@ export default function WarpText({
 
             program.uniforms.uPointer.value[0] = pointer.x;
             program.uniforms.uPointer.value[1] = pointer.y;
-            program.uniforms.uPointerActive.value = reduceMotion ? pointer.active * 0.35 : pointer.active;
-            program.uniforms.uTime.value = reduceMotion ? 0 : elapsed;
+            program.uniforms.uPointerActive.value = pointer.active;
+            program.uniforms.uTime.value = elapsed;
 
             renderOnce();
             raf = requestAnimationFrame(loop);
+        };
+
+        const canAnimate = () => animationAllowed && !reduceMotion && pageVisible && visible && !disposed && !contextLost;
+        const updateAnimation = () => {
+            if (canAnimate()) {
+                if (!raf) raf = requestAnimationFrame(loop);
+            } else {
+                if (raf) cancelAnimationFrame(raf);
+                raf = 0;
+                previousFrame = null;
+                renderOnce();
+            }
         };
 
         resizeObserver = new ResizeObserver(resize);
@@ -472,11 +498,7 @@ export default function WarpText({
         intersectionObserver = new IntersectionObserver(
             ([entry]) => {
                 visible = entry.isIntersecting;
-                if (visible && pageVisible && !raf) raf = requestAnimationFrame(loop);
-                if (!visible && raf) {
-                    cancelAnimationFrame(raf);
-                    raf = 0;
-                }
+                updateAnimation();
             },
             { threshold: 0 },
         );
@@ -489,9 +511,16 @@ export default function WarpText({
         mediaQuery?.addEventListener('change', onReducedMotion);
 
         syncUniforms(program, propsRef.current);
-        contextRef.current = { program, rasterize };
+        contextRef.current = {
+            program,
+            rasterize,
+            setActive: (value) => {
+                animationAllowed = value;
+                updateAnimation();
+            },
+        };
         resize();
-        raf = requestAnimationFrame(loop);
+        updateAnimation();
 
         return () => {
             disposed = true;
@@ -527,6 +556,8 @@ export default function WarpText({
             style={style}
             role="img"
             aria-label={text}
-        />
+        >
+            {!rendered ? <span aria-hidden="true" style={{ display: 'grid', placeItems: 'center', minHeight: 'inherit', color, fontFamily, fontSize: getFontValue(fontSize), fontWeight, letterSpacing: getFontValue(letterSpacing), lineHeight, whiteSpace: 'pre-wrap', textAlign: 'center' }}>{text}</span> : null}
+        </div>
     );
 }
