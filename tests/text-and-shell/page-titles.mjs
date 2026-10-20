@@ -20,7 +20,7 @@ await withBrowser(async (page) => {
         assert.equal(await page.title(), title);
     }
     await page.goto(baseURL + "/missing");
-    await page.getByRole("link", { name: "Text tools", exact: true }).click();
+    await page.getByRole("navigation", { name: "Page recovery" }).getByRole("link", { name: "Text tools", exact: true }).click();
     await page.waitForFunction(() => document.title === "Text tools | MODIF.in");
     await page.goBack();
     await page.waitForFunction(() => document.title === "Page not found | MODIF.in");
