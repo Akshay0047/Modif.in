@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import DepthText from "../components/DepthText";
 import PixelCard from "../components/PixelCard";
-import { useSilkPreview } from "../contexts/SilkPreviewContext";
 import "./Hero.css";
 import SearchBar from "../components/SearchBar";
 import { Link } from "react-router-dom";
@@ -21,12 +20,6 @@ const QUICK_TOOLS = [
     ["/doc/pdf-merger", "Merge PDF"],
     ["/doc/pdf-compressor", "Compress PDF"],
 ];
-
-const HUB_PREVIEW_KEY = {
-    text: "text",
-    image: "image",
-    pdf: "doc",
-};
 
 const EDITOR_CARDS = [
     {
@@ -59,7 +52,6 @@ const EDITOR_CARDS = [
 
 function Hero() {
     const navigate = useNavigate();
-    const setSilkPreview = useSilkPreview();
 
     return (
         <section className="hero">
@@ -96,14 +88,7 @@ function Hero() {
             <div className="hero-editor-cards">
                 {EDITOR_CARDS.map(
                     ({ id, title, description, icon, pixelColor, path }) => (
-                        <div
-                            key={id}
-                            className="hero-editor-card-wrap"
-                            onMouseEnter={() =>
-                                setSilkPreview?.(HUB_PREVIEW_KEY[id] ?? null)
-                            }
-                            onMouseLeave={() => setSilkPreview?.(null)}
-                        >
+                        <div key={id} className="hero-editor-card-wrap">
                             <PixelCard
                                 variant="blue"
                                 title={title}
