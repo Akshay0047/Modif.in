@@ -68,3 +68,17 @@ Additional regressions cover immediate search results with delayed/failed animat
 Project ESLint and the production build pass. The follow-up Impeccable scan reported four advisory findings for existing fluid type sizes; it also skipped the intentionally deleted, unused Silk-preview context. Design-system lint still has zero errors and the same 17 documented advisories. These static tools are not reported as clean accessibility certifications.
 
 See the [cold-cache performance audit](performance-audit.md) for live deployment identity, before/after measurements, cache proofs, profiling commands and measurement limits.
+
+## Branded page-loading cover
+
+The loading-cover application snapshot at `f0d34b7` passed **354/354 viewport checks and 236 axe scans** on production preview. Reports and home/hub captures are retained locally under `.git/frontend-audit/loading-screen/routes/`; desktop/mobile loading-wordmark captures are in the parent folder.
+
+The opaque cover is present in the initial HTML and appears immediately on pathname navigation. Its MODIF.in wordmark pulses while the actual page mounts underneath. The page reveals after committed route content, fonts, visible-image decoding, and the decorative background's first draw or handled failure, followed by a 200ms fade. Reduced-motion and paused-animation preferences keep the logo still. No minimum loading duration is imposed; failed entry and stalled route loads have bounded recovery.
+
+The dedicated loader suite passed 18 desktop/mobile browser contexts covering entry-before-React, delayed Dither/Silk imports, route changes, failures, 404 recovery, keyboard isolation, reduced/paused motion, startup watchdogs, and legal-dialog history/overlapping inert ownership. It also verifies that the performance profiler does not report covered controls as usable. Shared legal-dialog, file-processing, and export workflows remain available after reveal.
+
+The route and browser checks now await reveal before inspecting or typing into finished workspaces. Deliberately delayed loading, early title updates, and failure-recovery tests retain their distinct timing boundaries. Historical performance measurements remain explicitly tied to their earlier frozen snapshot; profiler version 5 includes the loading cover in its usable-control readiness condition.
+
+Validation passed: production build, project ESLint, 65 Text/shared-lock unit tests, 45 Docs/Image unit tests, all 24 Text/shell browser suites across targeted/resumed batches, and all eight Docs/Image browser suites. The HEIC interception suite uses the development server; production preview serves the remaining Docs/Image checks. The graphics checks also use the separately running skeleton fixture.
+
+Static checks introduce no loader findings. The premium scanner still reports the previously documented 101 textarea-resizing heuristics and one unused scrollbar utility; these unrelated contract differences are not misreported as a clean static scan. Design-system lint retains zero errors and 17 existing advisories.
