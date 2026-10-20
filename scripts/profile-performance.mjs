@@ -163,7 +163,10 @@ export function installObservers({ selector }) {
     if (record.readyMs != null) return;
     const element = document.querySelector(selector);
     if (!element || !element.getBoundingClientRect().width) return;
+    const loader = document.getElementById("page-loader");
+    if (element.closest("[inert]") || (loader && loader.dataset.state !== "hidden")) return;
     record.readyMs = performance.now();
+    observer.disconnect();
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         record.readyAfterPaintMs = performance.now();
@@ -171,7 +174,8 @@ export function installObservers({ selector }) {
     );
   };
   const observer = new MutationObserver(check);
-  observer.observe(document, { childList: true, subtree: true });
+  observer.observe(document, { childList: true, subtree: true, attributes: true,
+    attributeFilter: ["data-state", "inert"] });
   document.addEventListener("DOMContentLoaded", check, { once: true });
 }
 
@@ -884,7 +888,7 @@ async function main() {
   const report = {
     startedAt: new Date().toISOString(),
     summaryVersion: 2,
-    instrumentationVersion: 4,
+    instrumentationVersion: 5,
     baseURL,
     profiles,
     routes,

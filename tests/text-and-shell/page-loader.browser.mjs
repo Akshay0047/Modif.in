@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { installObservers } from "../../scripts/profile-performance.mjs";
 
 const modulePath = process.env.PLAYWRIGHT_MODULE;
 const { chromium } = await import(modulePath ? modulePath.startsWith("file:") ? modulePath : pathToFileURL(modulePath).href : "playwright");
@@ -91,6 +92,7 @@ try {
 
         for (const [path, scene] of [["/", "Dither"], ["/doc", "Silk"]]) {
             await run(viewport, async (page) => {
+                await page.addInitScript(installObservers, { selector: path === "/" ? ".hero-search input" : ".search-bar__input" });
                 const background = hold(page, sceneChunk(scene));
                 await background.installed;
                 try {
@@ -98,11 +100,13 @@ try {
                     await background.requested;
                     await page.locator("#main-content h1").waitFor();
                     await covered(page);
+                    assert.equal(await page.evaluate(() => window.__performanceProfile.readyMs), null, "A covered control is not reported as usable by the profiler");
                     assert.equal(await page.locator("canvas[data-scene-ready='true']").count(), 0);
                     await page.keyboard.press("Tab");
                     assert.equal(await page.evaluate(() => document.getElementById("root").contains(document.activeElement)), false, "Tab cannot enter a partially mounted page");
                     background.release();
                     await revealed(page);
+                    await page.waitForFunction(() => window.__performanceProfile.readyAfterPaintMs !== null);
                     await page.locator("canvas[data-scene-ready='true']").first().waitFor();
                     const main = page.locator("#main-content");
                     assert.equal(await main.count(), 1);
