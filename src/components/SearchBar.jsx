@@ -1,7 +1,12 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import AnimatedList from "./AnimatedList";
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
+import SuggestionList from "./SuggestionList";
 import { filterTools } from "../data/tools";
 import "./SearchBar.css";
+
+let animatedListModule;
+const loadAnimatedList = () => animatedListModule ??= import("./AnimatedList")
+    .catch(() => ({ default: SuggestionList }));
+const AnimatedList = lazy(loadAnimatedList);
 
 function SearchBar({ categories, onSelect, placeholder = "Find a tool by name or category…" }) {
     const [query, setQuery] = useState("");
@@ -45,6 +50,15 @@ function SearchBar({ categories, onSelect, placeholder = "Find a tool by name or
 
     const showResults = isFocused && query.trim().length > 0;
     const activeIndex = selectedIndex < matches.length ? selectedIndex : -1;
+
+    const listProps = {
+        id: listId,
+        itemClassName: "search-bar__suggestion-item cursor-target",
+        items: resultLabels,
+        onItemSelect: handleSelect,
+        selectedIndex: activeIndex,
+        onActiveChange: setSelectedIndex,
+    };
 
     const handleKeyDown = (event) => {
         if (event.nativeEvent.isComposing) return;
@@ -91,7 +105,10 @@ function SearchBar({ categories, onSelect, placeholder = "Find a tool by name or
                     setSelectedIndex(-1);
                     setIsFocused(true);
                 }}
-                onFocus={() => setIsFocused(true)}
+                onFocus={() => {
+                    setIsFocused(true);
+                    void loadAnimatedList();
+                }}
                 onBlur={() => setIsFocused(false)}
                 onKeyDown={handleKeyDown}
             />
@@ -104,14 +121,9 @@ function SearchBar({ categories, onSelect, placeholder = "Find a tool by name or
             {showResults ? (
                 resultLabels.length > 0 ? (
                     <div className="search-dropdown-menu">
-                        <AnimatedList
-                            id={listId}
-                            itemClassName="search-bar__suggestion-item cursor-target"
-                            items={resultLabels}
-                            onItemSelect={handleSelect}
-                            selectedIndex={activeIndex}
-                            onActiveChange={setSelectedIndex}
-                        />
+                        <Suspense fallback={<SuggestionList {...listProps} />}>
+                            <AnimatedList {...listProps} />
+                        </Suspense>
                     </div>
                 ) : (
                     <div
