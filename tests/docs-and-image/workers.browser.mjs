@@ -12,14 +12,18 @@ const files = ["one.pdf", "two.pdf"].map((name) => ({
 
 await withBrowser(async (page) => {
     const errors = [];
+    const workers = [];
+    page.on("worker", (worker) => workers.push(worker.url()));
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${baseURL}/doc/pdf-merger`);
     await page.locator('input[type="file"]').setInputFiles(files);
+    assert.equal(workers.length, 0, "Opening the tool and selecting files does not start document workers");
     const completed = page.waitForEvent("download");
     await page.getByRole("button", { name: "Save & Download", exact: true }).click();
     const download = await completed;
     const merged = await PDFDocument.load(await readFile(await download.path()));
     assert.equal(merged.getPageCount(), 2);
+    assert.equal(workers.filter((url) => /docWorker/.test(url)).length, 1, "Processing creates its worker on demand");
     assert.deepEqual(errors, []);
 
     // A worker that never replies reproduces leaving a tool while processing.

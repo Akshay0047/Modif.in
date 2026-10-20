@@ -46,10 +46,22 @@ function setup(t, options = {}) {
     return { runner, workers, state };
 }
 
+test("idle runners allocate no worker and disposal keeps them idle", async (t) => {
+    const { runner, workers, state } = setup(t);
+    assert.equal(workers.length, 0);
+    assert.deepEqual(state, { running: [], progress: [], error: [] });
+    runner.dispose();
+    assert.equal(workers.length, 0);
+    await assert.rejects(runner.run({ task: "merge" }), { name: "AbortError" });
+    assert.equal(workers.length, 0);
+});
+
 test("worker results match requests and running stays true until all requests finish", async (t) => {
     const { runner, workers, state } = setup(t);
+    assert.equal(workers.length, 0);
     const one = runner.run({ task: "merge" });
     const two = runner.run({ task: "ocr" });
+    assert.equal(workers.length, 1, "The first task creates one reusable worker");
     workers[0].reply(1, { type: "progress", progress: 45 });
     workers[0].reply(1, { type: "done", result: "second" });
     assert.equal(await two, "second");
@@ -119,6 +131,8 @@ test("startup errors, worker crashes, post errors and missing results remain ret
         return worker;
     });
     t.after(() => runner.dispose());
+    assert.equal(attempts, 0, "Constructing a runner does not start its worker");
+    await assert.rejects(runner.run({ task: "merge" }), /blocked worker/);
     await assert.rejects(runner.run({ task: "merge" }), /blocked worker/);
     const retry = runner.run({ task: "merge" });
     const crashed = assert.rejects(retry, /worker crashed/);

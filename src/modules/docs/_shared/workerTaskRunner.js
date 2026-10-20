@@ -76,8 +76,7 @@ export function createWorkerTaskRunner(createWorker, {
         }
     };
 
-    spawnWorker();
-
+    // An idle workspace must not download or initialize document engines.
     return {
         run(payload) {
             if (disposed) return Promise.reject(workerTaskAborted());
