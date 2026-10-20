@@ -4,6 +4,7 @@
   width: 100%;
   height: 100%;
   display: block;
+  pointer-events: none;
 }
 
 .pixel-card {
@@ -25,9 +26,33 @@
     0 10px 30px rgba(0, 0, 0, 0.8),
     inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
   isolation: isolate;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease;
   user-select: none;
   font-family: "IBM Plex Sans", sans-serif;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pixel-card--interactive {
+  cursor: pointer;
+}
+
+.pixel-card:focus-visible {
+  outline: 3px solid #8991ff;
+  outline-offset: 4px;
+}
+
+.pixel-card--interactive:active {
+  transform: translateY(-2px);
+}
+
+.pixel-card[data-animated="false"],
+.pixel-card[data-animated="false"]::before {
+  transition: none;
+}
+
+.pixel-card[data-animated="false"]:is(:hover, :focus-within, :active) {
+  transform: none;
 }
 
 .pixel-card::before {

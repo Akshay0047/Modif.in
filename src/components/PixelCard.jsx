@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import { useAnimationSettings } from "../contexts/AnimationContext";
 import "./PixelCard.css";
 
 class Pixel {
@@ -169,18 +171,16 @@ function PixelCard({
     description,
     icon,
     pixelColor,
+    to,
     onClick,
     children,
 }) {
+    const { active = true, reducedMotion } = useAnimationSettings();
     const containerRef = useRef(null);
     const canvasRef = useRef(null);
     const pixelsRef = useRef([]);
     const animationRef = useRef(null);
     const timePreviousRef = useRef(0);
-    const reducedMotion = useRef(
-        typeof window !== "undefined" &&
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    ).current;
 
     const variantCfg = VARIANTS[variant] || VARIANTS.default;
     const colorCfg = resolvePixelColor(pixelColor);
@@ -198,6 +198,7 @@ function PixelCard({
         const width = Math.floor(rect.width);
         const height = Math.floor(rect.height);
         const ctx = canvasRef.current.getContext("2d");
+        if (!ctx) return;
 
         canvasRef.current.width = width;
         canvasRef.current.height = height;
@@ -206,8 +207,9 @@ function PixelCard({
 
         const colorsArray = finalColors.split(",");
         const pxs = [];
-        for (let x = 0; x < width; x += parseInt(finalGap, 10)) {
-            for (let y = 0; y < height; y += parseInt(finalGap, 10)) {
+        const pixelGap = Math.max(3, parseInt(finalGap, 10) || 5);
+        for (let x = 0; x < width; x += pixelGap) {
+            for (let y = 0; y < height; y += pixelGap) {
                 const color =
                     colorsArray[
                         Math.floor(Math.random() * colorsArray.length)
@@ -235,6 +237,7 @@ function PixelCard({
     };
 
     const doAnimate = (fnName) => {
+        if (!active || reducedMotion || !canvasRef.current || !pixelsRef.current.length) return;
         animationRef.current = requestAnimationFrame(() => doAnimate(fnName));
         // Called only from rAF / pointer handlers, not during render.
         // eslint-disable-next-line react-hooks/purity -- ported react-bits animation loop
@@ -246,7 +249,10 @@ function PixelCard({
         timePreviousRef.current = timeNow - (timePassed % timeInterval);
 
         const ctx = canvasRef.current?.getContext("2d");
-        if (!ctx || !canvasRef.current) return;
+        if (!ctx || !canvasRef.current) {
+            cancelAnimationFrame(animationRef.current);
+            return;
+        }
 
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
@@ -264,6 +270,7 @@ function PixelCard({
     };
 
     const handleAnimation = (name) => {
+        if (!active || reducedMotion) return;
         cancelAnimationFrame(animationRef.current);
         animationRef.current = requestAnimationFrame(() => doAnimate(name));
     };
@@ -280,6 +287,12 @@ function PixelCard({
     };
 
     useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!active || reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+            pixelsRef.current = [];
+            return;
+        }
         timePreviousRef.current = performance.now();
         initPixels();
         const observer = new ResizeObserver(() => {
@@ -291,9 +304,16 @@ function PixelCard({
         return () => {
             observer.disconnect();
             cancelAnimationFrame(animationRef.current);
+            pixelsRef.current = [];
+            canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [finalGap, finalSpeed, finalColors, finalNoFocus, pixelColor]);
+    }, [active, reducedMotion, finalGap, finalSpeed, finalColors, finalNoFocus, pixelColor]);
+
+    const Card = to ? Link : onClick ? "button" : "div";
+    const Content = onClick && !to ? "span" : "div";
+    const Title = onClick && !to ? "span" : "h2";
+    const Description = onClick && !to ? "span" : "p";
 
     const cardStyle = {
         ...(glowColor
@@ -308,53 +328,46 @@ function PixelCard({
     };
 
     return (
-        <div
+        <Card
             ref={containerRef}
-            className={`pixel-card ${className}`.trim()}
+            className={`pixel-card${to || onClick ? " pixel-card--interactive" : ""} ${className}`.trim()}
             style={Object.keys(cardStyle).length ? cardStyle : undefined}
+            to={to}
+            type={onClick && !to ? "button" : undefined}
+            data-animated={active && !reducedMotion ? "true" : "false"}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onFocus={finalNoFocus ? undefined : onFocus}
             onBlur={finalNoFocus ? undefined : onBlur}
             onClick={onClick}
-            onKeyDown={
-                onClick
-                    ? (event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              onClick(event);
-                          }
-                      }
-                    : undefined
-            }
-            role={onClick ? "button" : undefined}
-            tabIndex={onClick ? 0 : finalNoFocus ? -1 : 0}
         >
-            <canvas className="pixel-canvas" ref={canvasRef} />
+            <canvas className="pixel-canvas" ref={canvasRef} aria-hidden="true" />
             {(icon || title || description || children) && (
-                <div className="pixel-card__content">
+                <Content className="pixel-card__content">
                     {icon ? (
-                        <div className="pixel-card__icon-wrap">
+                        <Content className="pixel-card__icon-wrap">
                             <img
                                 className="pixel-card__icon"
                                 src={icon}
                                 alt=""
                                 aria-hidden="true"
+                                width="160"
+                                height="160"
                             />
-                        </div>
+                        </Content>
                     ) : null}
                     {title ? (
-                        <h3 className="pixel-card__title">{title}</h3>
+                        <Title className="pixel-card__title" role={Title === "span" ? "heading" : undefined} aria-level={Title === "span" ? 2 : undefined}>{title}</Title>
                     ) : null}
                     {description ? (
-                        <p className="pixel-card__description">
+                        <Description className="pixel-card__description">
                             {description}
-                        </p>
+                        </Description>
                     ) : null}
                     {children}
-                </div>
+                </Content>
             )}
-        </div>
+        </Card>
     );
 }
 
