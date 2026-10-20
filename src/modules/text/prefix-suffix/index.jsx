@@ -85,7 +85,7 @@ function PrefixSuffix() {
                 <h2 className="text-tool-section-title">Operation</h2>
                 <div className="text-tool-controls">
                     {PREFIX_SUFFIX_MODES.map((entry) => (
-                        <button
+                        <button aria-pressed={mode === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${

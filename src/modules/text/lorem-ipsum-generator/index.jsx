@@ -46,7 +46,7 @@ function LoremIpsumGenerator() {
                         ["sentences", "Sentences"],
                         ["paragraphs", "Paragraphs"],
                     ].map(([id, text]) => (
-                        <button
+                        <button aria-pressed={mode === id}
                             key={id}
                             type="button"
                             className={`text-tool-button cursor-target${

@@ -104,7 +104,7 @@ function InvisibleCharacterTools() {
                 </p>
                 <div className="text-tool-controls">
                     {INVISIBLE_CHARACTERS.map((entry) => (
-                        <button
+                        <button aria-pressed={selectedChar === entry.char}
                             key={entry.codePoint}
                             type="button"
                             className={`text-tool-button cursor-target${

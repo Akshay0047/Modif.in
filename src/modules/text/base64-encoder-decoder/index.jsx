@@ -20,8 +20,8 @@ function Base64EncoderDecoder() {
         <TextToolShell title="Base64 Encoder / Decoder" description="Encode and decode text using Base64." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${mode === "encode" ? " is-active" : ""}`} onClick={() => setMode("encode")}>Encode</button>
-                    <button type="button" className={`text-tool-button cursor-target${mode === "decode" ? " is-active" : ""}`} onClick={() => setMode("decode")}>Decode</button>
+                    <button aria-pressed={mode === "encode"} type="button" className={`text-tool-button cursor-target${mode === "encode" ? " is-active" : ""}`} onClick={() => setMode("encode")}>Encode</button>
+                    <button aria-pressed={mode === "decode"} type="button" className={`text-tool-button cursor-target${mode === "decode" ? " is-active" : ""}`} onClick={() => setMode("decode")}>Decode</button>
                 </div>
                 <label className="text-tool-label" htmlFor="base64-encoder-decoder-input">{mode === "encode" ? "Text to encode" : "Base64 to decode"}</label>
                 <textarea aria-invalid={Boolean(output.error)} aria-describedby={output.error ? "base64-encoder-decoder-input-error" : undefined} id="base64-encoder-decoder-input" className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />

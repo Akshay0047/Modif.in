@@ -20,8 +20,8 @@ function HexText() {
         <TextToolShell title="Hex ↔ Text" description="Convert text to UTF-8 hexadecimal bytes and decode UTF-8 bytes back to text. Enter pairs of hex digits, with optional spaces." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${mode === "text-to-hex" ? " is-active" : ""}`} onClick={() => setMode("text-to-hex")}>Text → Hex</button>
-                    <button type="button" className={`text-tool-button cursor-target${mode === "hex-to-text" ? " is-active" : ""}`} onClick={() => setMode("hex-to-text")}>Hex → Text</button>
+                    <button aria-pressed={mode === "text-to-hex"} type="button" className={`text-tool-button cursor-target${mode === "text-to-hex" ? " is-active" : ""}`} onClick={() => setMode("text-to-hex")}>Text → Hex</button>
+                    <button aria-pressed={mode === "hex-to-text"} type="button" className={`text-tool-button cursor-target${mode === "hex-to-text" ? " is-active" : ""}`} onClick={() => setMode("hex-to-text")}>Hex → Text</button>
                 </div>
                 <label className="text-tool-label" htmlFor="hex-text-input">{mode === "text-to-hex" ? "Text to encode" : "UTF-8 hexadecimal bytes"}</label>
                 <textarea id="hex-text-input" aria-invalid={!output.ok} aria-describedby={output.error ? "hex-text-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />

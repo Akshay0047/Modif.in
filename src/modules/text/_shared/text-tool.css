@@ -790,3 +790,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Keep dense tool workspaces usable with touch, zoom, and long content. */
+.text-tool-panel,
+.text-tool-grid > *,
+.text-tool-split > *,
+.text-tool-info-row > * {
+  min-width: 0;
+}
+
+.text-tool-button,
+.text-tool-category-chip,
+.text-tool-range {
+  min-height: 44px;
+}
+
+.text-tool-button,
+.text-tool-category-chip {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.text-tool-table-wrap {
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  .text-tool-textarea,
+  .text-tool-input,
+  .text-tool-select {
+    font-size: 1rem;
+  }
+
+  .text-tool-info-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+}

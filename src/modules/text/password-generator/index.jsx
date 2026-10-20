@@ -44,7 +44,7 @@ function PasswordGenerator() {
         >
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button
+                    <button aria-pressed={mode === "password"}
                         type="button"
                         className={`text-tool-button cursor-target${
                             mode === "password" ? " is-active" : ""
@@ -53,7 +53,7 @@ function PasswordGenerator() {
                     >
                         Password
                     </button>
-                    <button
+                    <button aria-pressed={mode === "passphrase"}
                         type="button"
                         className={`text-tool-button cursor-target${
                             mode === "passphrase" ? " is-active" : ""

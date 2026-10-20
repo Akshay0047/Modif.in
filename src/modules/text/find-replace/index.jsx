@@ -63,7 +63,7 @@ function FindReplace() {
 
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button
+                    <button aria-pressed={!multiMode}
                         type="button"
                         className={`text-tool-button cursor-target${
                             !multiMode ? " is-active" : ""
@@ -72,7 +72,7 @@ function FindReplace() {
                     >
                         Single replace
                     </button>
-                    <button
+                    <button aria-pressed={multiMode}
                         type="button"
                         className={`text-tool-button cursor-target${
                             multiMode ? " is-active" : ""
@@ -81,7 +81,7 @@ function FindReplace() {
                     >
                         Multiple patterns
                     </button>
-                    <button
+                    <button aria-pressed={useRegex}
                         type="button"
                         className={`text-tool-button cursor-target${
                             useRegex ? " is-active" : ""
@@ -91,7 +91,7 @@ function FindReplace() {
                         Use regex
                     </button>
                     {!multiMode ? (
-                        <button
+                        <button aria-pressed={caseSensitive}
                             type="button"
                             className={`text-tool-button cursor-target${
                                 caseSensitive ? " is-active" : ""

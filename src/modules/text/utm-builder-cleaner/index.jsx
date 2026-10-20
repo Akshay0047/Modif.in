@@ -37,8 +37,8 @@ function UtmBuilderCleaner() {
         <TextToolShell title="UTM Builder / Cleaner" description="Create UTM campaign URLs or remove UTM parameters from existing links." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${mode === "build" ? " is-active" : ""}`} onClick={() => setMode("build")}>Build UTM URL</button>
-                    <button type="button" className={`text-tool-button cursor-target${mode === "clean" ? " is-active" : ""}`} onClick={() => setMode("clean")}>Clean UTM params</button>
+                    <button aria-pressed={mode === "build"} type="button" className={`text-tool-button cursor-target${mode === "build" ? " is-active" : ""}`} onClick={() => setMode("build")}>Build UTM URL</button>
+                    <button aria-pressed={mode === "clean"} type="button" className={`text-tool-button cursor-target${mode === "clean" ? " is-active" : ""}`} onClick={() => setMode("clean")}>Clean UTM params</button>
                 </div>
                 {mode === "build" ? (
                     <div className="text-tool-grid text-tool-grid--2">

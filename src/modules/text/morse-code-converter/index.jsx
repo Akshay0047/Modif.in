@@ -20,8 +20,8 @@ function MorseCodeConverter() {
         <TextToolShell title="Morse Code Converter" description="Convert text to Morse code and Morse code back to text." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${mode === "text-to-morse" ? " is-active" : ""}`} onClick={() => setMode("text-to-morse")}>Text → Morse</button>
-                    <button type="button" className={`text-tool-button cursor-target${mode === "morse-to-text" ? " is-active" : ""}`} onClick={() => setMode("morse-to-text")}>Morse → Text</button>
+                    <button aria-pressed={mode === "text-to-morse"} type="button" className={`text-tool-button cursor-target${mode === "text-to-morse" ? " is-active" : ""}`} onClick={() => setMode("text-to-morse")}>Text → Morse</button>
+                    <button aria-pressed={mode === "morse-to-text"} type="button" className={`text-tool-button cursor-target${mode === "morse-to-text" ? " is-active" : ""}`} onClick={() => setMode("morse-to-text")}>Morse → Text</button>
                 </div>
                 <label className="text-tool-label" htmlFor="morse-code-converter-input">{mode === "text-to-morse" ? "Text to encode" : "Morse code to decode"}</label>
                 <textarea aria-invalid={Boolean(output.error)} aria-describedby={output.error ? "morse-code-converter-input-error" : undefined} id="morse-code-converter-input" className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />

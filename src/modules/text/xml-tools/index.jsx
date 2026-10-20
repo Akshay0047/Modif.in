@@ -35,7 +35,7 @@ function XmlTools() {
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     {MODES.map((entry) => (
-                        <button
+                        <button aria-pressed={mode === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${

@@ -26,9 +26,9 @@ function ClassicalCipherTools() {
         <TextToolShell title="Classical Cipher Tools" description="Apply ROT13, Caesar cipher, and Atbash transformations to text." leading={<BackButton />} privacySensitive>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${cipher === "rot13" ? " is-active" : ""}`} onClick={() => setCipher("rot13")}>ROT13</button>
-                    <button type="button" className={`text-tool-button cursor-target${cipher === "caesar" ? " is-active" : ""}`} onClick={() => setCipher("caesar")}>Caesar cipher</button>
-                    <button type="button" className={`text-tool-button cursor-target${cipher === "atbash" ? " is-active" : ""}`} onClick={() => setCipher("atbash")}>Atbash</button>
+                    <button aria-pressed={cipher === "rot13"} type="button" className={`text-tool-button cursor-target${cipher === "rot13" ? " is-active" : ""}`} onClick={() => setCipher("rot13")}>ROT13</button>
+                    <button aria-pressed={cipher === "caesar"} type="button" className={`text-tool-button cursor-target${cipher === "caesar" ? " is-active" : ""}`} onClick={() => setCipher("caesar")}>Caesar cipher</button>
+                    <button aria-pressed={cipher === "atbash"} type="button" className={`text-tool-button cursor-target${cipher === "atbash" ? " is-active" : ""}`} onClick={() => setCipher("atbash")}>Atbash</button>
                 </div>
                 {cipher === "caesar" ? (
                     <>

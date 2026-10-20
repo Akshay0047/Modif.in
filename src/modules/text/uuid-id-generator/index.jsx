@@ -37,7 +37,7 @@ function UuidIdGenerator() {
                         ["ulid", "ULID"],
                         ["nanoid", "NanoID"],
                     ].map(([id, label]) => (
-                        <button
+                        <button aria-pressed={type === id}
                             key={id}
                             type="button"
                             className={`text-tool-button cursor-target${

@@ -35,7 +35,7 @@ function UsernameGenerator() {
                 <h2 className="text-tool-section-title">Style / pattern</h2>
                 <div className="text-tool-controls">
                     {STYLES.map((entry) => (
-                        <button
+                        <button aria-pressed={style === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${

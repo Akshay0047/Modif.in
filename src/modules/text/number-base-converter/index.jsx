@@ -33,7 +33,7 @@ function NumberBaseConverter() {
                 <span id="number-base-selection-label" className="text-tool-label">Input base</span>
                 <div className="text-tool-controls" role="group" aria-labelledby="number-base-selection-label">
                     {BASES.map((base) => (
-                        <button key={base.id} type="button" className={`text-tool-button cursor-target${fromBase === base.id ? " is-active" : ""}`} onClick={() => setFromBase(base.id)}>{base.label}</button>
+                        <button aria-pressed={fromBase === base.id} key={base.id} type="button" className={`text-tool-button cursor-target${fromBase === base.id ? " is-active" : ""}`} onClick={() => setFromBase(base.id)}>{base.label}</button>
                     ))}
                 </div>
                 <label className="text-tool-label" htmlFor="number-base-input">Number to convert</label>

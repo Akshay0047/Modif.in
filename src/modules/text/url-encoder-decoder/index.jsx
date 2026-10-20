@@ -17,8 +17,8 @@ function UrlEncoderDecoder() {
         <TextToolShell title="URL Encoder / Decoder" description="Encode and decode URL components safely." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${mode === "encode" ? " is-active" : ""}`} onClick={() => setMode("encode")}>Encode</button>
-                    <button type="button" className={`text-tool-button cursor-target${mode === "decode" ? " is-active" : ""}`} onClick={() => setMode("decode")}>Decode</button>
+                    <button aria-pressed={mode === "encode"} type="button" className={`text-tool-button cursor-target${mode === "encode" ? " is-active" : ""}`} onClick={() => setMode("encode")}>Encode</button>
+                    <button aria-pressed={mode === "decode"} type="button" className={`text-tool-button cursor-target${mode === "decode" ? " is-active" : ""}`} onClick={() => setMode("decode")}>Decode</button>
                 </div>
                 <label className="text-tool-label" htmlFor="url-encoder-decoder-input">{mode === "encode" ? "Text to encode" : "Encoded URL component"}</label>
                 <textarea aria-invalid={Boolean(output.error)} aria-describedby={output.error ? "url-encoder-decoder-input-error" : undefined} id="url-encoder-decoder-input" className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />

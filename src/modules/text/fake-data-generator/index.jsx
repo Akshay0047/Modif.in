@@ -36,7 +36,7 @@ function FakeDataGenerator() {
                 <h2 className="text-tool-section-title">Data type</h2>
                 <div className="text-tool-controls">
                     {DATA_TYPES.map((entry) => (
-                        <button
+                        <button aria-pressed={type === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${

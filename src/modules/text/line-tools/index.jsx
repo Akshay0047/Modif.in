@@ -74,7 +74,7 @@ function LineTools() {
                 <h2 className="text-tool-section-title">Line operations</h2>
                 <div className="text-tool-controls">
                     {LINE_OPERATIONS.map((entry) => (
-                        <button
+                        <button aria-pressed={operation === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${
@@ -89,7 +89,7 @@ function LineTools() {
 
                 {operation === "dedupe" ? (
                     <div className="text-tool-controls">
-                        <button
+                        <button aria-pressed={caseSensitiveDedupe}
                             type="button"
                             className={`text-tool-button cursor-target${
                                 caseSensitiveDedupe ? " is-active" : ""

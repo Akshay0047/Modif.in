@@ -47,7 +47,7 @@ function RandomGenerator() {
                         ["sentence", "Random sentences"],
                         ["name", "Random names"],
                     ].map(([id, label]) => (
-                        <button
+                        <button aria-pressed={type === id}
                             key={id}
                             type="button"
                             className={`text-tool-button cursor-target${

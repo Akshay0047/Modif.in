@@ -24,7 +24,7 @@ function TextComparison() {
                     <span className="text-tool-label" style={{ marginBottom: 0 }}>
                         Diff mode
                     </span>
-                    <button
+                    <button aria-pressed={diffMode === "word"}
                         type="button"
                         className={`text-tool-button${
                             diffMode === "word" ? " is-active" : ""
@@ -33,7 +33,7 @@ function TextComparison() {
                     >
                         Word-level
                     </button>
-                    <button
+                    <button aria-pressed={diffMode === "char"}
                         type="button"
                         className={`text-tool-button${
                             diffMode === "char" ? " is-active" : ""

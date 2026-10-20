@@ -39,7 +39,7 @@ function HashGenerator() {
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     {ALGORITHMS.map((entry) => (
-                        <button key={entry} type="button" className={`text-tool-button cursor-target${algorithm === entry ? " is-active" : ""}`} onClick={() => setAlgorithm(entry)}>{entry}</button>
+                        <button aria-pressed={algorithm === entry} key={entry} type="button" className={`text-tool-button cursor-target${algorithm === entry ? " is-active" : ""}`} onClick={() => setAlgorithm(entry)}>{entry}</button>
                     ))}
                 </div>
                 <label className="text-tool-label" htmlFor="hash-input">Text to hash</label>

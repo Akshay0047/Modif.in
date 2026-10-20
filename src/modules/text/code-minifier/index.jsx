@@ -27,7 +27,7 @@ function CodeMinifier() {
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     {LANGUAGES.map((entry) => (
-                        <button
+                        <button aria-pressed={language === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${

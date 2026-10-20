@@ -50,7 +50,7 @@ function DuplicateFinder() {
 
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button
+                    <button aria-pressed={caseSensitive}
                         type="button"
                         className={`text-tool-button${
                             caseSensitive ? " is-active" : ""
@@ -59,7 +59,7 @@ function DuplicateFinder() {
                     >
                         Case-sensitive words
                     </button>
-                    <button
+                    <button aria-pressed={trimLines}
                         type="button"
                         className={`text-tool-button${
                             trimLines ? " is-active" : ""

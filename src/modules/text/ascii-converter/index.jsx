@@ -40,12 +40,12 @@ function AsciiConverter() {
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
                     {MODES.map((entry) => (
-                        <button key={entry.id} type="button" className={`text-tool-button cursor-target${mode === entry.id ? " is-active" : ""}`} onClick={() => setMode(entry.id)}>{entry.label}</button>
+                        <button aria-pressed={mode === entry.id} key={entry.id} type="button" className={`text-tool-button cursor-target${mode === entry.id ? " is-active" : ""}`} onClick={() => setMode(entry.id)}>{entry.label}</button>
                     ))}
                 </div>
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${direction === "encode" ? " is-active" : ""}`} onClick={() => setDirection("encode")}>Encode</button>
-                    <button type="button" className={`text-tool-button cursor-target${direction === "decode" ? " is-active" : ""}`} onClick={() => setDirection("decode")}>Decode</button>
+                    <button aria-pressed={direction === "encode"} type="button" className={`text-tool-button cursor-target${direction === "encode" ? " is-active" : ""}`} onClick={() => setDirection("encode")}>Encode</button>
+                    <button aria-pressed={direction === "decode"} type="button" className={`text-tool-button cursor-target${direction === "decode" ? " is-active" : ""}`} onClick={() => setDirection("decode")}>Decode</button>
                 </div>
                 <label className="text-tool-label" htmlFor="ascii-converter-input">{direction === "encode" ? "ASCII text" : "ASCII codes to decode"}</label>
                 <textarea id="ascii-converter-input" aria-invalid={!output.ok} aria-describedby={output.error ? "ascii-converter-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />

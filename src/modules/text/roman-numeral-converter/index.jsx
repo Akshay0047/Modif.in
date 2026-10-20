@@ -22,8 +22,8 @@ function RomanNumeralConverter() {
         <TextToolShell title="Roman Numeral Converter" description="Convert numbers to Roman numerals and Roman numerals back to numbers (2026 ↔ MMXXVI)." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${mode === "number-to-roman" ? " is-active" : ""}`} onClick={() => setMode("number-to-roman")}>Number → Roman</button>
-                    <button type="button" className={`text-tool-button cursor-target${mode === "roman-to-number" ? " is-active" : ""}`} onClick={() => setMode("roman-to-number")}>Roman → Number</button>
+                    <button aria-pressed={mode === "number-to-roman"} type="button" className={`text-tool-button cursor-target${mode === "number-to-roman" ? " is-active" : ""}`} onClick={() => setMode("number-to-roman")}>Number → Roman</button>
+                    <button aria-pressed={mode === "roman-to-number"} type="button" className={`text-tool-button cursor-target${mode === "roman-to-number" ? " is-active" : ""}`} onClick={() => setMode("roman-to-number")}>Roman → Number</button>
                 </div>
                 <label className="text-tool-label" htmlFor="roman-input">{mode === "number-to-roman" ? "Number (1–3999)" : "Roman numeral"}</label>
                 <input id="roman-input" aria-invalid={!output.ok} aria-describedby={output.error ? "roman-error" : undefined} className="text-tool-input" value={input} onChange={(e) => setInput(e.target.value)} placeholder={mode === "number-to-roman" ? "2026" : "MMXXVI"} />

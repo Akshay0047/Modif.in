@@ -69,7 +69,7 @@ function UnicodeSymbolPicker() {
 
                 <div className="text-tool-controls">
                     {UNICODE_SYMBOL_CATEGORIES.map((entry) => (
-                        <button
+                        <button aria-pressed={activeCategory === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${
@@ -96,7 +96,7 @@ function UnicodeSymbolPicker() {
                 ) : (
                     <div className="text-tool-symbol-grid">
                         {filteredSymbols.map((symbol) => (
-                            <button
+                            <button aria-pressed={selectedChar === symbol.char}
                                 key={`${symbol.char}-${symbol.name}`}
                                 type="button"
                                 className={`text-tool-symbol-button cursor-target${

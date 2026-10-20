@@ -24,7 +24,7 @@ function HtmlEntityTools() {
         >
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button
+                    <button aria-pressed={mode === "encode"}
                         type="button"
                         className={`text-tool-button cursor-target${
                             mode === "encode" ? " is-active" : ""
@@ -33,7 +33,7 @@ function HtmlEntityTools() {
                     >
                         Encode
                     </button>
-                    <button
+                    <button aria-pressed={mode === "decode"}
                         type="button"
                         className={`text-tool-button cursor-target${
                             mode === "decode" ? " is-active" : ""

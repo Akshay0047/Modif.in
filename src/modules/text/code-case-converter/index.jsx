@@ -40,7 +40,7 @@ function CodeCaseConverter() {
                 <h2 className="text-tool-section-title">Naming conventions</h2>
                 <div className="text-tool-controls">
                     {CODE_CASE_OPTIONS.map((option) => (
-                        <button
+                        <button aria-pressed={activeCase === option.id}
                             key={option.id}
                             type="button"
                             className={`text-tool-button cursor-target${

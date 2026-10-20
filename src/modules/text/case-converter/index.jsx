@@ -37,7 +37,7 @@ function CaseConverter() {
                 <h2 className="text-tool-section-title">Case options</h2>
                 <div className="text-tool-controls">
                     {CASE_OPTIONS.map((option) => (
-                        <button
+                        <button aria-pressed={activeCase === option.id}
                             key={option.id}
                             type="button"
                             className={`text-tool-button cursor-target${

@@ -69,7 +69,7 @@ function SeparatorsDividers() {
 
                 <div className="text-tool-controls">
                     {DIVIDER_CATEGORIES.map((entry) => (
-                        <button
+                        <button aria-pressed={activeCategory === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${
@@ -96,7 +96,7 @@ function SeparatorsDividers() {
                 ) : (
                     <div className="text-tool-divider-grid">
                         {filteredDividers.map((divider) => (
-                            <button
+                            <button aria-pressed={selectedDivider === divider.value}
                                 key={`${divider.name}-${divider.value}`}
                                 type="button"
                                 className={`text-tool-divider-card cursor-target${

@@ -42,7 +42,7 @@ function AsciiKaomoji() {
 
                 <div className="text-tool-controls">
                     {KAOMOJI_CATEGORIES.map((entry) => (
-                        <button
+                        <button aria-pressed={activeCategory === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${

@@ -47,7 +47,7 @@ function TextReverser() {
                 <h2 className="text-tool-section-title">Reversal mode</h2>
                 <div className="text-tool-controls">
                     {REVERSAL_MODES.map((entry) => (
-                        <button
+                        <button aria-pressed={mode === entry.id}
                             key={entry.id}
                             type="button"
                             className={`text-tool-button cursor-target${

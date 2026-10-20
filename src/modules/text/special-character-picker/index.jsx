@@ -23,7 +23,7 @@ function CharacterGrid({ symbols, selectedChar, onSelect }) {
     return (
         <div className="text-tool-character-grid">
             {symbols.map((symbol) => (
-                <button
+                <button aria-pressed={selectedChar === symbol.char}
                     key={`${symbol.char}-${symbol.name}`}
                     type="button"
                     className={`text-tool-character-card cursor-target${
@@ -143,7 +143,7 @@ function SpecialCharacterPicker() {
                         const count = getSpecialCharacterSymbols(entry).length;
 
                         return (
-                            <button
+                            <button aria-pressed={!isSearching && activeCategory === entry.id}
                                 key={entry.id}
                                 type="button"
                                 className={`text-tool-category-chip cursor-target${

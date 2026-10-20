@@ -20,8 +20,8 @@ function BinaryText() {
         <TextToolShell title="Binary ↔ Text" description="Convert text to UTF-8 binary bytes and decode UTF-8 bytes back to text. Separate each 8-bit byte with a space." leading={<BackButton />}>
             <div className="text-tool-panel">
                 <div className="text-tool-controls">
-                    <button type="button" className={`text-tool-button cursor-target${mode === "text-to-binary" ? " is-active" : ""}`} onClick={() => setMode("text-to-binary")}>Text → Binary</button>
-                    <button type="button" className={`text-tool-button cursor-target${mode === "binary-to-text" ? " is-active" : ""}`} onClick={() => setMode("binary-to-text")}>Binary → Text</button>
+                    <button aria-pressed={mode === "text-to-binary"} type="button" className={`text-tool-button cursor-target${mode === "text-to-binary" ? " is-active" : ""}`} onClick={() => setMode("text-to-binary")}>Text → Binary</button>
+                    <button aria-pressed={mode === "binary-to-text"} type="button" className={`text-tool-button cursor-target${mode === "binary-to-text" ? " is-active" : ""}`} onClick={() => setMode("binary-to-text")}>Binary → Text</button>
                 </div>
                 <label className="text-tool-label" htmlFor="binary-text-input">{mode === "text-to-binary" ? "Text to encode" : "UTF-8 binary bytes"}</label>
                 <textarea id="binary-text-input" aria-invalid={!output.ok} aria-describedby={output.error ? "binary-text-error" : undefined} className="text-tool-textarea" value={input} onChange={(e) => setInput(e.target.value)} spellCheck={false} />
