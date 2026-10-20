@@ -147,6 +147,7 @@ async function inspectRoute(page, route, viewport) {
                 && ![...root.querySelectorAll("h1")].some((heading) => heading.textContent.startsWith("Loading page"));
         }, undefined, { timeout: 20000 });
         await page.locator(".intro-screen").waitFor({ state: "hidden", timeout: 5000 });
+        await page.locator("#page-loader").waitFor({ state: "hidden", timeout: 20000 });
         await page.evaluate(() => document.fonts.ready);
         await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         result.loadMilliseconds = Math.round(performance.now() - started);

@@ -17,6 +17,7 @@ async function ready(page, path) {
         ["/text", "/image", "/doc"].includes(path) ? "a.tool-button" :
         path.startsWith("/text/") ? ".text-tool-page h1" : path.startsWith("/doc/") ? ".doc-tool-page h1" : ".image-tool-page h1";
     await page.locator(selector).first().waitFor({ timeout: 20000 });
+    await page.locator("#page-loader").waitFor({ state: "hidden", timeout: 20000 });
     assert.equal(await page.locator(".route-feedback").count(), 0, `${path} rendered actual content`);
     assert.equal(await page.title(), getRouteTitle(path));
 }
@@ -75,8 +76,9 @@ try {
     const gate = new Promise((resolve) => { releaseChunk = resolve; });
     await delayed.route(/\/assets\/text-counter-[^/]+\.js$/, async (route) => { await gate; await route.continue(); });
     await delayed.goto(baseURL + "/text/text-counter", { waitUntil: "domcontentloaded" });
-    await delayed.getByRole("status").filter({ has: delayed.getByRole("heading", { name: "Loading page…" }) }).waitFor();
-    assert.equal(await delayed.getByRole("navigation", { name: "Loading recovery" }).getByRole("link").count(), 4);
+    await delayed.locator('#page-loader[data-state="loading"]').waitFor();
+    assert.equal(await delayed.locator("#root").evaluate((root) => root.inert), true);
+    assert.equal(await delayed.locator('.route-feedback nav[aria-label="Loading recovery"] a').count(), 4);
     assert.ok(await delayed.locator("footer").evaluate((footer) => footer.getBoundingClientRect().top >= innerHeight - 1), "Loading reserves the viewport so the footer cannot shift from above the fold");
     releaseChunk();
     await ready(delayed, "/text/text-counter");
