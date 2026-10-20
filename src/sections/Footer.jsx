@@ -126,7 +126,7 @@ function Footer() {
               <p className="footer-description">Everyday utilities for text, images, and documents. Free to use, with no account required.</p>
             </div>
 
-            <nav className="footer-group" aria-label="Tool hubs">
+            <nav className="footer-group" aria-label="Explore tools">
               <h2>Explore tools</h2>
               <ul>
                 <li><Link to="/text" className="cursor-target footer-link">Text tools</Link></li>
@@ -135,7 +135,7 @@ function Footer() {
               </ul>
             </nav>
 
-            <nav className="footer-group" aria-label="Common tasks">
+            <nav className="footer-group" aria-label="Tool shortcuts">
               <h2>Common tasks</h2>
               <ul>
                 <li><Link to="/text/text-counter" className="cursor-target footer-link">Count words</Link></li>
