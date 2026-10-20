@@ -5,7 +5,6 @@ import FileDropZone from "../_shared/FileDropZone";
 import PdfPreview from "../_shared/PdfPreview";
 import ProgressBar from "../_shared/ProgressBar";
 import { downloadBytes, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { mergePdfBuffers } from "../_shared/pdfUtils";
 import { createDocWorker } from "../_shared/createDocWorker";
 import { useWorkerTask } from "../_shared/useWorkerTask";
 
@@ -25,6 +24,7 @@ function PdfMerger() {
             });
         } catch (workerError) {
             if (workerError?.name === "AbortError") throw workerError;
+            const { mergePdfBuffers } = await import("../_shared/pdfUtils");
             return mergePdfBuffers(buffers);
         }
     };

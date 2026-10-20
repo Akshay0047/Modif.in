@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { clonePdfBytes } from "./pdfUtils";
+import { clonePdfBytes } from "./pdfBytes";
 
 const EMPTY_PREVIEW = { url: "", error: "" };
 const getEmptyPreview = () => EMPTY_PREVIEW;

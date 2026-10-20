@@ -3,7 +3,7 @@ import BackButton from "../../../components/BackButton";
 import DocToolShell from "../_shared/DocToolShell";
 import FileDropZone from "../_shared/FileDropZone";
 import { downloadBytes, getBaseName, readFileAsArrayBuffer } from "../_shared/downloadUtils";
-import { clonePdfBytes } from "../_shared/pdfUtils";
+import { clonePdfBytes } from "../_shared/pdfBytes";
 
 function PdfSecurity() {
     const [file, setFile] = useState(null);

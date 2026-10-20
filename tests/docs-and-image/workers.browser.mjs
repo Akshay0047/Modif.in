@@ -13,11 +13,16 @@ const files = ["one.pdf", "two.pdf"].map((name) => ({
 await withBrowser(async (page) => {
     const errors = [];
     const workers = [];
+    const processingRequests = [];
+    page.on("request", (request) => {
+        if (/\/(?:pdfUtils(?:-|\.js)|docWorker)/.test(request.url())) processingRequests.push(request.url());
+    });
     page.on("worker", (worker) => workers.push(worker.url()));
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${baseURL}/doc/pdf-merger`);
     await page.locator('input[type="file"]').setInputFiles(files);
     assert.equal(workers.length, 0, "Opening the tool and selecting files does not start document workers");
+    assert.deepEqual(processingRequests, [], "An empty merger does not load document processing engines");
     const completed = page.waitForEvent("download");
     await page.getByRole("button", { name: "Save & Download", exact: true }).click();
     const download = await completed;
@@ -25,6 +30,29 @@ await withBrowser(async (page) => {
     assert.equal(merged.getPageCount(), 2);
     assert.equal(workers.filter((url) => /docWorker/.test(url)).length, 1, "Processing creates its worker on demand");
     assert.deepEqual(errors, []);
+
+    // The main-thread fallback remains available when worker construction fails.
+    await page.addInitScript(() => {
+        const NativeWorker = window.Worker;
+        window.Worker = new Proxy(NativeWorker, {
+            construct(target, args, newTarget) {
+                if (String(args[0]).includes("docWorker") && sessionStorage.getItem("block-document-worker") === "true") {
+                    throw new Error("Document worker blocked for fallback QA");
+                }
+                return Reflect.construct(target, args, newTarget);
+            },
+        });
+    });
+    await page.evaluate(() => sessionStorage.setItem("block-document-worker", "true"));
+    await page.reload();
+    await page.locator('input[type="file"]').setInputFiles(files);
+    const fallback = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save & Download", exact: true }).click();
+    const fallbackResult = await fallback;
+    const mergedWithoutWorker = await PDFDocument.load(await readFile(await fallbackResult.path()));
+    assert.equal(mergedWithoutWorker.getPageCount(), 2);
+    assert.ok(processingRequests.some((url) => /\/pdfUtils-/.test(url) || /\/pdfUtils\.js/.test(url)), "A blocked worker loads the merge fallback on demand");
+    await page.evaluate(() => sessionStorage.removeItem("block-document-worker"));
 
     // A worker that never replies reproduces leaving a tool while processing.
     await page.route(/docWorker(?:-[^/?]+)?\.js(?:\?.*)?$/, (route) =>
@@ -56,4 +84,4 @@ await withBrowser(async (page) => {
     assert.deepEqual(errors, []);
 });
 
-console.log("Document worker merge and navigation cancellation passed on desktop and mobile.");
+console.log("Document worker lazy startup, merge, blocked-worker fallback and navigation cancellation passed on desktop and mobile.");

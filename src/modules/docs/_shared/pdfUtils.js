@@ -1,3 +1,4 @@
+import { clonePdfBytes } from "./pdfBytes";
 import * as pdfjs from "pdfjs-dist";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
 import {
@@ -11,29 +12,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
     import.meta.url,
 ).href;
-
-export function clonePdfBytes(input) {
-    if (input == null) {
-        throw new Error("Missing PDF data.");
-    }
-
-    if (input instanceof Uint8Array) {
-        const { buffer, byteLength } = input;
-        if (buffer instanceof ArrayBuffer && buffer.detached) {
-            throw new Error("PDF data is no longer available. Re-add the file and try again.");
-        }
-        return Uint8Array.from(input.subarray(0, byteLength));
-    }
-
-    if (input instanceof ArrayBuffer) {
-        if (input.detached) {
-            throw new Error("PDF data is no longer available. Re-add the file and try again.");
-        }
-        return new Uint8Array(input.slice(0));
-    }
-
-    return Uint8Array.from(input);
-}
 
 export async function loadPdfWithPdfLib(arrayBuffer, options = {}) {
     return PDFDocument.load(clonePdfBytes(arrayBuffer), {
@@ -363,4 +341,4 @@ export async function extractPdfPageImages(pdf, pageNumber) {
     return images;
 }
 
-export { PDFDocument, degrees, rgb, StandardFonts, pdfjs };
+export { clonePdfBytes, PDFDocument, degrees, rgb, StandardFonts, pdfjs };
