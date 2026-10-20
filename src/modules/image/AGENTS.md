@@ -4,7 +4,7 @@ This directory is the **designated home for individual Image tool subpages and I
 
 ## Purpose
 
-Use `src/modules/image/` for future Image function pages and supporting code that is specific to an Image tool or subpage.
+Use `src/modules/image/` for the implemented Image tools and supporting code that is specific to an Image tool or subpage. Reuse `_shared/ImageToolWorkspace.jsx`, shared image styles, and `handleFilePickerKeyDown` from `_shared/imageToolUtils.js`.
 
 Example future structure:
 
@@ -36,3 +36,7 @@ Do **not** create these example tool directories unless a task explicitly requir
 
 - Reuse existing shared components where appropriate rather than creating duplicates.
 - Avoid unrelated repository changes unless the task explicitly requires a shared change.
+- Put upload first in DOM and visual order; `inputInPreview` identifies workspaces whose preview panel owns the upload control. Do not use CSS order to contradict keyboard order.
+- File triggers support Enter and Space. Label all controls, including conditional color fields, and expose selected modes with `aria-pressed`.
+- Primary action text uses `--image-action-text` from the shared page; verify contrast when changing gradients.
+- Run `node tests/docs-and-image/tool-accessibility.browser.mjs` and relevant processing/output regressions after shared UI changes.

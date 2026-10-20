@@ -4,7 +4,7 @@ This directory is the **designated home for individual Text tool subpages and Te
 
 ## Purpose
 
-Use `src/modules/text/` for future Text function pages and supporting code that is specific to a Text tool or subpage.
+Use `src/modules/text/` for the implemented Text tools and supporting code that is specific to a Text tool or subpage. Shared presentation lives in `_shared/TextToolShell.jsx` and `_shared/text-tool.css`.
 
 Example future structure:
 
@@ -36,3 +36,5 @@ Do **not** create these example tool directories unless a task explicitly requir
 
 - Do not create duplicate shared components when an existing reusable component can be used.
 - Do not modify unrelated modules unless the task explicitly requires a shared change.
+- Associate labels with controls, expose selected modes with `aria-pressed`, and retain keyboard navigation. Previewed Markdown headings must remain below the tool page's H1.
+- Run `npm test`, relevant browser suites in `tests/text-and-shell/`, and the route audit after changes to shared presentation.

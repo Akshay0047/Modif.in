@@ -132,3 +132,17 @@ The tool `id` must match the folder slug under `src/modules/<module>/`. If the p
 - Hub layout: `src/layouts/ToolHubLayout.jsx`
 - Route wiring: `src/App.jsx`
 - Brand/component references: `README.md`
+- Design and interaction contracts: `DESIGN.md`, `UX-CONTRACT.md`
+- Full route/accessibility audit: `npm run audit:frontend` against a running production preview on port 4173 (or `MODIF_BASE_URL`).
+- Audit results, coverage, and limits: `docs/frontend-audit.md`
+- Popular-tool selection: ordered IDs in each catalog own `isPopular`; keep the rationale in `docs/popular-tools.md` current.
+
+## Frontend invariants
+
+- Preserve the Reactbits identity: Dither, Silk, DepthText, WarpText, TargetCursor, and PixelCard. Optimize lifecycle/rendering instead of removing those elements.
+- Reuse `AppHeader`, the global skip link, `AnimationContext`, and shared tool shells. Do not add duplicate route chrome.
+- Motion defaults on, respects reduced motion, and pauses through the header control or when the document is hidden. Keep still shader/title renderings for paused states.
+- Tool and hub navigation uses links. Upload panels work with Enter and Space as well as pointer/drop input.
+- Keep upload first in both DOM and visual order; use `ImageToolWorkspace`'s `inputInPreview` variant when the preview panel contains the input.
+- Keep labels visible and associated, selected modes announced, and essential actions keyboard accessible. Check conditional controls after enabling them.
+- Use document scrolling and an in-flow footer. Reflow to 320 CSS pixels; reserve horizontal scrolling for genuine tables/code/previews.

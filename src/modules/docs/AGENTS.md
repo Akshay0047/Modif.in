@@ -4,7 +4,7 @@ This directory is the **designated home for individual document-related tool sub
 
 ## Purpose
 
-Use `src/modules/docs/` for future document function pages and supporting code that is specific to a document tool or subpage.
+Use `src/modules/docs/` for the implemented document tools and supporting code that is specific to a document tool or subpage. Reuse `_shared/DocToolShell.jsx`, `FileDropZone`, status/progress components, and `_shared/doc-tool.css`.
 
 This module is intended for document tools such as PDF, DOCX, CSV, and related document-processing functionality.
 
@@ -38,3 +38,6 @@ Do **not** create these example tool directories unless a task explicitly requir
 
 - Reuse existing shared components where appropriate rather than creating duplicates.
 - Avoid unrelated repository changes unless the task explicitly requires a shared change.
+- Label input and read-only output controls, including conditional fields. Keep live processing/error feedback and selected-mode semantics.
+- Preserve numeric alternatives for signature placement/size/rotation and native keyboard page-selection buttons.
+- Run `node --test tests/docs-and-image/*.test.mjs` and the relevant `*.browser.mjs` export/interaction suites. Browser tests use the shared harness and a running app on port 4173 by default.
