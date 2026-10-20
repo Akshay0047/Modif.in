@@ -11,6 +11,7 @@
     "test": "node scripts/verify-text-and-shell.mjs",
     "test:browser": "node scripts/verify-text-and-shell.mjs --browser",
     "audit:frontend": "node scripts/audit-frontend.mjs",
+    "profile:performance": "node scripts/profile-performance.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
