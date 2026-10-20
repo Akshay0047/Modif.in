@@ -1,6 +1,6 @@
 .tool-hub__intro {
   position: relative;
-  z-index: 100;
+  z-index: 10;
   width: min(920px, 100%);
   margin: 0 auto;
   padding: 1.5rem 1.5rem 2.5rem;
@@ -18,11 +18,20 @@
 .tool-hub__heading-wrap {
   width: 100%;
   min-height: 120px;
-  margin-bottom: 1rem;
+  margin: 0 0 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #f8fafc;
+  font-family: Georgia, serif;
+  font-size: clamp(2rem, 7vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  text-wrap: balance;
 }
+
+.tool-hub__heading-wrap > span { display: block; width: 100%; }
 
 .tool-hub__subheading {
   max-width: 640px;
@@ -36,7 +45,7 @@
 .tool-hub__badges {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 1rem;
   width: min(100%, 520px);
   margin: 1.5rem auto 0;
@@ -47,6 +56,14 @@
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
+
+.tool-hub__category-jump { width: min(920px, 100%); margin: 0 auto 1.5rem; padding-inline: 1.5rem; }
+.tool-hub__category-jump summary { width: fit-content; min-height: 44px; padding: 0.75rem; color: #cbd5e1; border: 1px solid #334155; border-radius: 8px; background: #0a0f1c; cursor: pointer; font-size: 0.875rem; }
+.tool-hub__category-jump summary:hover { color: #fff; border-color: #a5b4fc; }
+.tool-hub__categories { display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; margin-top: 0.75rem; }
+.tool-hub__categories a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.5rem 0.75rem; border: 1px solid #334155; border-radius: 8px; background: #0a0f1c; color: #cbd5e1; font-size: 0.875rem; text-decoration: none; }
+.tool-hub__categories a:hover { color: #fff; border-color: #a5b4fc; }
+.tool-category__title { scroll-margin-top: calc(var(--app-header-height) + 1rem); }
 
 .tool-hub__body,
 .tool-hub__grid {
@@ -83,6 +100,7 @@
 }
 
 @media (max-width: 768px) {
+  .tool-hub__category-jump { padding-inline: 1rem; }
   .tool-hub__intro,
   .tool-hub__body {
     padding-left: 1rem;

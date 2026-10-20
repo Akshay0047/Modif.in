@@ -1,103 +1,24 @@
 .tool-button {
-  text-decoration: none;
-  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: visible;
-  /* 1. REDUCE SIZE AND PADDING */
-  padding: 1rem; 
-  min-height: 70px; /* Shorter buttons */
-  box-sizing: border-box;
-  
-  /* 2. MAKE REGULAR BUTTONS MORE TRANSPARENT (LESS DARK) */
-  background: rgba(15, 20, 35, 0.4) !important; 
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-  color: #94a3b8 !important;
-  transition: all 0.2s ease-out;
-  border-radius: 8px !important;
-  cursor: pointer;
   width: 100%;
+  min-width: 0;
+  min-height: 68px;
+  padding: 1rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(10, 15, 28, 0.94);
+  color: #cbd5e1;
+  text-align: center;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.tool-button__title {
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.tool-button__title-track {
-  display: inline-flex;
-  min-width: 100%;
-  justify-content: center;
-}
-
-.tool-button__title-track > span {
-  flex: 0 0 auto;
-}
-
-.tool-button__title.is-overflowing {
-  text-align: left;
-}
-
-.tool-button__title.is-overflowing .tool-button__title-track {
-  justify-content: flex-start;
-  gap: 3rem;
-  animation: tool-button-title-marquee 12s ease-in-out infinite alternate;
-}
-
-@keyframes tool-button-title-marquee {
-  0%,
-  18% {
-    transform: translateX(0);
-  }
-
-  82%,
-  100% {
-    transform: translateX(calc(-50% - 1.5rem));
-  }
-}
-
-.tool-button:hover {
-  background: rgba(20, 28, 48, 0.6) !important; /* Slightly more visible on hover */
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  color: #ffffff !important;
-  transform: translateY(-2px); /* Subtler lift */
-}
-
-.tool-button.highlighted {
-  /* KEEP POPULAR BUTTONS DARKER/MORE SOLID SO THEY STAND OUT */
-  background: rgba(10, 14, 26, 0.85) !important; 
-  border: 1px solid rgba(99, 102, 241, 0.6) !important;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2), inset 0 0 8px rgba(99, 102, 241, 0.1) !important;
-  color: #ffffff !important; 
-  font-weight: 500;
-}
-
-.tool-button.highlighted:hover {
-  background: rgba(15, 22, 40, 0.95) !important;
-  border: 1px solid rgba(99, 102, 241, 0.9) !important; 
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4), inset 0 0 12px rgba(99, 102, 241, 0.2) !important;
-  transform: translateY(-2px);
-}
-
-.tool-button__badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #4f46e5 !important;
-  color: #ffffff !important;
-  font-size: 0.65rem;
-  font-weight: bold;
-  padding: 2px 8px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.5);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  z-index: 10;
-}
+.tool-button__title { overflow-wrap: anywhere; }
+.tool-button:hover, .tool-button:focus-visible { background: #151c2d; border-color: #a5b4fc; color: #fff; }
+.tool-button:active { background: #252e49; }
+.tool-button.highlighted { border-color: #6366f1; background: #0f1428; color: #f8fafc; font-weight: 600; }
+.tool-button.highlighted:hover { background: #1d2442; border-color: #a5b4fc; }

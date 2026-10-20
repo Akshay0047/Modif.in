@@ -1,0 +1,34 @@
+import assert from "node:assert/strict";
+import { baseURL, withBrowser } from "./browserHarness.mjs";
+
+await withBrowser(async (page) => {
+    await page.goto(baseURL);
+    await page.getByRole("heading", { level: 1, name: "MODIF.in", exact: true }).waitFor();
+    assert.equal(await page.getByRole("navigation", { name: "Common tasks" }).getByRole("link").count(), 6);
+    assert.equal(await page.locator("a.pixel-card[href]").count(), 3);
+    const search = page.getByRole("combobox", { name: "Search tools" });
+    await search.fill("base64");
+    assert.equal(await page.getByRole("option").count(), 2, "global search retains identical slugs in different hubs");
+    await page.getByRole("button", { name: "Clear search" }).click();
+    assert.equal(await search.inputValue(), "");
+    assert.equal(await search.evaluate((element) => element === document.activeElement), true);
+    await search.fill("no such utility xyz");
+    await page.getByText("No matching tools found.").waitFor();
+    await page.getByRole("button", { name: "Clear search" }).click();
+    await search.fill("pdf merger");
+    await search.press("ArrowDown");
+    await search.press("Enter");
+    await page.waitForURL(`${baseURL}/doc/pdf-merger`);
+    await page.getByRole("heading", { level: 1 }).waitFor();
+    assert.equal(await page.locator('.app-header__nav a[aria-current="page"]').textContent(), "Docs");
+    await page.getByRole("navigation", { name: "Tool hubs" }).getByRole("link", { name: "Text", exact: true }).click();
+    await page.waitForURL(`${baseURL}/text`);
+    await page.locator(".tool-category__title").first().waitFor();
+    assert.equal(await page.locator(".tool-button__title-track").count(), 0, "all tool names wrap without marquee");
+    await page.locator(".tool-hub__category-jump summary").click();
+    await page.getByRole("navigation", { name: "Jump to category" }).getByRole("link", { name: "Text Analysis", exact: true }).click();
+    assert.match(page.url(), /#text-analysis$/);
+    const position = await page.locator("#text-analysis").boundingBox();
+    assert.ok(position.y >= 56, "anchor heading clears the fixed header");
+    console.log(`Discovery/navigation passed at ${page.viewportSize().width}px`);
+});

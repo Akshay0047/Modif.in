@@ -3,10 +3,9 @@ import { createContext, useContext, useState, useSyncExternalStore } from "react
 const AnimationContext = createContext({ enabled: false, reducedMotion: false, toggle: () => {} });
 const STORAGE_KEY = "modif-animation";
 const reducedQuery = "(prefers-reduced-motion: reduce)";
-const touchQuery = "(hover: none), (pointer: coarse), (max-width: 700px)";
 
 function subscribe(listener) {
-    const media = [window.matchMedia(reducedQuery), window.matchMedia(touchQuery)];
+    const media = [window.matchMedia(reducedQuery)];
     media.forEach((query) => query.addEventListener("change", listener));
     document.addEventListener("visibilitychange", listener);
     return () => {
@@ -16,7 +15,7 @@ function subscribe(listener) {
 }
 
 function getSnapshot() {
-    return `${window.matchMedia(reducedQuery).matches},${window.matchMedia(touchQuery).matches},${document.hidden}`;
+    return `${window.matchMedia(reducedQuery).matches},${document.hidden}`;
 }
 
 export function AnimationProvider({ children }) {
@@ -26,9 +25,9 @@ export function AnimationProvider({ children }) {
             return stored === null ? null : stored === "on";
         } catch { return null; }
     });
-    const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => "true,true,false");
-    const [reduce, touch, hidden] = snapshot.split(",").map((value) => value === "true");
-    const enabled = !reduce && (preference ?? !touch);
+    const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => "true,false");
+    const [reduce, hidden] = snapshot.split(",").map((value) => value === "true");
+    const enabled = !reduce && (preference ?? true);
     const toggle = () => {
         const next = !enabled;
         setPreference(next);

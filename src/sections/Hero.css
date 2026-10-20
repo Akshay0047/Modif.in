@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: flex-start;
 
-  padding-top: 4vh;
+  padding-top: clamp(2rem, 5vh, 4rem);
   padding-left: 2rem;
   padding-right: 2rem;
 
@@ -18,16 +18,22 @@
   text-align: center;
 }
 
+.hero-brand { margin: 0; font-size: inherit; font-weight: inherit; }
+.hero-search { position: relative; z-index: 5; width: min(620px, 100%); margin-top: 1.5rem; }
+.hero-quick-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem 1rem; margin-top: 0.75rem; max-width: 760px; }
+.hero-quick-tools a { display: inline-flex; align-items: center; min-height: 44px; color: #cbd5e1; font-size: 0.875rem; text-underline-offset: 4px; }
+.hero-quick-tools a:hover { color: #fff; }
+
 .hero-editor-cards {
   display: flex;
   flex-direction: row;
-  gap: 2rem;
+  gap: 1.5rem;
   justify-content: center;
   flex-wrap: wrap;
 
   width: 100%;
   max-width: 980px;
-  margin-top: 2rem;
+  margin-block: 1.75rem 3rem;
   padding: 0 1.5rem;
   box-sizing: border-box;
 }
@@ -39,7 +45,7 @@
 
   width: min(260px, 100%);
   height: auto;
-  min-height: 420px;
+  min-height: 320px;
 }
 
 .hero-editor-card--clickable {
@@ -47,7 +53,7 @@
 }
 
 .hero-subtitle {
-  margin: 2rem 0 0;
+  margin: 1.5rem 0 0;
 
   max-width: 650px;
   padding: 0 1.5rem;
@@ -60,26 +66,30 @@
 
 @media (max-width: 768px) {
   .hero {
-    padding-top: 3vh;
+    padding: 2rem 1rem 0;
   }
 
   .hero-editor-cards {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
     width: 100%;
     margin-top: 1.25rem;
-    padding: 0 1rem;
+    padding: 0;
     box-sizing: border-box;
   }
 
   .hero-editor-card {
     width: 100%;
-    max-width: 340px;
+    max-width: none;
     height: auto;
     min-height: fit-content;
   }
+
+  .hero-editor-card .pixel-card__content { display: grid; grid-template-columns: 64px minmax(0, 1fr); column-gap: 1rem; padding: 1.25rem; text-align: left; }
+  .hero-editor-card .pixel-card__icon-wrap { grid-row: 1 / 3; margin: 0; }
+  .hero-editor-card .pixel-card__icon { width: 64px !important; height: 64px !important; min-width: 64px; min-height: 64px; margin: 0; transform: none; }
+  .hero-editor-card .pixel-card__description { margin-top: 0.4rem; }
 
   .hero-subtitle {
     margin-top: 1.25rem;

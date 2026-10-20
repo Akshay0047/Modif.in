@@ -8,8 +8,8 @@ export default function AppHeader() {
     return (
         <header className="app-header">
             <Link className="app-header__brand cursor-target" to="/" aria-label="MODIF.in home" translate="no">
-                <DepthText text="MODIF.in" layers={8} depth={0.5} fontSize="1.4rem" fontWeight={800}
-                    depthColor="#13008f" pointerTracking={false} autoOrbit={false} shadow={false} />
+                <span aria-hidden="true"><DepthText text="MODIF.in" layers={8} depth={0.5} fontSize="1.4rem" fontWeight={800}
+                    depthColor="#13008f" pointerTracking={false} autoOrbit={false} shadow={false} /></span>
             </Link>
             <nav className="app-header__nav" aria-label="Tool hubs">
                 <NavLink className="cursor-target" to="/text">Text</NavLink>

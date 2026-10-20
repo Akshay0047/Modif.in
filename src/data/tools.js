@@ -67,8 +67,9 @@ export function flattenTools(categories = []) {
 
     return categories.flatMap((category) =>
         category.tools.flatMap((tool) => {
-            if (seen.has(tool.id)) return [];
-            seen.add(tool.id);
+            const key = tool.path ?? tool.id;
+            if (seen.has(key)) return [];
+            seen.add(key);
 
             return [
                 {

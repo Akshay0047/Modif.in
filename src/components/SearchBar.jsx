@@ -3,13 +3,14 @@ import AnimatedList from "./AnimatedList";
 import { filterTools } from "../data/tools";
 import "./SearchBar.css";
 
-function SearchBar({ categories, onSelect }) {
+function SearchBar({ categories, onSelect, placeholder = "Find a tool by name or category…" }) {
     const [query, setQuery] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const inputId = useId();
     const listId = `${inputId}-results`;
     const rootRef = useRef(null);
+    const inputRef = useRef(null);
 
     const matches = useMemo(
         () => filterTools(query, categories),
@@ -71,6 +72,7 @@ function SearchBar({ categories, onSelect }) {
                 Search tools
             </label>
             <input
+                ref={inputRef}
                 id={inputId}
                 className="search-bar__input cursor-target"
                 type="search"
@@ -80,7 +82,8 @@ function SearchBar({ categories, onSelect }) {
                 aria-controls={showResults && matches.length ? listId : undefined}
                 aria-activedescendant={showResults && activeIndex >= 0 ? `${listId}-option-${activeIndex}` : undefined}
                 value={query}
-                placeholder="Search category or component…"
+                name="tool-search"
+                placeholder={placeholder}
                 autoComplete="off"
                 spellCheck={false}
                 onChange={(event) => {
@@ -92,6 +95,12 @@ function SearchBar({ categories, onSelect }) {
                 onBlur={() => setIsFocused(false)}
                 onKeyDown={handleKeyDown}
             />
+            {query && <button className="search-bar__clear cursor-target" type="button" aria-label="Clear search"
+                onClick={() => {
+                    setQuery("");
+                    setSelectedIndex(-1);
+                    inputRef.current?.focus();
+                }}><span aria-hidden="true">×</span></button>}
             {showResults ? (
                 resultLabels.length > 0 ? (
                     <div className="search-dropdown-menu">
