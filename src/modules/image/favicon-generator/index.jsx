@@ -272,7 +272,7 @@ function FaviconGenerator() {
                         ["upload", "Upload Image"],
                         ["lettermark", "Create Lettermark"],
                     ].map(([key, label]) => (
-                        <button
+                        <button aria-pressed={sourceMode === key}
                             key={key}
                             type="button"
                             className={`img-tool__segment${sourceMode === key ? " is-active" : ""}`}

@@ -478,7 +478,7 @@ function MemeGenerator() {
                 <span className="img-tool__label">Text boxes</span>
                 <div className="img-tool__segmented" style={{ flexWrap: "wrap" }}>
                     {textLayers.map((layer, index) => (
-                        <button
+                        <button aria-pressed={selectedText?.id === layer.id}
                             key={layer.id}
                             type="button"
                             className={`img-tool__segment${selectedText?.id === layer.id ? " is-active" : ""}`}
@@ -763,6 +763,7 @@ function MemeGenerator() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Meme Generator"
             error={error}
             status={status}

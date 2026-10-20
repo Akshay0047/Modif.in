@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -592,7 +593,12 @@ export default function CropResizeTool() {
 
     const left = (
         <>
-            <label
+            <div
+                role="button"
+                tabIndex={isProcessing ? -1 : 0}
+                aria-disabled={isProcessing}
+                onKeyDown={handleFilePickerKeyDown}
+                onClick={() => { if (!isProcessing) fileInputRef.current?.click(); }}
                 className={`img-tool__dropzone${isDraggingFile ? " is-dragging" : ""}${isProcessing ? " is-disabled" : ""}`}
                 onDragEnter={(e) => {
                     preventDragDefaults(e);
@@ -622,7 +628,7 @@ export default function CropResizeTool() {
                     <br />
                     or click to browse
                 </p>
-            </label>
+            </div>
             {file && imageSize ? (
                 <div className="img-tool__meta">
                     <span className="img-tool__chip">
@@ -639,7 +645,7 @@ export default function CropResizeTool() {
                 <span className="img-tool__label">Mode</span>
                 <div className="img-tool__segmented">
                     {["crop", "resize", "both"].map((m) => (
-                        <button
+                        <button aria-pressed={mode === m}
                             key={m}
                             type="button"
                             className={`img-tool__segment${mode === m ? " is-active" : ""}`}
@@ -656,7 +662,7 @@ export default function CropResizeTool() {
                     <span className="img-tool__label">Aspect ratio</span>
                     <div className="img-tool__segmented">
                         {Object.keys(ASPECT_PRESETS).map((key) => (
-                            <button
+                            <button aria-pressed={aspectKey === key && !socialPreset}
                                 key={key}
                                 type="button"
                                 className={`img-tool__segment${aspectKey === key && !socialPreset ? " is-active" : ""}`}
@@ -678,7 +684,7 @@ export default function CropResizeTool() {
                     <span className="img-tool__label">Social Media Presets</span>
                     <div className="img-tool__segmented" style={{ flexWrap: "wrap" }}>
                         {Object.entries(SOCIAL_PRESETS).map(([key, preset]) => (
-                            <button
+                            <button aria-pressed={socialPreset === key}
                                 key={key}
                                 type="button"
                                 className={`img-tool__segment${socialPreset === key ? " is-active" : ""}`}
@@ -761,7 +767,7 @@ export default function CropResizeTool() {
             <div>
                 <span className="img-tool__label">Interpolation</span>
                 <div className="img-tool__segmented">
-                    <button
+                    <button aria-pressed={interpolation === "bicubic"}
                         type="button"
                         className={`img-tool__segment${interpolation === "bicubic" ? " is-active" : ""}`}
                         disabled={!imageSize}
@@ -769,7 +775,7 @@ export default function CropResizeTool() {
                     >
                         Bicubic
                     </button>
-                    <button
+                    <button aria-pressed={interpolation === "nearest"}
                         type="button"
                         className={`img-tool__segment${interpolation === "nearest" ? " is-active" : ""}`}
                         disabled={!imageSize}
@@ -783,7 +789,7 @@ export default function CropResizeTool() {
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
                     {["png", "jpg", "webp"].map((f) => (
-                        <button
+                        <button aria-pressed={exportFormat === f}
                             key={f}
                             type="button"
                             className={`img-tool__segment${exportFormat === f ? " is-active" : ""}`}

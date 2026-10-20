@@ -55,6 +55,10 @@
   align-items: stretch;
 }
 
+.img-tool__layout--input-preview {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+
 .img-tool__controls {
   display: flex;
   flex-direction: column;
@@ -283,7 +287,7 @@
 .img-tool__btn--primary {
   border-color: rgba(16, 185, 129, 0.55);
   background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  color: #ecfdf5;
+  color: var(--image-action-text);
 }
 
 .img-tool__btn--primary:hover:not(:disabled) {
@@ -1041,11 +1045,70 @@
     grid-template-columns: 1fr;
   }
 
-  .img-tool__preview-col {
-    order: -1;
+.img-tool__field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Shared workspace reflow and generous native control targets. */
+.img-tool__panel,
+.img-tool__panel > *,
+.img-tool__field-row > * {
+  min-width: 0;
+}
+
+.img-tool__btn,
+.img-tool__segment,
+.img-tool__tab,
+.img-tool__range-value--editable,
+.img-tool__input,
+.img-tool__select,
+.img-tool__range-input,
+.img-tool__range {
+  min-height: 44px;
+}
+
+.img-tool__btn--icon,
+.img-tool__color-input {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.img-tool__dropzone-text,
+.img-tool__hint,
+.img-tool__chip,
+.img-tool__error-badge {
+  overflow-wrap: anywhere;
+}
+
+.img-tool__checkbox-grid label {
+  min-height: 44px;
+}
+
+.img-tool__list-actions,
+.img-tool__output-header {
+  flex-wrap: wrap;
+}
+
+.img-tool__preview-empty {
+  color: #cbd5e1;
+}
+
+@media (max-width: 760px) {
+  .img-tool__layout--input-preview {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .img-tool__field-row {
-    grid-template-columns: 1fr;
+  .img-tool__controls-scroll {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .img-tool__input,
+  .img-tool__select,
+  .img-tool__textarea,
+  .img-tool__range-input {
+    font-size: 1rem;
   }
 }

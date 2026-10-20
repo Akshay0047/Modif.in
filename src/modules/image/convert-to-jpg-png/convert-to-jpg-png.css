@@ -113,7 +113,7 @@
 
 .cvt-jpg-png__layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 1rem;
   align-items: stretch;
 }
@@ -318,7 +318,7 @@
 .cvt-jpg-png__btn--primary {
   border-color: rgba(16, 185, 129, 0.55);
   background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  color: #ecfdf5;
+  color: var(--image-action-text);
 }
 
 .cvt-jpg-png__btn--primary:hover:not(:disabled) {
@@ -418,7 +418,7 @@
 .cvt-jpg-png__preview-empty {
   margin: 0;
   padding: 1rem;
-  color: #64748b;
+  color: #cbd5e1;
   font-size: 0.8125rem;
   text-align: center;
 }
@@ -448,16 +448,42 @@
     grid-template-columns: 1fr;
   }
 
-  .cvt-jpg-png__preview-col {
-    order: -1;
-  }
-
-  .cvt-jpg-png__preview-frame {
+.cvt-jpg-png__preview-frame {
     min-height: 160px;
     max-height: 240px;
   }
 
   .cvt-jpg-png__preview-image {
     max-height: 240px;
+  }
+}
+
+.cvt-jpg-png__panel,
+.cvt-jpg-png__panel > * {
+  min-width: 0;
+}
+
+.cvt-jpg-png__btn,
+.cvt-jpg-png__segment,
+.cvt-jpg-png__range,
+.cvt-jpg-png__range-value--editable,
+.cvt-jpg-png__range-input,
+.cvt-jpg-png__color-input {
+  min-height: 44px;
+}
+
+.cvt-jpg-png__color-input {
+  min-width: 44px;
+}
+
+.cvt-jpg-png__dropzone-text,
+.cvt-jpg-png__chip {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .cvt-jpg-png__range-input,
+  .cvt-jpg-png__hex-input {
+    font-size: 1rem;
   }
 }

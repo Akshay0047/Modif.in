@@ -323,7 +323,7 @@ function SvgToPngJpg() {
                 <span className="img-tool__label">Scale</span>
                 <div className="img-tool__tabs" role="group" aria-label="Resolution scale">
                     {SCALE_OPTIONS.map((option) => (
-                        <button
+                        <button aria-pressed={scale === option}
                             key={option}
                             type="button"
                             className={`img-tool__tab cursor-target${scale === option ? " is-active" : ""}`}
@@ -375,7 +375,7 @@ function SvgToPngJpg() {
             <div>
                 <span className="img-tool__label">Background</span>
                 <div className="img-tool__segmented" role="group" aria-label="Background mode">
-                    <button
+                    <button aria-pressed={bgMode === "transparent"}
                         type="button"
                         className={`img-tool__segment cursor-target${bgMode === "transparent" ? " is-active" : ""}`}
                         disabled={isProcessing}
@@ -383,7 +383,7 @@ function SvgToPngJpg() {
                     >
                         Transparent
                     </button>
-                    <button
+                    <button aria-pressed={bgMode === "solid"}
                         type="button"
                         className={`img-tool__segment cursor-target${bgMode === "solid" ? " is-active" : ""}`}
                         disabled={isProcessing}
@@ -482,11 +482,10 @@ function SvgToPngJpg() {
 
     const right = (
         <>
-            <div className="img-tool__tabs" role="tablist" aria-label="SVG input method">
+            <div className="img-tool__tabs" role="group" aria-label="SVG input method">
                 <button
                     type="button"
-                    role="tab"
-                    aria-selected={inputTab === "file"}
+                    aria-pressed={inputTab === "file"}
                     className={`img-tool__tab cursor-target${inputTab === "file" ? " is-active" : ""}`}
                     disabled={isProcessing}
                     onClick={() => setInputTab("file")}
@@ -495,8 +494,7 @@ function SvgToPngJpg() {
                 </button>
                 <button
                     type="button"
-                    role="tab"
-                    aria-selected={inputTab === "paste"}
+                    aria-pressed={inputTab === "paste"}
                     className={`img-tool__tab cursor-target${inputTab === "paste" ? " is-active" : ""}`}
                     disabled={isProcessing}
                     onClick={() => setInputTab("paste")}
@@ -607,6 +605,7 @@ function SvgToPngJpg() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="SVG to PNG / JPG"
             error={error}
             status={status}

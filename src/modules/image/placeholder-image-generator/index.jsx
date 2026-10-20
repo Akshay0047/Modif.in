@@ -492,7 +492,7 @@ function PlaceholderImageGenerator() {
                                 ["dashed", "Dashed"],
                                 ["dotted", "Dotted"],
                             ].map(([value, name]) => (
-                                <button
+                                <button aria-pressed={borderStyle === value}
                                     key={value}
                                     type="button"
                                     className={`img-tool__segment${borderStyle === value ? " is-active" : ""}`}
@@ -510,7 +510,7 @@ function PlaceholderImageGenerator() {
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
                     {FORMATS.map((entry) => (
-                        <button
+                        <button aria-pressed={format === entry.id}
                             key={entry.id}
                             type="button"
                             className={`img-tool__segment cursor-target${format === entry.id ? " is-active" : ""}`}

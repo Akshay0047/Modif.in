@@ -475,7 +475,7 @@ function DeviceMockupGenerator() {
                 <span className="img-tool__label">Theme</span>
                 <div className="img-tool__segmented">
                     {["dark", "light"].map((t) => (
-                        <button
+                        <button aria-pressed={theme === t}
                             key={t}
                             type="button"
                             className={`img-tool__segment${theme === t ? " is-active" : ""}`}
@@ -520,7 +520,7 @@ function DeviceMockupGenerator() {
                         ["solid", "Solid"],
                         ["transparent", "None"],
                     ].map(([val, label]) => (
-                        <button
+                        <button aria-pressed={backdrop === val}
                             key={val}
                             type="button"
                             className={`img-tool__segment${backdrop === val ? " is-active" : ""}`}
@@ -645,6 +645,7 @@ function DeviceMockupGenerator() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Device Mockup Generator"
             error={error}
             status={status}

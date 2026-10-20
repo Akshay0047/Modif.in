@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -222,7 +223,12 @@ export default function RotateFlipTool() {
 
     const left = (
         <>
-            <label
+            <div
+                role="button"
+                tabIndex={isProcessing ? -1 : 0}
+                aria-disabled={isProcessing}
+                onKeyDown={handleFilePickerKeyDown}
+                onClick={() => { if (!isProcessing) fileInputRef.current?.click(); }}
                 className={`img-tool__dropzone${isDraggingFile ? " is-dragging" : ""}${isProcessing ? " is-disabled" : ""}`}
                 onDragEnter={(e) => {
                     preventDragDefaults(e);
@@ -252,7 +258,7 @@ export default function RotateFlipTool() {
                     <br />
                     or click to browse
                 </p>
-            </label>
+            </div>
             {file && imageSize ? (
                 <div className="img-tool__meta">
                     <span className="img-tool__chip"><strong>{file.name}</strong></span>
@@ -277,7 +283,7 @@ export default function RotateFlipTool() {
             <div>
                 <span className="img-tool__label">Flip</span>
                 <div className="img-tool__segmented">
-                    <button
+                    <button aria-pressed={flipH}
                         type="button"
                         className={`img-tool__segment${flipH ? " is-active" : ""}`}
                         disabled={!imageSize}
@@ -285,7 +291,7 @@ export default function RotateFlipTool() {
                     >
                         Horizontal
                     </button>
-                    <button
+                    <button aria-pressed={flipV}
                         type="button"
                         className={`img-tool__segment${flipV ? " is-active" : ""}`}
                         disabled={!imageSize}
@@ -323,7 +329,7 @@ export default function RotateFlipTool() {
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
                     {["png", "jpg"].map((f) => (
-                        <button
+                        <button aria-pressed={exportFormat === f}
                             key={f}
                             type="button"
                             className={`img-tool__segment${exportFormat === f ? " is-active" : ""}`}

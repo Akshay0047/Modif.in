@@ -350,6 +350,7 @@ function CompressImage() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Compress Image"
             error={error}
             status={status}

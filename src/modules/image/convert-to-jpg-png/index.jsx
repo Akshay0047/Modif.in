@@ -290,104 +290,6 @@ function ConvertToJpgPng() {
                 )}
 
                 <div className="cvt-jpg-png__layout">
-                    <section className="cvt-jpg-png__panel cvt-jpg-png__controls">
-                        <div>
-                            <span className="cvt-jpg-png__label">Target format</span>
-                            <div className="cvt-jpg-png__segmented" role="group" aria-label="Target format">
-                                <button
-                                    type="button"
-                                    className={`cvt-jpg-png__segment cursor-target${isJpg ? " is-active" : ""}`}
-                                    aria-pressed={isJpg}
-                                    disabled={isProcessing}
-                                    onClick={() => setTargetFormat("jpg")}
-                                >
-                                    JPG
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`cvt-jpg-png__segment cursor-target${!isJpg ? " is-active" : ""}`}
-                                    aria-pressed={!isJpg}
-                                    disabled={isProcessing}
-                                    onClick={() => setTargetFormat("png")}
-                                >
-                                    PNG
-                                </button>
-                            </div>
-                        </div>
-
-                        <ImageToolRange
-                            id="cvt-quality"
-                            classPrefix="cvt-jpg-png"
-                            label="Quality"
-                            min={1}
-                            max={100}
-                            value={quality}
-                            disabled={!isJpg}
-                            onChange={setQuality}
-                            formatDisplay={(val) => (isJpg ? `${val}%` : "N/A for PNG")}
-                            lowLabel="Low"
-                            highLabel="High"
-                        />
-
-                        <div>
-                            <span className="cvt-jpg-png__label">Transparency fill (JPG only)</span>
-                            <div className="cvt-jpg-png__color-row">
-                                <input
-                                    className="cvt-jpg-png__color-input cursor-target"
-                                    type="color"
-                                    value={backgroundColor}
-                                    disabled={!isJpg || isProcessing}
-                                    onChange={(event) => setBackgroundColor(event.target.value)}
-                                    aria-label="Background color for transparent areas"
-                                />
-                                <input
-                                    className="cvt-jpg-png__color-text"
-                                    type="text"
-                                    value={backgroundColor}
-                                    disabled={!isJpg || isProcessing}
-                                    maxLength={7}
-                                    spellCheck={false}
-                                    onChange={(event) => {
-                                        const value = event.target.value;
-                                        if (/^#?[0-9a-fA-F]{0,6}$/.test(value)) {
-                                            setBackgroundColor(
-                                                value.startsWith("#") ? value : `#${value}`,
-                                            );
-                                        }
-                                    }}
-                                    aria-label="Background color hex value"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="cvt-jpg-png__actions">
-                            <button
-                                type="button"
-                                className="cvt-jpg-png__btn cvt-jpg-png__btn--primary cursor-target"
-                                disabled={!canExport}
-                                onClick={handleDownload}
-                            >
-                                Download
-                            </button>
-                            <button
-                                type="button"
-                                className="cvt-jpg-png__btn cursor-target"
-                                disabled={!canExport}
-                                onClick={handleCopy}
-                            >
-                                Copy to Clipboard
-                            </button>
-                            <button
-                                type="button"
-                                className="cvt-jpg-png__btn cursor-target"
-                                disabled={isProcessing && !hasImage}
-                                onClick={resetTool}
-                            >
-                                Clear
-                            </button>
-                        </div>
-                    </section>
-
                     <section className="cvt-jpg-png__panel cvt-jpg-png__preview-col">
                         <div
                             className={`cvt-jpg-png__dropzone${isDragging ? " is-dragging" : ""}${isProcessing ? " is-disabled" : ""}`}
@@ -505,6 +407,104 @@ function ConvertToJpgPng() {
                                 {status}
                             </p>
                         )}
+                    </section>
+
+                    <section className="cvt-jpg-png__panel cvt-jpg-png__controls">
+                        <div>
+                            <span className="cvt-jpg-png__label">Target format</span>
+                            <div className="cvt-jpg-png__segmented" role="group" aria-label="Target format">
+                                <button
+                                    type="button"
+                                    className={`cvt-jpg-png__segment cursor-target${isJpg ? " is-active" : ""}`}
+                                    aria-pressed={isJpg}
+                                    disabled={isProcessing}
+                                    onClick={() => setTargetFormat("jpg")}
+                                >
+                                    JPG
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`cvt-jpg-png__segment cursor-target${!isJpg ? " is-active" : ""}`}
+                                    aria-pressed={!isJpg}
+                                    disabled={isProcessing}
+                                    onClick={() => setTargetFormat("png")}
+                                >
+                                    PNG
+                                </button>
+                            </div>
+                        </div>
+
+                        <ImageToolRange
+                            id="cvt-quality"
+                            classPrefix="cvt-jpg-png"
+                            label="Quality"
+                            min={1}
+                            max={100}
+                            value={quality}
+                            disabled={!isJpg}
+                            onChange={setQuality}
+                            formatDisplay={(val) => (isJpg ? `${val}%` : "N/A for PNG")}
+                            lowLabel="Low"
+                            highLabel="High"
+                        />
+
+                        <div>
+                            <span className="cvt-jpg-png__label">Transparency fill (JPG only)</span>
+                            <div className="cvt-jpg-png__color-row">
+                                <input
+                                    className="cvt-jpg-png__color-input cursor-target"
+                                    type="color"
+                                    value={backgroundColor}
+                                    disabled={!isJpg || isProcessing}
+                                    onChange={(event) => setBackgroundColor(event.target.value)}
+                                    aria-label="Background color for transparent areas"
+                                />
+                                <input
+                                    className="cvt-jpg-png__color-text"
+                                    type="text"
+                                    value={backgroundColor}
+                                    disabled={!isJpg || isProcessing}
+                                    maxLength={7}
+                                    spellCheck={false}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        if (/^#?[0-9a-fA-F]{0,6}$/.test(value)) {
+                                            setBackgroundColor(
+                                                value.startsWith("#") ? value : `#${value}`,
+                                            );
+                                        }
+                                    }}
+                                    aria-label="Background color hex value"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="cvt-jpg-png__actions">
+                            <button
+                                type="button"
+                                className="cvt-jpg-png__btn cvt-jpg-png__btn--primary cursor-target"
+                                disabled={!canExport}
+                                onClick={handleDownload}
+                            >
+                                Download
+                            </button>
+                            <button
+                                type="button"
+                                className="cvt-jpg-png__btn cursor-target"
+                                disabled={!canExport}
+                                onClick={handleCopy}
+                            >
+                                Copy to Clipboard
+                            </button>
+                            <button
+                                type="button"
+                                className="cvt-jpg-png__btn cursor-target"
+                                disabled={isProcessing && !hasImage}
+                                onClick={resetTool}
+                            >
+                                Clear
+                            </button>
+                        </div>
                     </section>
                 </div>
             </div>

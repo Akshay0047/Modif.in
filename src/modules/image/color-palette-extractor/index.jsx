@@ -288,7 +288,7 @@ function ColorPaletteExtractor() {
                         ["rgb", "RGB"],
                         ["hsl", "HSL"],
                     ].map(([key, label]) => (
-                        <button
+                        <button aria-pressed={colorFormat === key}
                             key={key}
                             type="button"
                             className={`img-tool__segment${colorFormat === key ? " is-active" : ""}`}

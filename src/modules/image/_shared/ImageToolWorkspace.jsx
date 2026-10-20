@@ -30,6 +30,7 @@ export function ImageProgressBar({ label, progress, visible = true }) {
 
 export function ImageToolWorkspace({
     title,
+    inputInPreview = false,
     privacy = PRIVACY,
     error,
     status,
@@ -40,6 +41,15 @@ export function ImageToolWorkspace({
     showProgress = false,
 }) {
     usePreventWindowDragDrop();
+
+    const controls = <section key="controls" className="img-tool__panel img-tool__controls">{left}</section>;
+    const preview = (
+        <section key="preview" className="img-tool__panel img-tool__preview-col">
+            {right}
+            {showProgress ? <ImageProgressBar label={progressLabel} progress={progress} /> : null}
+            {status ? <p className="img-tool__status is-success" aria-live="polite">{status}</p> : null}
+        </section>
+    );
 
     return (
         <ImageToolShell>
@@ -54,19 +64,8 @@ export function ImageToolWorkspace({
                         {error}
                     </div>
                 ) : null}
-                <div className="img-tool__layout">
-                    <section className="img-tool__panel img-tool__controls">{left}</section>
-                    <section className="img-tool__panel img-tool__preview-col">
-                        {right}
-                        {showProgress ? (
-                            <ImageProgressBar label={progressLabel} progress={progress} />
-                        ) : null}
-                        {status ? (
-                            <p className="img-tool__status is-success" aria-live="polite">
-                                {status}
-                            </p>
-                        ) : null}
-                    </section>
+                <div className={`img-tool__layout${inputInPreview ? " img-tool__layout--input-preview" : ""}`}>
+                    {inputInPreview ? [preview, controls] : [controls, preview]}
                 </div>
             </div>
         </ImageToolShell>

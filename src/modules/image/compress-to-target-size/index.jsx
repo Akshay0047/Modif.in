@@ -212,7 +212,7 @@ function CompressToTargetSize() {
                 <span className="img-tool__label">Output format</span>
                 <div className="img-tool__segmented" role="group">
                     {["auto", "webp", "jpg"].map((f) => (
-                        <button
+                        <button aria-pressed={format === f}
                             key={f}
                             type="button"
                             className={`img-tool__segment${format === f ? " is-active" : ""}`}
@@ -322,6 +322,7 @@ function CompressToTargetSize() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Compress to Target Size"
             error={error}
             status={status}

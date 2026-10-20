@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -283,7 +284,12 @@ export default function ProfilePictureMakerTool() {
 
     const left = (
         <>
-            <label
+            <div
+                role="button"
+                tabIndex={isProcessing ? -1 : 0}
+                aria-disabled={isProcessing}
+                onKeyDown={handleFilePickerKeyDown}
+                onClick={() => { if (!isProcessing) fileInputRef.current?.click(); }}
                 className={`img-tool__dropzone${isDraggingFile ? " is-dragging" : ""}${isProcessing ? " is-disabled" : ""}`}
                 onDragEnter={(e) => {
                     preventDragDefaults(e);
@@ -309,7 +315,7 @@ export default function ProfilePictureMakerTool() {
                     onChange={(e) => e.target.files?.[0] && ingestFile(e.target.files[0])}
                 />
                 <p className="img-tool__dropzone-text">Drop a photo (max 30 MB)</p>
-            </label>
+            </div>
             {file && imageSize ? (
                 <div className="img-tool__meta">
                     <span className="img-tool__chip"><strong>{file.name}</strong></span>
@@ -370,7 +376,7 @@ export default function ProfilePictureMakerTool() {
                     <span className="img-tool__label">Output size</span>
                     <div className="img-tool__segmented">
                         {[512, 1024].map((s) => (
-                            <button
+                            <button aria-pressed={outputSize === s}
                                 key={s}
                                 type="button"
                                 className={`img-tool__segment${outputSize === s ? " is-active" : ""}`}

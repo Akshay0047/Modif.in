@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -482,7 +483,12 @@ export default function BlurCensorTool() {
 
     const left = (
         <>
-            <label
+            <div
+                role="button"
+                tabIndex={isProcessing ? -1 : 0}
+                aria-disabled={isProcessing}
+                onKeyDown={handleFilePickerKeyDown}
+                onClick={() => { if (!isProcessing) fileInputRef.current?.click(); }}
                 className={`img-tool__dropzone${isDraggingFile ? " is-dragging" : ""}${isProcessing ? " is-disabled" : ""}`}
                 onDragEnter={(e) => {
                     preventDragDefaults(e);
@@ -508,7 +514,7 @@ export default function BlurCensorTool() {
                     onChange={(e) => e.target.files?.[0] && ingestFile(e.target.files[0])}
                 />
                 <p className="img-tool__dropzone-text">Drop an image (max 30 MB)</p>
-            </label>
+            </div>
             {file && imageSize ? (
                 <div className="img-tool__meta">
                     <span className="img-tool__chip"><strong>{file.name}</strong></span>
@@ -524,7 +530,7 @@ export default function BlurCensorTool() {
                         ["blur", "Gaussian Blur"],
                         ["bar", "Black Bar"],
                     ].map(([key, label]) => (
-                        <button
+                        <button aria-pressed={effectType === key}
                             key={key}
                             type="button"
                             className={`img-tool__segment${effectType === key ? " is-active" : ""}`}
@@ -539,7 +545,7 @@ export default function BlurCensorTool() {
             <div>
                 <span className="img-tool__label">Drawing tool</span>
                 <div className="img-tool__segmented">
-                    <button
+                    <button aria-pressed={tool === "rect"}
                         type="button"
                         className={`img-tool__segment${tool === "rect" ? " is-active" : ""}`}
                         disabled={!imageSize}
@@ -547,7 +553,7 @@ export default function BlurCensorTool() {
                     >
                         Rectangle
                     </button>
-                    <button
+                    <button aria-pressed={tool === "brush"}
                         type="button"
                         className={`img-tool__segment${tool === "brush" ? " is-active" : ""}`}
                         disabled={!imageSize}
@@ -555,7 +561,7 @@ export default function BlurCensorTool() {
                     >
                         Freehand
                     </button>
-                    <button
+                    <button aria-pressed={tool === "full"}
                         type="button"
                         className={`img-tool__segment${tool === "full" ? " is-active" : ""}`}
                         disabled={!imageSize}

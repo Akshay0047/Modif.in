@@ -498,6 +498,7 @@ function WebpConverter() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="WEBP Converter"
             error={error}
             status={status}

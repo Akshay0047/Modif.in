@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -466,7 +467,12 @@ export default function FiltersEffectsTool() {
 
     const left = (
         <>
-            <label
+            <div
+                role="button"
+                tabIndex={isProcessing ? -1 : 0}
+                aria-disabled={isProcessing}
+                onKeyDown={handleFilePickerKeyDown}
+                onClick={() => { if (!isProcessing) fileInputRef.current?.click(); }}
                 className={`img-tool__dropzone${isDraggingFile ? " is-dragging" : ""}${isProcessing ? " is-disabled" : ""}`}
                 onDragEnter={(e) => {
                     preventDragDefaults(e);
@@ -492,7 +498,7 @@ export default function FiltersEffectsTool() {
                     onChange={(e) => e.target.files?.[0] && ingestFile(e.target.files[0])}
                 />
                 <p className="img-tool__dropzone-text">Drop PNG, JPG, or WEBP (max 30 MB)</p>
-            </label>
+            </div>
             {file && imageSize ? (
                 <div className="img-tool__meta">
                     <span className="img-tool__chip"><strong>{file.name}</strong></span>
@@ -506,7 +512,7 @@ export default function FiltersEffectsTool() {
                 <span className="img-tool__label">Filter category</span>
                 <div className="img-tool__tabs">
                     {Object.entries(PRESET_CATEGORIES).map(([key, { label }]) => (
-                        <button
+                        <button aria-pressed={activeCategory === key}
                             key={key}
                             type="button"
                             className={`img-tool__tab${activeCategory === key ? " is-active" : ""}`}
@@ -523,7 +529,7 @@ export default function FiltersEffectsTool() {
                 <span className="img-tool__label">Preset</span>
                 <div className="img-tool__segmented" style={{ flexWrap: "wrap" }}>
                     {Object.entries(activePresets).map(([key, { label }]) => (
-                        <button
+                        <button aria-pressed={preset === key}
                             key={key}
                             type="button"
                             className={`img-tool__segment${preset === key ? " is-active" : ""}`}
@@ -596,7 +602,7 @@ export default function FiltersEffectsTool() {
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
                     {["png", "jpg"].map((f) => (
-                        <button
+                        <button aria-pressed={exportFormat === f}
                             key={f}
                             type="button"
                             className={`img-tool__segment${exportFormat === f ? " is-active" : ""}`}

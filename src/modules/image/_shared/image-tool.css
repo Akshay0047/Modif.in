@@ -1,4 +1,5 @@
 .image-tool-page {
+  --image-action-text: #001a13;
   position: relative;
   z-index: 1;
   width: min(960px, 100%);
@@ -31,4 +32,10 @@
   color: #94a3b8;
   font-size: 0.95rem;
   line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .image-tool-page {
+    padding-inline: 1rem;
+  }
 }

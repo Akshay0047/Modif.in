@@ -1,3 +1,4 @@
+import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useRef, useState } from "react";
 import ImageToolWorkspace from "../_shared/ImageToolWorkspace";
 import ImageToolRange from "../_shared/ImageToolRange";
@@ -179,7 +180,12 @@ export default function ColorAdjustmentsTool() {
 
     const left = (
         <>
-            <label
+            <div
+                role="button"
+                tabIndex={isProcessing ? -1 : 0}
+                aria-disabled={isProcessing}
+                onKeyDown={handleFilePickerKeyDown}
+                onClick={() => { if (!isProcessing) fileInputRef.current?.click(); }}
                 className={`img-tool__dropzone${isDraggingFile ? " is-dragging" : ""}${isProcessing ? " is-disabled" : ""}`}
                 onDragEnter={(e) => {
                     preventDragDefaults(e);
@@ -205,7 +211,7 @@ export default function ColorAdjustmentsTool() {
                     onChange={(e) => e.target.files?.[0] && ingestFile(e.target.files[0])}
                 />
                 <p className="img-tool__dropzone-text">Drop an image (max 30 MB) or click to browse</p>
-            </label>
+            </div>
             {file && imageSize ? (
                 <div className="img-tool__meta">
                     <span className="img-tool__chip"><strong>{file.name}</strong></span>
@@ -217,7 +223,7 @@ export default function ColorAdjustmentsTool() {
             <div>
                 <span className="img-tool__label">Compare view</span>
                 <div className="img-tool__segmented">
-                    <button
+                    <button aria-pressed={viewMode === "split"}
                         type="button"
                         className={`img-tool__segment${viewMode === "split" ? " is-active" : ""}`}
                         disabled={!imageSize}
@@ -225,7 +231,7 @@ export default function ColorAdjustmentsTool() {
                     >
                         Side-by-side
                     </button>
-                    <button
+                    <button aria-pressed={viewMode === "hold"}
                         type="button"
                         className={`img-tool__segment${viewMode === "hold" ? " is-active" : ""}`}
                         disabled={!imageSize}
@@ -273,7 +279,7 @@ export default function ColorAdjustmentsTool() {
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
                     {["png", "jpg"].map((f) => (
-                        <button
+                        <button aria-pressed={exportFormat === f}
                             key={f}
                             type="button"
                             className={`img-tool__segment${exportFormat === f ? " is-active" : ""}`}

@@ -405,7 +405,7 @@ function ImageSplitter() {
                 <span className="img-tool__label">Preset category</span>
                 <div className="img-tool__tabs">
                     {Object.entries(PRESET_CATEGORIES).map(([key, category]) => (
-                        <button
+                        <button aria-pressed={activeCategory === key}
                             key={key}
                             type="button"
                             className={`img-tool__tab${activeCategory === key ? " is-active" : ""}`}
@@ -422,7 +422,7 @@ function ImageSplitter() {
                 <span className="img-tool__label">Grid preset</span>
                 <div className="img-tool__segmented" role="group" style={{ flexWrap: "wrap" }}>
                     {Object.entries(PRESET_CATEGORIES[activeCategory].presets).map(([key, p]) => (
-                        <button
+                        <button aria-pressed={preset === key}
                             key={key}
                             type="button"
                             className={`img-tool__segment${preset === key ? " is-active" : ""}`}
@@ -482,7 +482,7 @@ function ImageSplitter() {
                                 ["transparent", "Transparent"],
                                 ["color", "Colored"],
                             ].map(([val, label]) => (
-                                <button
+                                <button aria-pressed={letterboxMode === val}
                                     key={val}
                                     type="button"
                                     className={`img-tool__segment${letterboxMode === val ? " is-active" : ""}`}
@@ -636,6 +636,7 @@ function ImageSplitter() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Image Splitter"
             error={error}
             status={status}

@@ -388,7 +388,7 @@ function ImageToPdf() {
                 <span className="img-tool__label">Orientation</span>
                 <div className="img-tool__segmented" role="group" aria-label="Page orientation">
                     {["auto", "portrait", "landscape"].map((opt) => (
-                        <button
+                        <button aria-pressed={orientation === opt}
                             key={opt}
                             type="button"
                             className={`img-tool__segment cursor-target${orientation === opt ? " is-active" : ""}`}
@@ -409,7 +409,7 @@ function ImageToPdf() {
                         ["small", "Small"],
                         ["large", "Large"],
                     ].map(([key, label]) => (
-                        <button
+                        <button aria-pressed={marginKey === key}
                             key={key}
                             type="button"
                             className={`img-tool__segment cursor-target${marginKey === key ? " is-active" : ""}`}
@@ -430,7 +430,7 @@ function ImageToPdf() {
                         ["top", "Top"],
                         ["stretch", "Stretch"],
                     ].map(([key, label]) => (
-                        <button
+                        <button aria-pressed={alignment === key}
                             key={key}
                             type="button"
                             className={`img-tool__segment cursor-target${alignment === key ? " is-active" : ""}`}
@@ -475,7 +475,7 @@ function ImageToPdf() {
                                 ["center", "Bottom Center"],
                                 ["right", "Bottom Right"],
                             ].map(([key, label]) => (
-                                <button
+                                <button aria-pressed={pageNumberPosition === key}
                                     key={key}
                                     type="button"
                                     className={`img-tool__segment${pageNumberPosition === key ? " is-active" : ""}`}
@@ -637,6 +637,7 @@ function ImageToPdf() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Image to PDF"
             error={error}
             status={status}

@@ -418,6 +418,7 @@ function HeicToJpg() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="HEIC to JPG"
             error={error}
             status={status}

@@ -450,7 +450,7 @@ function WatermarkImage() {
                         ["text", "Text"],
                         ["logo", "Logo"],
                     ].map(([val, label]) => (
-                        <button
+                        <button aria-pressed={mode === val}
                             key={val}
                             type="button"
                             className={`img-tool__segment${mode === val ? " is-active" : ""}`}
@@ -518,7 +518,7 @@ function WatermarkImage() {
                         <span className="img-tool__label">Background shape</span>
                         <div className="img-tool__segmented">
                             {BG_SHAPES.map(([val, label]) => (
-                                <button
+                                <button aria-pressed={bgShape === val}
                                     key={val}
                                     type="button"
                                     className={`img-tool__segment${bgShape === val ? " is-active" : ""}`}
@@ -598,7 +598,7 @@ function WatermarkImage() {
                         ["anchor", "9-Point Grid"],
                         ["tiled", "Tiled"],
                     ].map(([val, label]) => (
-                        <button
+                        <button aria-pressed={placement === val}
                             key={val}
                             type="button"
                             className={`img-tool__segment${placement === val ? " is-active" : ""}`}
@@ -634,7 +634,7 @@ function WatermarkImage() {
                     <span className="img-tool__label">Anchor position</span>
                     <div className="img-tool__segmented" style={{ borderRadius: 12 }}>
                         {ANCHORS.map(([val, label]) => (
-                            <button
+                            <button aria-pressed={anchor === val}
                                 key={val}
                                 type="button"
                                 className={`img-tool__segment${anchor === val ? " is-active" : ""}`}
@@ -731,7 +731,7 @@ function WatermarkImage() {
                 <span className="img-tool__label">Export format</span>
                 <div className="img-tool__segmented">
                     {["png", "jpg"].map((f) => (
-                        <button
+                        <button aria-pressed={exportFormat === f}
                             key={f}
                             type="button"
                             className={`img-tool__segment${exportFormat === f ? " is-active" : ""}`}
@@ -814,6 +814,7 @@ function WatermarkImage() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Watermark Image"
             error={error}
             status={status}

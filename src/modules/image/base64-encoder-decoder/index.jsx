@@ -135,19 +135,19 @@ function Base64EncoderDecoder() {
 
     const left = (
         <>
-            <div className="img-tool__segmented" role="tablist" aria-label="Mode">
+            <div className="img-tool__segmented" role="group" aria-label="Mode">
                 <button
                     type="button"
-                    role="tab"
                     className={`img-tool__segment cursor-target${mode === "encode" ? " is-active" : ""}`}
+                    aria-pressed={mode === "encode"}
                     onClick={() => setMode("encode")}
                 >
                     Image to Base64
                 </button>
                 <button
                     type="button"
-                    role="tab"
                     className={`img-tool__segment cursor-target${mode === "decode" ? " is-active" : ""}`}
+                    aria-pressed={mode === "decode"}
                     onClick={() => setMode("decode")}
                 >
                     Base64 to Image
@@ -201,7 +201,7 @@ function Base64EncoderDecoder() {
                         <span className="img-tool__label">Output format</span>
                         <div className="img-tool__segmented">
                             {OUTPUT_FORMATS.map((entry) => (
-                                <button
+                                <button aria-pressed={outputFormat === entry.id}
                                     key={entry.id}
                                     type="button"
                                     className={`img-tool__segment cursor-target${outputFormat === entry.id ? " is-active" : ""}`}

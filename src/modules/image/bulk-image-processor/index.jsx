@@ -211,7 +211,7 @@ function BulkImageProcessor() {
                 <span className="img-tool__label">Output format</span>
                 <div className="img-tool__segmented" role="group">
                     {["original", "jpg", "png", "webp"].map((f) => (
-                        <button
+                        <button aria-pressed={outputFormat === f}
                             key={f}
                             type="button"
                             className={`img-tool__segment${outputFormat === f ? " is-active" : ""}`}
@@ -232,7 +232,7 @@ function BulkImageProcessor() {
                         ["fit", "Fit 1920"],
                         ["scale", "Scale %"],
                     ].map(([val, label]) => (
-                        <button
+                        <button aria-pressed={resizeMode === val}
                             key={val}
                             type="button"
                             className={`img-tool__segment${resizeMode === val ? " is-active" : ""}`}
@@ -376,6 +376,7 @@ function BulkImageProcessor() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Bulk Image Processor"
             error={error}
             status={status}

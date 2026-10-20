@@ -468,7 +468,7 @@ function GifFrameExtractorConverter() {
 
                     <div className="img-tool__filmstrip" role="list" aria-label="Frame filmstrip">
                         {frameUrls.map((url, index) => (
-                            <button
+                            <button aria-pressed={index === currentIndex}
                                 key={url}
                                 type="button"
                                 className={`img-tool__filmstrip-item cursor-target${index === currentIndex ? " is-active" : ""}`}
@@ -489,6 +489,7 @@ function GifFrameExtractorConverter() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="GIF Frame Extractor & Converter"
             error={error}
             status={status}

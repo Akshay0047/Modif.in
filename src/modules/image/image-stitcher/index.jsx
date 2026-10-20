@@ -318,7 +318,7 @@ function ImageStitcher() {
                         ["vertical", "Vertical"],
                         ["horizontal", "Horizontal"],
                     ].map(([val, label]) => (
-                        <button
+                        <button aria-pressed={direction === val}
                             key={val}
                             type="button"
                             className={`img-tool__segment${direction === val ? " is-active" : ""}`}
@@ -352,7 +352,7 @@ function ImageStitcher() {
                         ["center", "Center"],
                         ["end", direction === "vertical" ? "Right" : "Bottom"],
                     ].map(([val, label]) => (
-                        <button
+                        <button aria-pressed={alignment === val}
                             key={val}
                             type="button"
                             className={`img-tool__segment${alignment === val ? " is-active" : ""}`}
@@ -593,6 +593,7 @@ function ImageStitcher() {
 
     return (
         <ImageToolWorkspace
+            inputInPreview
             title="Image Stitcher"
             error={error}
             status={status}
