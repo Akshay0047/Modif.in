@@ -156,6 +156,11 @@ async function inspectRoute(page, route, viewport) {
         if (result.layout.documentWidth > result.layout.viewportWidth + 1) addFinding(result, "overflow", `Document width ${result.layout.documentWidth}px exceeds viewport ${result.layout.viewportWidth}px`);
         if (result.layout.clippedControls.length) addFinding(result, "clipped-control", "Interactive controls extend beyond the viewport without a horizontal scroll owner", result.layout.clippedControls);
         if (/Page could not load|Page not found/.test(result.layout.title)) addFinding(result, "route-error", result.layout.title);
+        // Snapshot before axe injects and scans; its own long tasks are not app cost.
+        result.metrics = await page.evaluate(() => ({
+            navigation: performance.getEntriesByType("navigation").map((entry) => ({ domContentLoaded: entry.domContentLoadedEventEnd, transferSize: entry.transferSize })),
+            longTasks: window.__frontendAuditLongTasks || [],
+        }));
 
         if (viewport.axe && !argumentsList.includes("--no-axe")) {
             const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
@@ -175,10 +180,6 @@ async function inspectRoute(page, route, viewport) {
         const obscured = result.footer.controls?.filter((control) => !control.visible || !control.unobscured) ?? [];
         if (obscured.length) addFinding(result, "footer-control", "Footer controls are clipped or obscured", obscured);
         await page.evaluate(() => window.scrollTo(0, 0));
-        result.metrics = await page.evaluate(() => ({
-            navigation: performance.getEntriesByType("navigation").map((entry) => ({ domContentLoaded: entry.domContentLoadedEventEnd, transferSize: entry.transferSize })),
-            longTasks: window.__frontendAuditLongTasks || [],
-        }));
     } catch (error) {
         addFinding(result, "audit-error", error.message);
     } finally {
