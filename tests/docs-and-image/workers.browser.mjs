@@ -51,6 +51,7 @@ await withBrowser(async (page) => {
     const fallbackResult = await fallback;
     const mergedWithoutWorker = await PDFDocument.load(await readFile(await fallbackResult.path()));
     assert.equal(mergedWithoutWorker.getPageCount(), 2);
+    assert.equal(await page.locator(".doc-tool-status--error").count(), 0, "A successful fallback does not retain the earlier worker failure");
     assert.ok(processingRequests.some((url) => /\/pdfUtils-/.test(url) || /\/pdfUtils\.js/.test(url)), "A blocked worker loads the merge fallback on demand");
     await page.evaluate(() => sessionStorage.removeItem("block-document-worker"));
 
@@ -84,4 +85,59 @@ await withBrowser(async (page) => {
     assert.deepEqual(errors, []);
 });
 
-console.log("Document worker lazy startup, merge, blocked-worker fallback and navigation cancellation passed on desktop and mobile.");
+await withBrowser(async (page) => {
+    await page.addInitScript(() => {
+        const NativeWorker = window.Worker;
+        window.Worker = new Proxy(NativeWorker, {
+            construct(target, args, newTarget) {
+                if (String(args[0]).includes("docWorker")) throw new Error("Blocked worker for delayed fallback QA");
+                return Reflect.construct(target, args, newTarget);
+            },
+        });
+    });
+    const other = await PDFDocument.create();
+    other.addPage([400, 500]);
+    const orderedFiles = [files[0], { name: "different.pdf", mimeType: "application/pdf", buffer: Buffer.from(await other.save()) }];
+    const downloads = [];
+    page.on("download", (download) => downloads.push(download));
+    const pattern = /\/pdfUtils(?:-[^/?]+)?\.js(?:\?.*)?$/;
+
+    for (const action of ["clear", "reorder", "leave"]) {
+        let release;
+        const gate = new Promise((resolve) => { release = resolve; });
+        await page.route(pattern, async (route) => {
+            await gate;
+            await route.continue();
+        });
+        await page.goto(`${baseURL}/doc/pdf-merger`);
+        await page.locator('input[type="file"]').setInputFiles(orderedFiles);
+        const stalled = page.waitForRequest(pattern);
+        await page.getByRole("button", { name: "Save & Download", exact: true }).click();
+        const moduleURL = (await stalled).url();
+        assert.equal(await page.getByRole("button", { name: "Save & Download", exact: true }).isDisabled(), true, "Busy ownership covers the cold fallback import");
+        assert.equal(await page.getByRole("button", { name: "Preview Merged PDF", exact: true }).isDisabled(), true);
+        const countBefore = downloads.length;
+        if (action === "clear") await page.getByRole("button", { name: "Clear All", exact: true }).click();
+        else if (action === "reorder") await page.getByRole("button", { name: "Down", exact: true }).first().click();
+        else await page.getByRole("link", { name: "MODIF.in home", exact: true }).click();
+        const loaded = page.waitForResponse(pattern);
+        release();
+        await loaded;
+        // Await the same module and two frames: the cancelled continuation has
+        // actually settled, rather than merely remaining hidden by the gate.
+        await page.evaluate((url) => import(url), moduleURL);
+        await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        assert.equal(downloads.length, countBefore, `${action} invalidates the old merge before it can download`);
+        assert.equal(await page.getByText("Merged PDF downloaded successfully.", { exact: true }).count(), 0);
+        if (action === "reorder") {
+            const currentDownload = page.waitForEvent("download");
+            await page.getByRole("button", { name: "Save & Download", exact: true }).click();
+            const result = await PDFDocument.load(await readFile(await (await currentDownload).path()));
+            assert.deepEqual(result.getPages().map((pdfPage) => pdfPage.getWidth()), [400, 200], "Only the current file order is merged");
+            assert.equal(await page.locator(".doc-tool-status--error").count(), 0);
+        }
+        await page.unroute(pattern);
+    }
+});
+
+console.log("Document worker lazy startup, merge, fallback busy state, source/unmount cancellation and retry passed on desktop and mobile.");
