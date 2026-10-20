@@ -14,6 +14,13 @@
     font-size: clamp(2rem, 5vw, 3rem);
 }
 
+/* Keep persistent footer chrome below the fold until the workspace is ready.
+   A short fallback otherwise paints it inside the viewport, then moves it as
+   soon as a long hub/tool replaces the loading state. */
+.route-feedback[role="status"] {
+    min-height: calc(100svh - var(--app-header-height));
+}
+
 .route-feedback p {
     color: #cbd5e1;
     line-height: 1.6;
