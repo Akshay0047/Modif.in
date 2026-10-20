@@ -11,6 +11,7 @@ let lastTrackedPath = "";
 export function trackGaPageView() {
     if (!import.meta.env.PROD) return;
     if (typeof window.gtag !== "function") return;
+    loadAnalyticsAfterContent(GA_MEASUREMENT_ID);
 
     const page_path = `${window.location.pathname}${window.location.search}`;
     if (lastTrackedPath === page_path) return;
@@ -22,3 +23,5 @@ export function trackGaPageView() {
         page_title: document.title,
     });
 }
+import { loadAnalyticsAfterContent } from "./loadAnalytics.js";
+

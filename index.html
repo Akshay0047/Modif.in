@@ -25,11 +25,7 @@
         link.setAttribute("href", path === "/" ? "https://modif.in/" : "https://modif.in" + path);
       })();
     </script>
-    <!-- Google tag (gtag.js) — send_page_view: false; SPA page views via useGaPageViews -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-SFVEF88V33"
-    ></script>
+    <!-- Queue page views immediately; load the SDK after route content paints. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
