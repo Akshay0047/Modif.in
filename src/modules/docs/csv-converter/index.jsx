@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../../text/_shared/CopyButton";
 import DocToolShell from "../_shared/DocToolShell";
@@ -13,20 +13,37 @@ function CsvConverter() {
     const [output, setOutput] = useState("");
     const [status, setStatus] = useState("");
     const [running, setRunning] = useState(false);
+    const operationRef = useRef(0);
+    const busyRef = useRef(false);
+
+    useEffect(() => () => {
+        operationRef.current += 1;
+        busyRef.current = false;
+    }, []);
 
     const handleFile = async (files) => {
+        const operation = ++operationRef.current;
         const next = files[0] ?? null;
+        busyRef.current = false;
+        setRunning(false);
         setFile(next);
-        if (next) {
-            setText(await next.text());
-        } else {
-            setText("");
-            setOutput("");
+        setText("");
+        setOutput("");
+        setStatus("");
+        if (!next) return;
+
+        try {
+            const contents = await next.text();
+            if (operation === operationRef.current) setText(contents);
+        } catch (error) {
+            if (operation === operationRef.current) setStatus(error?.message ?? "Failed to read CSV file.");
         }
     };
 
     const handleConvert = async () => {
-        if (!text || running) return;
+        if (!text || busyRef.current) return;
+        const operation = ++operationRef.current;
+        busyRef.current = true;
         setRunning(true);
         setStatus("Converting…");
 
@@ -38,15 +55,19 @@ function CsvConverter() {
                 setOutput(csvToXml(text));
             } else if (format === "xlsx") {
                 const bytes = await csvToExcel(text);
+                if (operation !== operationRef.current) return;
                 downloadBytes(bytes, `${file?.name?.replace(/\.csv$/i, "") || "data"}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
                 setStatus("Excel file downloaded.");
                 return;
             }
             setStatus("Conversion complete.");
         } catch (error) {
-            setStatus(error?.message ?? "Conversion failed.");
+            if (operation === operationRef.current) setStatus(error?.message ?? "Conversion failed.");
         } finally {
-            setRunning(false);
+            if (operation === operationRef.current) {
+                busyRef.current = false;
+                setRunning(false);
+            }
         }
     };
 
