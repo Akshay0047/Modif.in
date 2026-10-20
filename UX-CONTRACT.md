@@ -40,6 +40,7 @@ There is no account, billing, remote CRUD lifecycle, or global toast queue. Tool
 - Opening an idle document workspace does not create a document worker. `useWorkerTask` creates its runner on mount; the runner creates the worker on its first `run()`. Preserve request matching, progress, cancellation on unmount, timeouts, and retry after worker failure.
 - PDF Merger keeps its main-thread merge fallback behind an action-time import after worker failure. `PdfPreview` and byte-only consumers use `_shared/pdfBytes.js`; they must not import PDF processing engines just to clone input data.
 - Excel processing loads XLSX inside `csvToExcel` and `parseExcel`. Both helpers return promises and must be awaited. CSV/JSON/XML conversion retains its synchronous parsing semantics, and pending conversion prevents duplicate submissions while keeping status visible.
+- Busy state covers file reads, deferred engine imports, worker/fallback processing, and publication. Clearing, replacing, reordering inputs or leaving the workspace invalidates pending results; stale work must not download files, update previews, or reset a newer operation's status. A successful fallback reports success without retaining its earlier worker error.
 - Route loading retains recovery links and reserves the remaining viewport height. The footer stays below that loading region and in document flow as real content arrives.
 - IBM Plex Sans uses local variable WOFF2 assets with all original Unicode subsets and the Latin preload. Preserve font roles, fallback behavior, and the shipped OFL license when changing delivery.
 
@@ -48,6 +49,7 @@ There is no account, billing, remote CRUD lifecycle, or global toast queue. Tool
 - Reactbits effects are a maintained part of the identity. Motion defaults on, respects reduced-motion preferences, and can be paused/resumed globally. Only the motion preference is stored locally. Hidden tabs pause decorative work.
 - Silk preserves its shader and uniform behavior using OGL. Dither retains React Three Fiber and postprocessing. Loading or renderer changes must preserve module colors, responsive sizing, interaction behavior, and the motion controls.
 - Paused backgrounds and titles retain still versions of the same effects. The native cursor remains usable for coarse pointers, reduced motion, and paused effects.
+- `CursorLayer` loads TargetCursor/GSAP only for an eligible fine pointer with motion enabled; the native cursor remains available until it mounts. `DecorativeBoundary` contains failed cursor, Silk, and Dither chunks so navigation and workspaces remain usable with their existing native-cursor/gradient fallback.
 - Focus is visible and clears fixed header chrome. The document owns page scrolling; footer content stays in flow. Controls use at least 44px action targets where applicable, with 16px mobile input text.
 - Legal dialogs portal to the body, make the background inert, trap focus, close with Escape, restore the opener and prior overflow, and contain long content within the visual viewport. Their text remains sourced from `src/footer/`.
 
