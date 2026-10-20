@@ -16,22 +16,35 @@ await writeFile(join(temporary, "index.html"), '<html><head><meta name="viewport
 await writeFile(join(temporary, "harness.jsx"), `
 import React from ${JSON.stringify(`${project}/node_modules/react/index.js`)};
 import { createRoot } from ${JSON.stringify(`${project}/node_modules/react-dom/client.js`)};
+import { BrowserRouter } from ${JSON.stringify(`${project}/node_modules/react-router-dom/dist/index.mjs`)};
 import CursorLayer from ${JSON.stringify(`${project}/src/components/CursorLayer.jsx`)};
+import AppSilkBackdrop from ${JSON.stringify(`${project}/src/components/AppSilkBackdrop.jsx`)};
+import LandingPage from ${JSON.stringify(`${project}/src/pages/LandingPage.jsx`)};
 import { AnimationProvider, useAnimationSettings } from ${JSON.stringify(`${project}/src/contexts/AnimationContext.jsx`)};
 document.body.style.cursor = "crosshair";
+window.caughtDecorationErrors = 0;
 function Controls() {
     const { enabled, toggle } = useAnimationSettings();
     return <button id="toggle-motion" className="cursor-target" onClick={toggle}>{enabled ? "Pause" : "Resume"}</button>;
 }
-createRoot(document.getElementById("root")).render(<AnimationProvider><Controls /><CursorLayer /></AnimationProvider>);
+function Fixture() {
+    const scene = new URLSearchParams(location.search).get("scene");
+    if (scene === "home") return <LandingPage />;
+    if (scene === "silk") return <><AppSilkBackdrop visible color1="#1a0505" color2="#4a0f0f" /><main><h1>Working text tool</h1><label>Text<input id="workspace-input" /></label></main></>;
+    return <><Controls /><CursorLayer /></>;
+}
+createRoot(document.getElementById("root"), { onCaughtError: () => { window.caughtDecorationErrors++; } }).render(<BrowserRouter><AnimationProvider><Fixture /></AnimationProvider></BrowserRouter>);
 `);
 const bundle = await build({ configFile: false, root: temporary, publicDir: false, plugins: [react()],
     resolve: { alias: { react: `${project}/node_modules/react`, "react-dom": `${project}/node_modules/react-dom` } },
     logLevel: "error", build: { outDir: join(temporary, "dist"), emptyOutDir: true } });
 const chunks = (Array.isArray(bundle) ? bundle : [bundle]).flatMap((item) => item.output).filter((item) => item.type === "chunk");
 const cursorChunk = chunks.find((chunk) => chunk.facadeModuleId?.replaceAll("\\", "/").endsWith("/src/components/TargetCursor.jsx"));
+const silkChunk = chunks.find((chunk) => chunk.facadeModuleId?.replaceAll("\\", "/").endsWith("/src/components/Silk.jsx"));
+const ditherChunk = chunks.find((chunk) => chunk.facadeModuleId?.replaceAll("\\", "/").endsWith("/src/components/Dither.jsx"));
 const gsapChunks = chunks.filter((chunk) => Object.keys(chunk.modules).some((id) => id.replaceAll("\\", "/").includes("/node_modules/gsap/")));
 assert.ok(cursorChunk?.isDynamicEntry, "TargetCursor must be a separate dynamic entry");
+assert.ok(silkChunk?.isDynamicEntry && ditherChunk?.isDynamicEntry, "Real Silk and Dither components must remain lazy entries");
 assert.ok(gsapChunks.length > 0, "The fixture must locate actual GSAP code");
 assert.ok(gsapChunks.every((chunk) => !chunk.isEntry), "GSAP must be absent from the initial entry");
 const forbiddenAssets = new Set([cursorChunk.fileName, ...gsapChunks.map((chunk) => chunk.fileName)]);
@@ -101,7 +114,43 @@ try {
     assert.equal(await page.locator(".target-cursor-wrapper").count(), 0);
     assert.deepEqual(errors, []);
     await desktop.close();
-    console.log("Cursor loading passed: GSAP excluded from entry, zero cursor/GSAP requests on coarse/reduced/paused devices, live resume/media changes, native loading fallback, and animated desktop cursor.");
+
+    // Reject the actual emitted imports, rather than a mocked renderer. These
+    // effects sit outside tool route boundaries, so each needs local recovery.
+    for (const { scene, chunk, reducedMotion } of [
+        { scene: "cursor", chunk: cursorChunk, reducedMotion: "no-preference" },
+        { scene: "silk", chunk: silkChunk, reducedMotion: "reduce" },
+        { scene: "home", chunk: ditherChunk, reducedMotion: "reduce" },
+    ]) {
+        const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion });
+        const page = await context.newPage(), errors = [];
+        page.on("pageerror", (error) => errors.push(error.message));
+        await page.route((url) => url.pathname === `/${chunk.fileName}`, (route) => route.abort("failed"));
+        await page.goto(`${harnessURL}/?scene=${scene}`, { waitUntil: "domcontentloaded" });
+        await page.waitForFunction(() => window.caughtDecorationErrors > 0);
+        assert.deepEqual(errors, [], `${scene} chunk failure must be caught locally`);
+        assert.equal(await page.evaluate(() => document.body.style.cursor), "crosshair", "The native cursor survives an unavailable effect");
+        assert.equal(await page.locator(".route-feedback").count(), 0, "Optional decoration must not trigger route failure UI");
+        if (scene === "cursor") {
+            assert.equal(await page.locator(".target-cursor-wrapper").count(), 0);
+            assert.equal(await page.evaluate(() => document.body.classList.contains("target-cursor-active")), false);
+            await page.getByRole("button", { name: "Pause", exact: true }).click();
+            await page.getByRole("button", { name: "Resume", exact: true }).waitFor();
+        } else if (scene === "silk") {
+            await page.getByRole("heading", { name: "Working text tool", exact: true }).waitFor();
+            await page.locator("#workspace-input").fill("Still usable with a failed background import.");
+            assert.equal(await page.locator("#workspace-input").inputValue(), "Still usable with a failed background import.");
+            assert.match(await page.locator(".app-silk-backdrop").evaluate((element) => element.style.background), /linear-gradient/);
+        } else {
+            await page.getByRole("heading", { name: "MODIF.in", exact: true }).waitFor();
+            assert.equal(await page.locator(".hero-editor-cards a").count(), 3);
+            await page.getByRole("navigation", { name: "Common tasks" }).getByRole("link", { name: "Merge PDF", exact: true }).click();
+            assert.equal(new URL(page.url()).pathname, "/doc/pdf-merger");
+            await page.locator("footer").waitFor();
+        }
+        await context.close();
+    }
+    console.log("Cursor loading passed: capability-gated GSAP, live preference changes, native loading fallback, desktop animation, and locally contained cursor/Silk/Dither import failures.");
 } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

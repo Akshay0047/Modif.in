@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { useAnimationSettings } from "../contexts/AnimationContext";
 import useCursorSupport from "../hooks/useCursorSupport";
+import DecorativeBoundary from "./DecorativeBoundary";
 
 const TargetCursor = lazy(() => import("./TargetCursor"));
 
@@ -10,5 +11,5 @@ export default function CursorLayer(props) {
     const { active = true, reducedMotion } = useAnimationSettings();
     const supported = useCursorSupport();
     if (!active || reducedMotion || !supported) return null;
-    return <Suspense fallback={null}><TargetCursor {...props} /></Suspense>;
+    return <DecorativeBoundary><Suspense fallback={null}><TargetCursor {...props} /></Suspense></DecorativeBoundary>;
 }

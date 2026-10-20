@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import DecorativeBoundary from "./DecorativeBoundary";
 import "./AppSilkBackdrop.css";
 
 const Silk = lazy(() => import("./Silk"));
@@ -14,13 +15,13 @@ function AppSilkBackdrop({ visible, color1, color2 }) {
             style={backgroundStyle}
             aria-hidden="true"
         >
-            {visible && <Suspense fallback={null}><Silk
+            {visible && <DecorativeBoundary><Suspense fallback={null}><Silk
                 speed={5}
                 scale={1}
                 noiseIntensity={1.5}
                 color1={color1}
                 color2={color2}
-            /></Suspense>}
+            /></Suspense></DecorativeBoundary>}
         </div>
     );
 }
