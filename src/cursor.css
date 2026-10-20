@@ -1,0 +1,59 @@
+/* Browser-rendered cursors track the pointer without JavaScript or an overlay.
+   Keep keyword fallbacks so a missing/unsupported asset never hides the cursor. */
+@media (hover: hover) and (pointer: fine) and (forced-colors: none) {
+  :root {
+    --cursor-default: url("./assets/cursors/arrow.svg") 4 3, auto;
+    --cursor-action: url("./assets/cursors/arrow-active.svg") 4 3, pointer;
+    cursor: var(--cursor-default);
+  }
+
+  body {
+    cursor: var(--cursor-default);
+  }
+
+  /* Inputs and editable fields keep their native cursors. Specialized canvas,
+     drag and resize controls keep their own explicit cursor declarations. */
+  :root
+    :is(
+      a[href],
+      button:enabled,
+      summary,
+      [role="button"],
+      [role="link"],
+      [role="option"]
+    ):where(
+      :not(
+        :disabled,
+        [aria-disabled="true"],
+        input,
+        textarea,
+        select,
+        [contenteditable]:not([contenteditable="false"])
+      )
+    ) {
+    cursor: var(--cursor-action);
+  }
+
+  /* Keep the legacy marker as a low-specificity opt-in, so a tool's explicit
+     crosshair/grab/resize cursor always wins over this decorative default. */
+  :where(.cursor-target):where(
+    :not(
+      :disabled,
+      [aria-disabled="true"],
+      input,
+      textarea,
+      select,
+      [contenteditable]:not([contenteditable="false"])
+    )
+  ) {
+    cursor: var(--cursor-action);
+  }
+}
+
+:root [contenteditable]:not([contenteditable="false"]) {
+  cursor: text;
+}
+
+:root :is(:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed;
+}

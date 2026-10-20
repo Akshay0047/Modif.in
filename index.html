@@ -13,6 +13,25 @@
     />
     <title>MODIF.in | Text, image and document tools</title>
     <link rel="canonical" href="https://modif.in/" />
+    <style>
+      :root { --z-page-loader: 1100; }
+      html.modif-page-loading, html.modif-page-loading body, html.modif-page-loading #root { overflow: hidden !important; }
+      html.modif-page-loading .target-cursor-wrapper { visibility: hidden; }
+      .page-loader { position: fixed; inset: 0; z-index: var(--z-page-loader); display: grid; place-content: center; gap: 1.5rem; padding: 1.5rem; background: #000; color: #f8fafc; text-align: center; opacity: 1; transition: opacity 200ms ease-out; }
+      .page-loader__logo { font: 800 clamp(2.5rem, 9vw, 4.5rem)/1 "IBM Plex Sans", sans-serif; letter-spacing: -0.04em; text-shadow: 1px 2px 0 #13008f, 2px 4px 8px #000; animation: modif-loading-pulse 1.4s ease-in-out infinite; }
+      .page-loader[data-state="loading"] { opacity: 1; transition: none; }
+      .page-loader[data-state="revealing"], .page-loader[data-state="hidden"] { opacity: 0; }
+      .page-loader[data-state="hidden"] { visibility: hidden; pointer-events: none; }
+      .page-loader[data-motion="still"] .page-loader__logo, .page-loader[data-state="failed"] .page-loader__logo { animation: none; }
+      .page-loader__recovery { max-width: 26rem; font: 1rem/1.6 "IBM Plex Sans", sans-serif; }
+      .page-loader__recovery button { min-height: 44px; padding: .6rem 1rem; border: 1px solid #94a3b8; border-radius: 8px; background: #0a0f1c; color: inherit; font: inherit; }
+      .page-loader__recovery button:hover { border-color: #f8fafc; }
+      .page-loader__recovery button:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 4px; }
+      #page-loader, #page-loader * { cursor: auto !important; }
+      #page-loader button { cursor: pointer !important; }
+      @keyframes modif-loading-pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .page-loader { transition: none; } .page-loader__logo { animation: none; } }
+    </style>
     <script>
       (function () {
         var link = document.querySelector('link[rel="canonical"]');
@@ -36,7 +55,28 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="page-loader" class="page-loader" data-state="loading" role="status" aria-label="Loading page">
+      <span class="page-loader__logo" aria-hidden="true" translate="no">MODIF.in</span>
+      <div id="boot-recovery" class="page-loader__recovery" hidden>
+        <p>This page could not load. Check your connection and try again.</p>
+        <button type="button" onclick="window.location.reload()">Reload page</button>
+      </div>
+    </div>
+    <div id="root" inert aria-busy="true"></div>
+    <script>
+      (function () {
+        var loader = document.getElementById("page-loader");
+        document.documentElement.classList.add("modif-page-loading");
+        try { if (localStorage.getItem("modif-animation") === "off") loader.dataset.motion = "still"; } catch (e) {}
+        window.__modifBootTimer = setTimeout(function () {
+          loader.dataset.state = "failed";
+          loader.setAttribute("role", "alert");
+          loader.setAttribute("aria-label", "Page could not load");
+          document.getElementById("boot-recovery").hidden = false;
+        }, 20000);
+      })();
+    </script>
+    <noscript><style>#page-loader { display: none; }</style><p>Enable JavaScript to use MODIF.in.</p></noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

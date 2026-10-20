@@ -1,4 +1,5 @@
 @import "./fonts.css";
+@import "./cursor.css";
 
 html,
 body,
@@ -103,15 +104,6 @@ select, option {
     overflow-x: hidden;
     overflow-y: auto;
   }
-}
-
-body.intro-active,
-body.intro-active * {
-  cursor: none !important;
-}
-
-body.intro-active .target-cursor-wrapper {
-  visibility: hidden !important;
 }
 
 /* Scrollbar theme tokens (default / landing page) */

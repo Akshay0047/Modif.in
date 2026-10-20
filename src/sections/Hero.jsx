@@ -56,7 +56,6 @@ function Hero() {
     return (
         <section className="hero">
             <h1 className="hero-brand" aria-label="MODIF.in" translate="no"><span aria-hidden="true"><DepthText
-                className="cursor-target"
                 text="MODIF.in"
                 layers={28}
                 depth={1.9}

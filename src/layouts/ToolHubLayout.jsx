@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Silk from "../components/Silk";
 import DepthText from "../components/DepthText";
-import CursorLayer from "../components/CursorLayer";
 import ToolHub from "../sections/ToolHub";
 import Footer from "../sections/Footer";
 import "./ToolHubLayout.css";
@@ -80,15 +79,6 @@ function ToolHubLayout({
                     color2={color2}
                 />
             </div>
-
-            <CursorLayer
-                spinDuration={6.4}
-                hideDefaultCursor
-                parallaxOn
-                hoverDuration={0.25}
-                cursorColor="#ffffff"
-                cursorColorOnTarget="#bf1c1c"
-            />
 
             <header className="app-header">
                 <Link

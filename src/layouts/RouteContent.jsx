@@ -1,5 +1,6 @@
-import { Component, Suspense, useEffect } from "react";
+import { Component, Suspense, useEffect, useLayoutEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { markPageReady } from "../utils/pageReadiness";
 import "./RouteContent.css";
 
 function RecoveryLinks() {
@@ -27,6 +28,12 @@ class RouteErrorBoundary extends Component {
     render() { return this.state.failed ? <RouteLoadError /> : this.props.children; }
 }
 
+function PageReady() {
+    const { pathname } = useLocation();
+    useLayoutEffect(() => { markPageReady(pathname); }, [pathname]);
+    return null;
+}
+
 function RouteContent({ children }) {
     const { pathname } = useLocation();
     return <RouteErrorBoundary key={pathname}>
@@ -36,6 +43,7 @@ function RouteContent({ children }) {
             <RecoveryLinks />
         </section>}>
             {children}
+            <PageReady />
         </Suspense>
     </RouteErrorBoundary>;
 }

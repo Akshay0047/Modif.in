@@ -15,7 +15,7 @@ function AppSilkBackdrop({ visible, color1, color2 }) {
             style={backgroundStyle}
             aria-hidden="true"
         >
-            {visible && <DecorativeBoundary><Suspense fallback={null}><Silk
+            {visible && <DecorativeBoundary scene="module"><Suspense fallback={null}><Silk
                 speed={5}
                 scale={1}
                 noiseIntensity={1.5}

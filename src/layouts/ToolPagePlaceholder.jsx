@@ -2,14 +2,13 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Silk from "../components/Silk";
 import DepthText from "../components/DepthText";
-import CursorLayer from "../components/CursorLayer";
 import Footer from "../sections/Footer";
 import "./ToolHubLayout.css";
 import "./ToolPagePlaceholder.css";
 
 // Shared scaffold for individual tool subpages.
 // These are placeholders for now: they render only the MODIF.in header,
-// the shared Silk background + TargetCursor effects, and the Footer
+// the shared Silk background, and the Footer
 // (privacy policy, etc.). Actual tool UI/logic is added later per module.
 const MODULE_COLORS = {
     text: { color1: "#1a0505", color2: "#4a0f0f" },
@@ -79,15 +78,6 @@ function ToolPagePlaceholder({ module = "text", toolName = "Tool" }) {
                     color2={color2}
                 />
             </div>
-
-            <CursorLayer
-                spinDuration={6.4}
-                hideDefaultCursor
-                parallaxOn
-                hoverDuration={0.25}
-                cursorColor="#ffffff"
-                cursorColorOnTarget="#bf1c1c"
-            />
 
             <header className="app-header">
                 <Link

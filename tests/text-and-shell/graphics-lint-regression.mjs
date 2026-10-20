@@ -19,14 +19,12 @@ const imports = [
     ["SkeletonDither", "skeleton/src/components/Dither.jsx"],
     ["SkeletonSilk", "skeleton/src/components/Silk.jsx"],
     ["MainSilk", "src/components/Silk.jsx"],
-    ["MainCursor", "src/components/TargetCursor.jsx"],
     ["SkeletonCursor", "skeleton/src/components/TargetCursor.jsx"],
 ].map(([name, path]) => `import ${name} from ${JSON.stringify(`${project}/${path}`)};`).join("\n");
 await writeFile(join(temporary, "index.html"), '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="root"></div><script type="module" src="/harness.jsx"></script></body></html>');
 await writeFile(join(temporary, "harness.jsx"), `
 import React from ${JSON.stringify(`${project}/node_modules/react/index.js`)};
 import { createRoot } from ${JSON.stringify(`${project}/node_modules/react-dom/client.js`)};
-import { gsap } from ${JSON.stringify(`${project}/node_modules/gsap/index.js`)};
 ${imports}
 document.body.style.margin = "0";
 document.body.style.cursor = "crosshair";
@@ -35,20 +33,10 @@ const root = createRoot(document.getElementById("root"));
 window.renderGraphics = (patch = {}) => {
     settings = { ...settings, ...patch };
     const Scene = { "main-dither": MainDither, "skeleton-dither": SkeletonDither, silk: SkeletonSilk, "main-silk": MainSilk }[settings.scene];
-    const Cursor = { main: MainCursor, skeleton: SkeletonCursor }[settings.cursor];
+    const Cursor = { skeleton: SkeletonCursor }[settings.cursor];
     root.render(<React.StrictMode>{Scene ? <Scene {...settings.props} /> : null}{Cursor ? <Cursor hideDefaultCursor /> : null}<button className="cursor-target" style={{position:"fixed", top:20,left:20}}>Hover target</button></React.StrictMode>);
 };
 window.unmountGraphics = () => root.render(null);
-window.cursorMotionState = () => {
-    const cursor = document.querySelector(".target-cursor-wrapper");
-    if (!cursor) return null;
-    const dot = cursor.querySelector(".target-cursor-dot");
-    return {
-        rotationWriters: gsap.getTweensOf(cursor, true).filter((tween) => tween.vars.rotation !== undefined).length,
-        movementWriters: gsap.getTweensOf([cursor, dot], true).filter((tween) => tween.vars.x !== undefined || tween.vars.y !== undefined).length,
-        x: gsap.getProperty(cursor, "x"), y: gsap.getProperty(cursor, "y"),
-    };
-};
 window.renderGraphics();
 `);
 await build({ configFile: false, root: temporary, publicDir: false, plugins: [react()],
@@ -208,22 +196,7 @@ try {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.waitForFunction(() => window.graphicsSnapshot("uTime").at(-1)?.width === 1440 && window.graphicsSnapshot("uTime").at(-1)?.height === 1000);
     await assertAnimated(page, "uTime");
-    await page.evaluate(() => window.renderGraphics({ scene: null, cursor: "main" }));
-    await page.waitForFunction(() => document.body.classList.contains("target-cursor-active"));
-    await page.evaluate(() => {
-        for (let i = 0; i < 150; i++) window.dispatchEvent(new MouseEvent("mousemove", { clientX: 300 + i, clientY: 300 + i }));
-    });
-    await page.waitForTimeout(30);
-    assert.ok((await page.evaluate(() => window.cursorMotionState())).movementWriters <= 4, "Pointer floods must reuse the four x/y tweens");
-    await page.waitForFunction(() => Math.abs(window.cursorMotionState().x - 449) < 1 && Math.abs(window.cursorMotionState().y - 449) < 1);
-    for (let cycle = 0; cycle < 3; cycle++) {
-        await page.getByRole("button", { name: "Hover target" }).hover();
-        await page.mouse.move(500, 400);
-        await page.waitForFunction(() => window.cursorMotionState().rotationWriters === 1);
-        await page.waitForTimeout(80);
-        assert.equal((await page.evaluate(() => window.cursorMotionState())).rotationWriters, 1, "One timeline must own cursor rotation after hover");
-    }
-    for (const cursor of ["main", "skeleton"]) {
+    for (const cursor of ["skeleton"]) {
         for (let cycle = 0; cycle < 2; cycle += 1) {
             await page.evaluate((cursor) => window.renderGraphics({ scene: null, cursor }), cursor);
             await page.waitForFunction(() => document.body.style.cursor === "none" && document.body.classList.contains("target-cursor-active"));
@@ -239,7 +212,7 @@ try {
     const touch = await touchContext.newPage();
     const touchErrors = []; touch.on("pageerror", (error) => touchErrors.push(error.message));
     await touch.goto(harnessURL);
-    for (const cursor of ["main", "skeleton"]) {
+    for (const cursor of ["skeleton"]) {
         await touch.evaluate((cursor) => window.renderGraphics({ scene: null, cursor }), cursor);
         await touch.getByRole("button", { name: "Hover target" }).tap();
         assert.equal(await touch.locator(".target-cursor-wrapper").count(), 0);
@@ -248,7 +221,7 @@ try {
     }
     assert.deepEqual(touchErrors, []);
     await touchContext.close();
-    console.log("Production app/skeleton WebGL pixels, animation and resizing; both Dither resolution updates; both Silk material prop/time updates; both cursor cleanup cycles passed");
+    console.log("Production app/skeleton WebGL pixels, animation and resizing; both Dither resolution updates; both Silk material prop/time updates; historical skeleton cursor cleanup cycles passed");
 } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

@@ -63,7 +63,7 @@ Read [AGENTS.md](AGENTS.md) and the appropriate module guide before changing a t
 
 The homepage offers cross-hub search and common-task shortcuts. Each hub starts with eight curated Popular tools, followed by its full catalog. Category links, header hub navigation, wrapping labels, and keyboard search support desktop and mobile discovery. The [selection rationale](docs/popular-tools.md) distinguishes editorial estimates from measured usage.
 
-The dark visual identity uses IBM Plex Sans, Georgia tool headings, module accents, and Reactbits effects: Dither, Silk, DepthText, WarpText, TargetCursor, and PixelCard. The header's motion control pauses decorative effects; reduced-motion preferences are respected. Footer dialogs remain reachable at every viewport.
+The dark visual identity uses IBM Plex Sans, Georgia tool headings, module accents, and Reactbits effects: Dither, Silk, DepthText, WarpText, and PixelCard. Static SVG arrow cursors add a crimson hover state without JavaScript tracking, while text, drag, resize, and accessibility states retain native cursors. The header's motion control pauses decorative effects; reduced-motion preferences are respected. Footer dialogs remain reachable at every viewport.
 
 IBM Plex Sans is self-hosted as unmodified variable WOFF2 files from the existing Google Fonts distribution. All six original Unicode subsets remain available; the Latin face is preloaded, and other scripts load through `unicode-range`. Font definitions live in `src/fonts.css`, assets in `src/assets/fonts/`, and provenance plus the SIL OFL license in [`public/fonts/ibm-plex/`](public/fonts/ibm-plex/). The typeface and typography roles remain unchanged.
 
@@ -78,7 +78,7 @@ The frontend targets WCAG 2.2 AA. Automated route/accessibility tests and target
 - [Cold-cache performance audit](docs/performance-audit.md)
 - [Merged PR and issue reconciliation](docs/issue-reconciliation.md)
 - [Popular tool rationale](docs/popular-tools.md)
-- Reactbits sources: [TargetCursor](https://reactbits.dev/animations/target-cursor), [Dither](https://reactbits.dev/backgrounds/dither), [PixelCard](https://reactbits.dev/components/pixel-card), and [DepthText](https://reactbits.dev/text-animations/depth-text)
+- Reactbits sources: [Dither](https://reactbits.dev/backgrounds/dither), [PixelCard](https://reactbits.dev/components/pixel-card), and [DepthText](https://reactbits.dev/text-animations/depth-text)
 - Audit reference: [Vercel Web Interface Guidelines](https://vercel.com/design/guidelines)
 
 Legal documents are maintained under `src/footer/` and shown by `Footer.jsx`. Build artifacts, local files, and credentials must not be committed.

@@ -7,6 +7,7 @@ import { useGaPageViews } from "../hooks/useGaPageViews";
 import { useRouteTitle } from "../hooks/useRouteTitle";
 import { AnimationProvider } from "../contexts/AnimationContext";
 import AppHeader from "../components/AppHeader";
+import PageLoadingScreen from "../components/PageLoadingScreen";
 
 function AppShell({ children }) {
     const { pathname } = useLocation();
@@ -21,6 +22,7 @@ function AppShell({ children }) {
 
     return (
         <AnimationProvider>
+            <PageLoadingScreen />
             <a className="skip-link" href="#main-content">Skip to main content</a>
             <AppHeader />
             <AppSilkBackdrop

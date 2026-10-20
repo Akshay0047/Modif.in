@@ -18,7 +18,7 @@ Processing should stay in the browser whenever possible. Prefer local file handl
 - React Router 7
 - Plain JSX (no TypeScript in app code)
 - Font: IBM Plex Sans
-- UI effects: Silk background, DepthText branding, TargetCursor hover targets
+- UI effects: Silk background, DepthText branding, browser-rendered SVG cursors
 
 Run locally:
 
@@ -116,7 +116,7 @@ The tool `id` must match the folder slug under `src/modules/<module>/`. If the p
 ## Design and UX
 
 - Preserve the existing MODIF.in visual language: Silk background, header brand link to `/`, footer on tool pages.
-- Use `cursor-target` on interactive controls that should respond to TargetCursor.
+- Use `cursor-target` on custom interactive controls that should use the crimson SVG cursor. Preserve native text, drag, resize, and disabled cursor states.
 - Match module color themes already used by each hub/shell.
 - For privacy-sensitive tools, use `LocalSecurityDisclaimer` where other docs tools do.
 
@@ -139,7 +139,8 @@ The tool `id` must match the folder slug under `src/modules/<module>/`. If the p
 
 ## Frontend invariants
 
-- Preserve the Reactbits identity: Dither, Silk, DepthText, WarpText, TargetCursor, and PixelCard. Optimize lifecycle/rendering instead of removing those elements.
+- Preserve the Reactbits identity: Dither, Silk, DepthText, WarpText, and PixelCard. Optimize lifecycle/rendering instead of removing those elements.
+- Cursor styling belongs to `src/cursor.css`: static SVG arrows for fine hover pointers, native fallbacks elsewhere. Do not reintroduce cursor overlays, target tracking, or global `cursor: none` rules.
 - Reuse `AppHeader`, the global skip link, `AnimationContext`, and shared tool shells. Do not add duplicate route chrome.
 - Motion defaults on, respects reduced motion, and pauses through the header control or when the document is hidden. Keep still shader/title renderings for paused states.
 - Tool and hub navigation uses links. Upload panels work with Enter and Space as well as pointer/drop input.

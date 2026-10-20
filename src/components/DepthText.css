@@ -49,12 +49,6 @@
   transform: translateZ(0.6px);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .depth-text {
-    cursor: default;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .depth-text__stage {
     will-change: auto;

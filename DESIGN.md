@@ -91,7 +91,7 @@ components:
 
 **Creative North Star: "The Glass Midnight Console"**
 
-MODIF.in reads as a dark, cinematic utility console: black canvas, animated atmospheric backgrounds, and frosted glass panels that organize dense tool catalogs without feeling like enterprise software. The brand moment is theatrical — extruded DepthText, a custom TargetCursor, and pixel-reactive hub cards — while actual tool work stays legible, module-tinted, and calm.
+MODIF.in reads as a dark, cinematic utility console: black canvas, animated atmospheric backgrounds, and frosted glass panels that organize dense tool catalogs without feeling like enterprise software. The brand moment is theatrical — extruded DepthText and pixel-reactive hub cards — while actual tool work stays legible, module-tinted, and calm. A crisp, browser-rendered SVG cursor adds a restrained brand detail without animated tracking.
 
 The system balances spectacle on entry with operational clarity inside tools. Landing and hub pages sell motion and depth; tool pages shift to Georgia-serif headlines, IBM Plex Sans controls, and tinted accents that signal which module you are in (crimson for Text, emerald for Image, amber for Docs).
 
@@ -101,7 +101,7 @@ The system balances spectacle on entry with operational clarity inside tools. La
 - Glass panels: semi-transparent midnight slate, 12px blur, hairline white borders
 - Module color coding carried through scrollbars, accents, and primary actions
 - Pill-shaped tool controls; squarer 8px controls on dense hub grids
-- Custom cursor interaction on `.cursor-target` elements with crimson hover state
+- Static SVG arrow cursor with a crimson variant on enabled interactive controls
 - Serif tool titles + sans UI body for hierarchy without changing the global font stack
 
 ## Colors
@@ -111,7 +111,7 @@ The palette is intentionally restrained: neutrals carry most surfaces, module ac
 ### Primary
 
 - **Royal Depth** (#13008f): DepthText extrusion color for the MODIF.in wordmark; the brand's deep indigo shadow plane.
-- **Signal Crimson** (#bf1c1c): TargetCursor accent when hovering interactive targets; the system's "you can act here" signal.
+- **Signal Crimson** (#bf1c1c): SVG cursor accent when hovering enabled interactive controls; the system's "you can act here" signal.
 - **Indigo Pulse** (#4f46e5): Popular-tool badge and highlighted hub button border glow on the default hub chrome.
 
 ### Secondary
@@ -226,10 +226,12 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 - **Discovery:** Homepage cross-hub SearchBar, six common-task links, and three PixelCard navigation links. Hubs use SearchBar + categorized ToolButton grids and a native category disclosure above the Popular tools.
 - **Search suggestions:** Preserve AnimatedList's opacity animation and styling. Its Motion module loads on input focus. A shared `SuggestionList` renders the same immediately available options, active state, mouse behavior, and ARIA while animation loads or is unavailable; the combobox input remains the sole keyboard owner.
 
-### TargetCursor (signature)
+### SVG cursor
 
-- **Behavior:** Replaces the native cursor only for fine pointers while motion is active. Module accent on `.cursor-target` hover. Touch, paused, and reduced-motion states retain the native cursor.
-- **Use:** Apply `cursor-target` class to interactive marketing and tool controls that should feel "magnetic."
+- **Appearance:** Compact Snow Peak arrow with a dark outline; the enabled interactive variant uses Signal Crimson. Both use the same shape and hotspot so hover does not shift the pointer.
+- **Behavior:** The browser renders static SVG cursor assets on fine hover pointers. No overlay, animation loop, target tracking, or JavaScript is required. The cursor remains static with paused or reduced motion; coarse pointers and forced-colors mode retain platform cursors. Native text selection, drag, resize, and disabled cursor states take precedence.
+- **Ownership:** `src/cursor.css`, imported by `src/index.css`, owns cursor styling and references `src/assets/cursors/arrow.svg` and `arrow-active.svg`. CSS cursor declarations retain native keyword fallbacks when assets are unavailable.
+- **Use:** Native links and enabled controls receive the interactive variant. Retain `cursor-target` for custom interactive controls with equivalent keyboard semantics.
 
 ### DepthText (signature)
 
@@ -244,8 +246,8 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 - **Do** use glass panels with blur(12px) and `rgba(255, 255, 255, 0.08)` borders for tool UI groupings.
 - **Do** apply module accent colors to primary actions, focus states, scrollbars, and disclaimers within that module.
 - **Do** use Georgia only for tool page titles; keep controls and metadata in IBM Plex Sans.
-- **Do** add `cursor-target` to interactive elements that should respond to TargetCursor.
-- **Do** preserve Dither, Silk, DepthText, WarpText, TargetCursor, and PixelCard as the site's signature. Optimize their rendering lifecycle instead of removing the effects.
+- **Do** use `cursor-target` for custom interactive controls that should receive the crimson SVG cursor.
+- **Do** preserve Dither, Silk, DepthText, WarpText, and PixelCard as the site's signature. Optimize their rendering lifecycle instead of removing the effects.
 - **Do** pause decorative work in hidden tabs, honor reduced motion, and provide the global motion control. Keep a still rendering when animations pause.
 - **Do** use the shared focus ring, inherited scrollbar theme, and 44px action targets. Inputs on narrow screens use 16px text to avoid focus zoom.
 
@@ -254,7 +256,7 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 - **Don't** introduce light themes or white page backgrounds; the product is dark-first end to end.
 - **Don't** mix module accent colors arbitrarily across Docs/Image/Text tool pages.
 - **Don't** add heavy drop shadows to flat tool panels at rest; reserve shadow stacks for cards, menus, and modals.
-- **Don't** replace TargetCursor with default pointer styling on primary interactive surfaces without a deliberate accessibility-driven exception.
+- **Don't** hide the system cursor globally or add cursor overlays, magnetic tracking, or animation dependencies.
 - **Don't** use decorative motion on dense control rows; keep motion on brand surfaces, hovers, and background atmospherics.
 
 ## Runtime ownership and audit changes

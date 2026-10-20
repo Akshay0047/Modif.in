@@ -82,4 +82,4 @@ A neighboring product could not truthfully copy this combination: a single no-ac
 
 The frontend targets WCAG 2.2 AA, with native controls, keyboard access, visible focus, readable contrast, and layouts that reflow down to 320 CSS pixels. Automated checks support this target; they do not certify conformance or replace assistive-technology and real-device testing.
 
-Reactbits effects remain part of the product identity: Dither, Silk, DepthText, WarpText, TargetCursor, and PixelCard. Motion is enabled by default, can be paused from the header, respects device reduced-motion preferences, and pauses in hidden tabs. Pause state stays on the device; tool inputs are not stored with it.
+Reactbits effects remain part of the product identity: Dither, Silk, DepthText, WarpText, and PixelCard. Motion is enabled by default, can be paused from the header, respects device reduced-motion preferences, and pauses in hidden tabs. Pause state stays on the device; tool inputs are not stored with it. Cursor styling uses static, browser-rendered SVG arrows with native interaction and accessibility fallbacks.

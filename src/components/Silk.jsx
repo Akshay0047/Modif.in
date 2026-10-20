@@ -1,6 +1,7 @@
 import { useRef, useEffect, useSyncExternalStore } from "react";
 import { Renderer, Program, Mesh, Triangle } from "ogl";
 import { useAnimationSettings } from "../contexts/AnimationContext";
+import { markSceneReady, markSceneFailed } from "../utils/pageReadiness";
 import "./Silk.css";
 
 const hexToNormalizedRGB = (hex) => {
@@ -176,13 +177,17 @@ function Silk({
         };
         try { createScene(); }
         catch (error) {
+            markSceneFailed("module");
             console.warn("Silk: WebGL could not be initialized.", error);
             return undefined;
         }
         container.appendChild(canvas);
 
         const renderOnce = () => {
-            if (!disposed && !contextLost && !document.hidden && width > 0 && height > 0) renderer.render({ scene: mesh });
+            if (!disposed && !contextLost && !document.hidden && width > 0 && height > 0) {
+                renderer.render({ scene: mesh });
+                if (canvas.dataset.sceneReady !== "true") markSceneReady(canvas);
+            }
         };
         const loop = (now) => {
             frame = 0;

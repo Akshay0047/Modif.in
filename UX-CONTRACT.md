@@ -48,8 +48,8 @@ There is no account, billing, remote CRUD lifecycle, or global toast queue. Tool
 
 - Reactbits effects are a maintained part of the identity. Motion defaults on, respects reduced-motion preferences, and can be paused/resumed globally. Only the motion preference is stored locally. Hidden tabs pause decorative work.
 - Silk preserves its shader and uniform behavior using OGL. Dither retains React Three Fiber and postprocessing. Loading or renderer changes must preserve module colors, responsive sizing, interaction behavior, and the motion controls.
-- Paused backgrounds and titles retain still versions of the same effects. The native cursor remains usable for coarse pointers, reduced motion, and paused effects.
-- `CursorLayer` loads TargetCursor/GSAP only for an eligible fine pointer with motion enabled; the native cursor remains available until it mounts. `DecorativeBoundary` contains failed cursor, Silk, and Dither chunks so navigation and workspaces remain usable with their existing native-cursor/gradient fallback.
+- Paused backgrounds and titles retain still versions of the same effects. Static SVG cursors work independently of motion preferences.
+- `src/cursor.css` owns browser-rendered SVG arrows for fine hover pointers, with native cursor fallbacks if assets fail. Coarse pointers and forced-colors mode retain platform cursors; text selection, drag, resize, and disabled states preserve their native affordances. Cursor movement requires no JavaScript or overlay. `DecorativeBoundary` contains failed Silk and Dither chunks so navigation and workspaces remain usable with their gradient fallback.
 - Focus is visible and clears fixed header chrome. The document owns page scrolling; footer content stays in flow. Controls use at least 44px action targets where applicable, with 16px mobile input text.
 - Legal dialogs portal to the body, make the background inert, trap focus, close with Escape, restore the opener and prior overflow, and contain long content within the visual viewport. Their text remains sourced from `src/footer/`.
 

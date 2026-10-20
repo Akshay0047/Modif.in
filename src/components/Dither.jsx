@@ -4,6 +4,7 @@ import { EffectComposer, wrapEffect } from "@react-three/postprocessing";
 import { Effect } from "postprocessing";
 import * as THREE from "three";
 import { useAnimationSettings } from "../contexts/AnimationContext";
+import { markSceneReady, markSceneFailed } from "../utils/pageReadiness";
 
 import "./Dither.css";
 
@@ -193,6 +194,7 @@ function DitheredWaves({
     const mesh = useRef(null);
     const materialRef = useRef(null);
     const mouseRef = useRef(new THREE.Vector2());
+    const firstDraw = useRef(false);
     const { viewport, size, gl, invalidate } = useThree();
 
     const [uniforms] = useState(() => ({
@@ -244,7 +246,11 @@ function DitheredWaves({
 
     return (
         <>
-            <mesh ref={mesh} scale={[viewport.width, viewport.height, 1]}>
+            <mesh ref={mesh} scale={[viewport.width, viewport.height, 1]} onAfterRender={() => {
+                if (firstDraw.current) return;
+                firstDraw.current = true;
+                markSceneReady(gl.domElement);
+            }}>
                 <planeGeometry args={[1, 1]} />
                 <shaderMaterial
                     ref={materialRef}
@@ -283,6 +289,11 @@ function subscribeEnvironment(listener) {
 
 const getEnvironment = () => `${window.matchMedia("(prefers-reduced-motion: reduce)").matches},${document.hidden}`;
 
+function SceneUnavailable() {
+    useEffect(() => { markSceneFailed("home"); }, []);
+    return null;
+}
+
 export default function Dither({
     waveSpeed = 0.05,
     waveFrequency = 3,
@@ -301,6 +312,7 @@ export default function Dither({
     const paused = disableAnimation || !active || reducedMotion || reduce || hidden;
     return (
         <Canvas
+            fallback={<SceneUnavailable />}
             className="dither-container"
             camera={{ position: [0, 0, 6] }}
             dpr={1}
