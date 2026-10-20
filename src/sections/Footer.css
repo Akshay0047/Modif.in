@@ -141,23 +141,27 @@
 }
 
 .footer-copyright,
+.footer-support,
 .footer-credit {
   margin: 0;
 }
 
-.footer-credit {
+.footer-credit,
+.footer-support {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0 5px;
 }
 
-.footer-credit .footer-link {
+.footer-credit .footer-link,
+.footer-support .footer-link {
   color: #cbd5e1;
   font-size: inherit;
 }
 
-.footer-credit .footer-link:hover {
+.footer-credit .footer-link:hover,
+.footer-support .footer-link:hover {
   color: #fff;
 }
 

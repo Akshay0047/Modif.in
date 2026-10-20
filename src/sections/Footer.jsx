@@ -165,6 +165,9 @@ function Footer() {
 
           <div className="footer-bottom">
             <p className="footer-copyright">© {new Date().getFullYear()} MODIF.in</p>
+            <p className="footer-support">
+              Support: <a className="cursor-target footer-link" href="mailto:junuhammad2@gmail.com">junuhammad2@gmail.com</a>
+            </p>
             <p className="footer-credit">
               Built by <ExternalFooterLink href="https://junaidahamed.runs-on.dev">Junaid</ExternalFooterLink>
               {" and "}<ExternalFooterLink href="https://akshaysuresh.runs-on.dev">Akshay</ExternalFooterLink>
