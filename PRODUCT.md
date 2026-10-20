@@ -34,7 +34,9 @@ A neighboring product could not truthfully copy this combination: a single no-ac
 
 **Confirmed capabilities**
 
-- Three tool hubs: Text (~60+ catalogued tools), Image (~25), Docs (~27).
+- Three tool hubs with 114 implemented tool routes: Text (62), Image (25), Docs (27).
+- Homepage search across all three hubs, six common-task shortcuts, and persistent hub navigation.
+- Each hub begins with eight curated Popular tools and offers search and category jump links.
 - Browser-based processing is the default architecture; many docs tools surface a client-side privacy disclaimer.
 - No account required for current tool usage.
 - Supported input types vary by tool (text, images, PDF, DOCX, CSV, and related formats).
@@ -50,14 +52,14 @@ A neighboring product could not truthfully copy this combination: a single no-ac
 **Open / undecided**
 
 - Subdomain launch timing and routing split.
-- Full implementation status of every catalogued tool (some pages may still be placeholders).
+- Usage rankings: Popular tools are an editorial selection, not measured MODIF.in traffic. See `docs/popular-tools.md`.
 - Final advertising integration scope and placement.
 
 ## Brand Commitments
 
 - Product name: **MODIF.in**
 - Tagline in current UI: **"Simple tools for your digital world."**
-- Creators credited in footer: **Junaid** and **Akshay** (GitHub links in `src/sections/Footer.jsx`).
+- Creators credited in footer: **Junaid** and **Akshay** (personal-site links in `src/sections/Footer.jsx`).
 - Legal documents exist at `src/footer/privacypolicy.md`, `src/footer/termsofservice.md`, and `src/footer/disclaimer.md` (last updated September 14, 2026).
 - Typography in app: IBM Plex Sans.
 
@@ -78,4 +80,6 @@ A neighboring product could not truthfully copy this combination: a single no-ac
 
 ## Accessibility & Inclusion
 
-No product-specific accessibility standard has been confirmed yet. Baseline web accessibility should be maintained; a formal target (e.g. WCAG level) remains undecided.
+The frontend targets WCAG 2.2 AA, with native controls, keyboard access, visible focus, readable contrast, and layouts that reflow down to 320 CSS pixels. Automated checks support this target; they do not certify conformance or replace assistive-technology and real-device testing.
+
+Reactbits effects remain part of the product identity: Dither, Silk, DepthText, WarpText, TargetCursor, and PixelCard. Motion is enabled by default, can be paused from the header, respects device reduced-motion preferences, and pauses in hidden tabs. Pause state stays on the device; tool inputs are not stored with it.

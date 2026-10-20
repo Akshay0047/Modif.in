@@ -1,0 +1,17 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["src/components", "src/layouts", "src/sections", "src/pages", "src/modules", "src/contexts"],
+  "locale": "en",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Select/Listbox", "Date", "Form", "Scrollbar"],
+  "ownership": { "Select/Listbox": "native", "Date": "native" },
+  "requiredCommands": ["lint", "unit", "docsUnit", "browser", "routeAudit"],
+  "commands": {
+    "lint": "npm run lint",
+    "unit": "npm test",
+    "docsUnit": "node --test tests/docs-and-image/*.test.mjs",
+    "browser": "npm run test:browser",
+    "routeAudit": "npm run audit:frontend"
+  },
+  "evidence": { "failurePaths": "tests/text-and-shell/field-errors.browser.mjs" }
+}

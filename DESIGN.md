@@ -18,29 +18,26 @@ colors:
   text-crimson-bright: "#dc2626"
   image-emerald: "#10b981"
   image-emerald-deep: "#047857"
+  image-action-text: "#001a13"
   docs-amber: "#eab308"
   docs-amber-deep: "#a16207"
 typography:
   display:
     fontFamily: "Georgia, serif"
-    fontSize: "clamp(2rem, 5vw, 3rem)"
     fontWeight: 700
     lineHeight: 1.25
     letterSpacing: "-0.02em"
   brand:
     fontFamily: '"IBM Plex Sans", sans-serif'
-    fontSize: "clamp(3rem, 12vw, 7rem)"
     fontWeight: 800
     lineHeight: 1
   title:
     fontFamily: '"IBM Plex Sans", sans-serif'
-    fontSize: "clamp(1.125rem, 2.2vw, 1.375rem)"
     fontWeight: 700
     lineHeight: 1.25
     letterSpacing: "-0.02em"
   body:
     fontFamily: '"IBM Plex Sans", sans-serif'
-    fontSize: "clamp(0.95rem, 2vw, 1.05rem)"
     fontWeight: 400
     lineHeight: 1.6
   label:
@@ -49,6 +46,10 @@ typography:
     fontWeight: 600
     lineHeight: 1.4
     letterSpacing: "0.02em"
+  code:
+    fontFamily: '"IBM Plex Mono", "SFMono-Regular", Consolas, monospace'
+    fontSize: "0.875rem"
+    lineHeight: 1.6
 rounded:
   sm: "8px"
   md: "12px"
@@ -79,7 +80,7 @@ components:
     padding: "0.55rem 1rem"
   image-button-primary:
     backgroundColor: "#10b981"
-    textColor: "#ecfdf5"
+    textColor: "{colors.image-action-text}"
     rounded: "{rounded.pill}"
     padding: "0.55rem 1rem"
 ---
@@ -142,7 +143,11 @@ Module accents (use only within their module routes):
 **Body Font:** IBM Plex Sans, sans-serif (UI, body, labels, footer)
 **Brand Display:** IBM Plex Sans 800 via DepthText (landing/hub header logo treatment)
 
+**Code and data:** IBM Plex Mono / SFMono-Regular / Consolas / monospace fallbacks for code, Base64, structured data, and exact character outputs. This is an existing utility role, not a display face.
+
 **Character:** Utility-first sans for controls and reading; editorial serif reserved for tool headlines so functional pages feel distinct from the marketing shell without introducing a third type family on body copy.
+
+Fluid sizes are recorded in the hierarchy below rather than frontmatter `fontSize` fields: the design-token linter accepts single dimensions, while runtime CSS uses `clamp()`.
 
 ### Hierarchy
 
@@ -157,10 +162,10 @@ Module accents (use only within their module routes):
 ## Layout
 
 - **Canvas model:** Full-viewport black stage with fixed atmospheric background (`position: fixed`, behind content).
-- **Header:** 48px fixed black bar, centered brand link, `#1a233a` bottom rule.
-- **Footer:** 40px fixed bar on desktop; stacks on mobile at `max-width: 700px`.
+- **Header:** Fixed black bar, 64px desktop / 56px mobile, compact DepthText home link, Text/Image/Docs navigation, and a motion toggle. Runtime height comes from `--app-header-height` in `src/index.css`.
+- **Footer:** In document flow on every viewport, at least 56px high, stacking on mobile. It must never cover tool actions or keyboard focus.
 - **Hub content:** Centered column; hero cards cap at ~980px; tool grid uses full hub width inside ToolHub.
-- **Tool pages:** `min(960px, 100%)` centered column, `2rem 1.5rem 6rem` padding, two-column grids on wider image tools (`1fr / 1.15fr`).
+- **Tool pages:** `min(960px, 100%)` centered column, `2rem 1.5rem 6rem` padding, reduced horizontal padding on mobile. Image workspaces put the upload panel first in both DOM and visual order; the `inputInPreview` variant identifies which panel owns upload.
 - **Spacing rhythm:** 0.75rem control gaps, 1rem panel padding baseline, 1.5–2rem section separation.
 - **Breakpoints:** 700px (footer/scroll behavior), 768px (hero card stack), component-level clamps for type.
 
@@ -194,10 +199,10 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 ### Buttons
 
 - **Shape:** Hub grid buttons use 8px corners; tool actions use pills (999px).
-- **Primary (Image):** Emerald gradient `#10b981 → #059669`, snow text, brighter gradient on hover.
+- **Primary (Image):** Emerald gradient `#10b981 → #059669`, dark green text `#001a13` (at least 4.8:1 against both stops), brighter gradient on hover. The shared `.image-tool-page` owns `--image-action-text`; shared image button recipes consume it.
 - **Primary (Docs):** Amber-tinted fill `rgba(234, 179, 8, 0.18)` with amber border; hover increases tint.
 - **Hub default:** Transparent midnight glass, slate mist text, white border on hover.
-- **Hub highlighted/popular:** Darker fill, indigo border/glow, white text, "POPULAR" badge in indigo pill.
+- **Hub highlighted/popular:** Darker fill and indigo border, white text. The Popular section establishes context without repeating a badge on every button. Tool labels wrap fully; no continuously scrolling names or per-card overflow observers.
 
 ### Cards / Containers
 
@@ -214,18 +219,18 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 
 ### Navigation
 
-- **Header:** Fixed black bar, DepthText brand scaled down, links home.
-- **Footer:** Low-contrast legal links, modal overlays for policy documents with blurred scrim.
-- **Hub tool grid:** SearchBar + categorized AnimatedList/ToolButton grid.
+- **Header:** Fixed black bar with a readable DepthText brand, home link, current-hub state, and keyboard-accessible hub links.
+- **Footer:** Legal controls have 44px touch targets. Documents open in a body portal with a blurred scrim, background inertness, focus trapping/restoration, and Escape dismissal.
+- **Discovery:** Homepage cross-hub SearchBar, six common-task links, and three PixelCard navigation links. Hubs use SearchBar + categorized ToolButton grids and a native category disclosure above the Popular tools.
 
 ### TargetCursor (signature)
 
-- **Behavior:** Replaces default cursor on most pages; crimson accent on `.cursor-target` hover; hidden during intro screen.
+- **Behavior:** Replaces the native cursor only for fine pointers while motion is active. Module accent on `.cursor-target` hover. Touch, paused, and reduced-motion states retain the native cursor.
 - **Use:** Apply `cursor-target` class to interactive marketing and tool controls that should feel "magnetic."
 
 ### DepthText (signature)
 
-- **Behavior:** Extruded brand logotype with pointer tracking / auto-orbit on landing and headers.
+- **Behavior:** Extruded brand logotype with pointer tracking / auto-orbit on landing. Header branding retains the layered treatment without a perpetual animation loop.
 - **Colors:** Face `#f8fafc`, depth `#13008f`; large clamp sizing for hero presence.
 
 ## Do's and Don'ts
@@ -237,6 +242,9 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 - **Do** apply module accent colors to primary actions, focus states, scrollbars, and disclaimers within that module.
 - **Do** use Georgia only for tool page titles; keep controls and metadata in IBM Plex Sans.
 - **Do** add `cursor-target` to interactive elements that should respond to TargetCursor.
+- **Do** preserve Dither, Silk, DepthText, WarpText, TargetCursor, and PixelCard as the site's signature. Optimize their rendering lifecycle instead of removing the effects.
+- **Do** pause decorative work in hidden tabs, honor reduced motion, and provide the global motion control. Keep a still rendering when animations pause.
+- **Do** use the shared focus ring, inherited scrollbar theme, and 44px action targets. Inputs on narrow screens use 16px text to avoid focus zoom.
 
 ### Don't:
 
@@ -245,3 +253,9 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 - **Don't** add heavy drop shadows to flat tool panels at rest; reserve shadow stacks for cards, menus, and modals.
 - **Don't** replace TargetCursor with default pointer styling on primary interactive surfaces without a deliberate accessibility-driven exception.
 - **Don't** use decorative motion on dense control rows; keep motion on brand surfaces, hovers, and background atmospherics.
+
+## Runtime ownership and audit changes
+
+Runtime styles remain canonical; this document mirrors their accepted values. `src/index.css` owns header height, global focus and scrollbar tokens; `src/components/AppHeader.css` consumes the header tokens; module shared CSS owns module control recipes. `AnimationContext.jsx` owns the user's local motion preference and visibility/reduced-motion state. This project does not generate CSS from DESIGN.md.
+
+The October 2026 audit intentionally changes fixed-footer/centered-header behavior for navigation and reflow, replaces marquee labels with wrapping text, and changes Image primary-action text for contrast. It retains the dark palette, IBM Plex Sans/Georgia roles, module accents, glass workspaces, and Reactbits effects. See `UX-CONTRACT.md` and `docs/frontend-audit.md` for verification scope.
