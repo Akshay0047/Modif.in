@@ -1,35 +1,33 @@
 import { createTool } from "./createTool.js";
 
 const PREFIX = "image";
-const tool = (id, name, category, isPopular = false) =>
-    createTool(PREFIX, id, name, category, isPopular);
 
+// Curated common tasks; see docs/popular-tools.md for selection criteria.
 export const imagePopularToolOrder = [
     "compress-image",
-    "convert-to-jpg-png",
     "crop-resize",
-    "heic-to-jpg",
-    "image-to-pdf",
+    "convert-to-jpg-png",
     "compress-to-target-size",
+    "heic-to-jpg",
     "webp-converter",
+    "image-to-pdf",
     "rotate-flip",
-    "watermark-image",
-    "meme-generator",
-    "favicon-generator",
-    "exif-data-viewer-stripper",
 ];
+
+const popularToolIds = new Set(imagePopularToolOrder);
+const tool = (id, name, category) =>
+    createTool(PREFIX, id, name, category, popularToolIds.has(id));
 
 export const imageToolsData = [
     {
         id: "compress-optimize",
         name: "Compress & Optimize",
         tools: [
-            tool("compress-image", "Compress Image", "Compress & Optimize", true),
+            tool("compress-image", "Compress Image", "Compress & Optimize"),
             tool(
                 "compress-to-target-size",
                 "Compress to Target Size",
                 "Compress & Optimize",
-                true,
             ),
             tool(
                 "bulk-image-processor",
@@ -46,11 +44,10 @@ export const imageToolsData = [
                 "convert-to-jpg-png",
                 "Convert to JPG / PNG",
                 "Image Converters",
-                true,
             ),
-            tool("heic-to-jpg", "HEIC to JPG", "Image Converters", true),
-            tool("image-to-pdf", "Image to PDF", "Image Converters", true),
-            tool("webp-converter", "WEBP Converter", "Image Converters", true),
+            tool("heic-to-jpg", "HEIC to JPG", "Image Converters"),
+            tool("image-to-pdf", "Image to PDF", "Image Converters"),
+            tool("webp-converter", "WEBP Converter", "Image Converters"),
             tool("svg-to-png-jpg", "SVG to PNG / JPG", "Image Converters"),
             tool(
                 "gif-frame-extractor-converter",
@@ -63,8 +60,8 @@ export const imageToolsData = [
         id: "edit-adjust",
         name: "Edit & Adjust",
         tools: [
-            tool("crop-resize", "Crop & Resize", "Edit & Adjust", true),
-            tool("rotate-flip", "Rotate & Flip", "Edit & Adjust", true),
+            tool("crop-resize", "Crop & Resize", "Edit & Adjust"),
+            tool("rotate-flip", "Rotate & Flip", "Edit & Adjust"),
             tool("color-adjustments", "Color Adjustments", "Edit & Adjust"),
             tool("filters-effects", "Filters & Effects", "Edit & Adjust"),
             tool("blur-censor", "Blur & Censor", "Edit & Adjust"),
@@ -75,8 +72,8 @@ export const imageToolsData = [
         id: "create-generate",
         name: "Create & Generate",
         tools: [
-            tool("watermark-image", "Watermark Image", "Create & Generate", true),
-            tool("meme-generator", "Meme Generator", "Create & Generate", true),
+            tool("watermark-image", "Watermark Image", "Create & Generate"),
+            tool("meme-generator", "Meme Generator", "Create & Generate"),
             tool("image-splitter", "Image Splitter", "Create & Generate"),
             tool("image-stitcher", "Image Stitcher", "Create & Generate"),
             tool(
@@ -94,13 +91,11 @@ export const imageToolsData = [
                 "favicon-generator",
                 "Favicon Generator",
                 "Developer & Tech Tools",
-                true,
             ),
             tool(
                 "exif-data-viewer-stripper",
                 "EXIF Data Viewer & Stripper",
                 "Developer & Tech Tools",
-                true,
             ),
             tool(
                 "base64-encoder-decoder",

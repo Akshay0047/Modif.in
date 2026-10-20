@@ -1,30 +1,30 @@
 import { createTool } from "./createTool.js";
 
 const PREFIX = "doc";
-const tool = (id, name, category, isPopular = false) =>
-    createTool(PREFIX, id, name, category, isPopular);
 
+// Curated common tasks; see docs/popular-tools.md for selection criteria.
 export const docPopularToolOrder = [
     "pdf-merger",
     "pdf-compressor",
-    "ocr",
-    "pdf-editor",
+    "pdf-splitter",
     "to-pdf",
     "from-pdf",
-    "pdf-splitter",
+    "pdf-editor",
     "e-signature",
-    "redaction-tool",
-    "watermarking",
-    "csv-converter",
+    "ocr",
 ];
+
+const popularToolIds = new Set(docPopularToolOrder);
+const tool = (id, name, category) =>
+    createTool(PREFIX, id, name, category, popularToolIds.has(id));
 
 export const docToolsData = [
     {
         id: "pdf-manipulation",
         name: "PDF Manipulation",
         tools: [
-            tool("pdf-merger", "PDF Merger", "PDF Manipulation", true),
-            tool("pdf-splitter", "PDF Splitter", "PDF Manipulation", true),
+            tool("pdf-merger", "PDF Merger", "PDF Manipulation"),
+            tool("pdf-splitter", "PDF Splitter", "PDF Manipulation"),
             tool("page-organizer", "Page Organizer", "PDF Manipulation"),
         ],
     },
@@ -36,7 +36,6 @@ export const docToolsData = [
                 "pdf-compressor",
                 "PDF Compressor",
                 "Optimization & Formatting",
-                true,
             ),
             tool("pdf-flattening", "PDF Flattening", "Optimization & Formatting"),
             tool(
@@ -56,8 +55,8 @@ export const docToolsData = [
         id: "document-conversion",
         name: "Document Conversion",
         tools: [
-            tool("to-pdf", "To PDF", "Document Conversion", true),
-            tool("from-pdf", "From PDF", "Document Conversion", true),
+            tool("to-pdf", "To PDF", "Document Conversion"),
+            tool("from-pdf", "From PDF", "Document Conversion"),
             tool("ebook-conversion", "E-Book Conversion", "Document Conversion"),
             tool("archival-conversion", "Archival Conversion", "Document Conversion"),
         ],
@@ -66,8 +65,8 @@ export const docToolsData = [
         id: "editing-forms-signatures",
         name: "Editing, Forms & Signatures",
         tools: [
-            tool("pdf-editor", "PDF Editor", "Editing, Forms & Signatures", true),
-            tool("e-signature", "E-Signature", "Editing, Forms & Signatures", true),
+            tool("pdf-editor", "PDF Editor", "Editing, Forms & Signatures"),
+            tool("e-signature", "E-Signature", "Editing, Forms & Signatures"),
             tool(
                 "fillable-form-tools",
                 "Fillable Form Tools",
@@ -84,7 +83,7 @@ export const docToolsData = [
         id: "extraction-ocr",
         name: "Extraction & OCR",
         tools: [
-            tool("ocr", "OCR (Optical Character Recognition)", "Extraction & OCR", true),
+            tool("ocr", "OCR (Optical Character Recognition)", "Extraction & OCR"),
             tool("text-extractor", "Text Extractor", "Extraction & OCR"),
             tool("table-extractor", "Table Extractor", "Extraction & OCR"),
             tool("asset-extractor", "Asset Extractor", "Extraction & OCR"),
@@ -94,8 +93,8 @@ export const docToolsData = [
         id: "security-metadata",
         name: "Security & Metadata",
         tools: [
-            tool("redaction-tool", "Redaction Tool", "Security & Metadata", true),
-            tool("watermarking", "Watermarking", "Security & Metadata", true),
+            tool("redaction-tool", "Redaction Tool", "Security & Metadata"),
+            tool("watermarking", "Watermarking", "Security & Metadata"),
             tool("pdf-security", "PDF Security", "Security & Metadata"),
             tool("metadata-stripper", "Metadata Stripper", "Security & Metadata"),
         ],
@@ -104,7 +103,7 @@ export const docToolsData = [
         id: "data-csv-utilities",
         name: "Data & CSV Utilities",
         tools: [
-            tool("csv-converter", "CSV Converter", "Data & CSV Utilities", true),
+            tool("csv-converter", "CSV Converter", "Data & CSV Utilities"),
             tool(
                 "csv-editor-transformer",
                 "CSV Editor & Transformer",

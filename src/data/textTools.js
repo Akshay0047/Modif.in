@@ -1,16 +1,30 @@
 import { createTool } from "./createTool.js";
 
 const PREFIX = "text";
-const tool = (id, name, category, isPopular = false) =>
-    createTool(PREFIX, id, name, category, isPopular);
+
+// Curated common tasks; see docs/popular-tools.md for selection criteria.
+export const textPopularToolOrder = [
+    "text-counter",
+    "case-converter",
+    "text-comparison",
+    "text-cleaner",
+    "json-tools",
+    "base64-encoder-decoder",
+    "password-generator",
+    "uuid-id-generator",
+];
+
+const popularToolIds = new Set(textPopularToolOrder);
+const tool = (id, name, category) =>
+    createTool(PREFIX, id, name, category, popularToolIds.has(id));
 
 export const textToolsData = [
     {
         id: "text-analysis",
         name: "Text Analysis",
         tools: [
-            tool("text-counter", "Text Counter", "Text Analysis", true),
-            tool("text-comparison", "Text Comparison", "Text Analysis", true),
+            tool("text-counter", "Text Counter", "Text Analysis"),
+            tool("text-comparison", "Text Comparison", "Text Analysis"),
             tool("text-statistics", "Text Statistics", "Text Analysis"),
             tool(
                 "reading-speaking-time",
@@ -29,13 +43,11 @@ export const textToolsData = [
                 "case-converter",
                 "Case Converter",
                 "Text Formatter & Converter",
-                true,
             ),
             tool(
                 "text-cleaner",
                 "Text Cleaner",
                 "Text Formatter & Converter",
-                true,
             ),
             tool(
                 "fancy-text-converter",
@@ -57,9 +69,9 @@ export const textToolsData = [
         id: "developer-tools",
         name: "Developer Tools",
         tools: [
-            tool("json-tools", "JSON Tools", "Developer Tools", true),
-            tool("code-formatter", "Code Formatter", "Developer Tools", true),
-            tool("jwt-decoder", "JWT Decoder", "Developer Tools", true),
+            tool("json-tools", "JSON Tools", "Developer Tools"),
+            tool("code-formatter", "Code Formatter", "Developer Tools"),
+            tool("jwt-decoder", "JWT Decoder", "Developer Tools"),
             tool("code-minifier", "Code Minifier", "Developer Tools"),
             tool("regex-tester", "Regex Tester", "Developer Tools"),
             tool("markdown-tools", "Markdown Tools", "Developer Tools"),
@@ -73,14 +85,13 @@ export const textToolsData = [
         id: "generators",
         name: "Generators",
         tools: [
-            tool("password-generator", "Password Generator", "Generators", true),
+            tool("password-generator", "Password Generator", "Generators"),
             tool(
                 "lorem-ipsum-generator",
                 "Lorem Ipsum Generator",
                 "Generators",
-                true,
             ),
-            tool("uuid-id-generator", "UUID / ID Generator", "Generators", true),
+            tool("uuid-id-generator", "UUID / ID Generator", "Generators"),
             tool("username-generator", "Username Generator", "Generators"),
             tool("fake-data-generator", "Fake Data Generator", "Generators"),
             tool("random-generator", "Random Generator", "Generators"),
@@ -97,13 +108,11 @@ export const textToolsData = [
                 "base64-encoder-decoder",
                 "Base64 Encoder / Decoder",
                 "Encode, Decode & Convert",
-                true,
             ),
             tool(
                 "url-encoder-decoder",
                 "URL Encoder / Decoder",
                 "Encode, Decode & Convert",
-                true,
             ),
             tool("binary-text", "Binary ↔ Text", "Encode, Decode & Convert"),
             tool("hex-text", "Hex ↔ Text", "Encode, Decode & Convert"),
@@ -139,12 +148,11 @@ export const textToolsData = [
         id: "web-url-security",
         name: "Web, URL & Security",
         tools: [
-            tool("hash-generator", "Hash Generator", "Web, URL & Security", true),
+            tool("hash-generator", "Hash Generator", "Web, URL & Security"),
             tool(
                 "password-strength-checker",
                 "Password Strength Checker",
                 "Web, URL & Security",
-                true,
             ),
             tool("url-sanitizer", "URL Sanitizer", "Web, URL & Security"),
             tool("url-parser", "URL Parser", "Web, URL & Security"),
@@ -171,13 +179,11 @@ export const textToolsData = [
                 "special-character-picker",
                 "Special Character Picker",
                 "ASCII, Unicode & Symbols",
-                true,
             ),
             tool(
                 "invisible-character-tools",
                 "Invisible Character Tools",
                 "ASCII, Unicode & Symbols",
-                true,
             ),
             tool("ascii-kaomoji", "ASCII Emojis", "ASCII, Unicode & Symbols"),
             tool(

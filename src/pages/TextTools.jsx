@@ -1,5 +1,5 @@
 import ToolHub from "../sections/ToolHub";
-import { textToolsData } from "../data/textTools";
+import { textPopularToolOrder, textToolsData } from "../data/textTools";
 
 function TextTools() {
     return (
@@ -7,6 +7,7 @@ function TextTools() {
             title="TEXT TOOLS"
             subheading="Comprehensive utilities for text analysis, formatting, encoding, and developer tools"
             toolsData={textToolsData}
+            popularToolOrder={textPopularToolOrder}
         />
     );
 }
