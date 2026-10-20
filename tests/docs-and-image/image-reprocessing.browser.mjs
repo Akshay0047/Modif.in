@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import JSZip from "jszip";
-import { baseURL, withBrowser } from "../text-and-shell/browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "../text-and-shell/browserHarness.mjs";
 
 // Run against the Vite dev server: the decoder boundary is mocked to cover
 // output failure/recovery deterministically without a platform HEIC decoder.
@@ -37,6 +37,7 @@ await withBrowser(async (page, context) => {
         }`,
     }));
     await page.goto(`${baseURL}/image/heic-to-jpg`);
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles({
         name: "photo.heic", mimeType: "image/heic", buffer: Buffer.from("decoder fixture"),
     });
@@ -68,6 +69,7 @@ await withBrowser(async (page, context) => {
     assert.equal(await page.evaluate((url) => window.revokedUrls.includes(url), recoveredThumb), true);
 
     await page.goto(`${baseURL}/image/bulk-image-processor`);
+    await waitForPageReveal(page);
     const imageBytes = Buffer.from(await page.evaluate(async () => {
         const canvas = document.createElement("canvas");
         canvas.width = canvas.height = 120;
@@ -96,6 +98,7 @@ await withBrowser(async (page, context) => {
     assert.equal(await page.locator(".img-tool__pill").textContent(), "done");
 
     await page.goto(`${baseURL}/image/favicon-generator`);
+    await waitForPageReveal(page);
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.getByRole("button", { name: "Create Lettermark", exact: true }).click();
     for (const size of [16, 32, 180, 192, 512]) {
@@ -112,6 +115,7 @@ await withBrowser(async (page, context) => {
     assert.deepEqual(JSON.parse(await pack.file("site.webmanifest").async("string")).icons, []);
 
     await page.goto(`${baseURL}/image/image-splitter`);
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles(fixture("grid.png"));
     const slicesDownload = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download Slices as ZIP", exact: true }).click();

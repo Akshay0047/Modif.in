@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import Papa from "papaparse";
 import { parseExcel } from "../../src/modules/docs/_shared/csvUtils.js";
-import { baseURL, withBrowser } from "../text-and-shell/browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "../text-and-shell/browserHarness.mjs";
 
 // Run against a Vite dev/preview server using MODIF_BASE_URL when needed.
 const pdf = await PDFDocument.create();
@@ -31,6 +31,7 @@ await withBrowser(async (page) => {
     });
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${baseURL}/doc/table-extractor`);
+    await waitForPageReveal(page);
     await page.locator(".doc-tool-dropzone input[type=file]").setInputFiles({
         name: "blank-first-table.pdf", mimeType: "application/pdf", buffer: fixture,
     });
@@ -53,6 +54,7 @@ await withBrowser(async (page) => {
     await page.waitForFunction((expected) => document.querySelector("textarea[readonly]")?.value === expected, csv);
 
     await page.goto(`${baseURL}/doc/csv-converter`);
+    await waitForPageReveal(page);
     await page.locator(".doc-tool-dropzone input[type=file]").setInputFiles({
         name: "inconsistent.csv", mimeType: "text/csv",
         buffer: Buffer.from("First,Last\nAlice,Brown,Unexpected\n"),

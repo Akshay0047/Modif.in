@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PDFDocument, PDFRawStream, decodePDFRawStream } from "pdf-lib";
-import { baseURL, withBrowser } from "../text-and-shell/browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "../text-and-shell/browserHarness.mjs";
 
 const formPdf = await PDFDocument.create();
 const formPage = formPdf.addPage();
@@ -50,6 +50,7 @@ await withBrowser(async (page) => {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${baseURL}/doc/fillable-form-tools`);
+    await waitForPageReveal(page);
     await upload(page, formBytes);
     await page.getByLabel("full_name", { exact: true }).fill("Updated name");
     await page.getByLabel("approved", { exact: true }).check();
@@ -59,6 +60,7 @@ await withBrowser(async (page) => {
 
     for (const slug of ["pdf-splitter", "page-organizer", "e-signature", "redaction-tool"]) {
         await page.goto(`${baseURL}/doc/${slug}`);
+        await waitForPageReveal(page);
         await upload(page, Buffer.from("malformed PDF"));
         await page.getByText(/Invalid PDF|Could not read/i).first().waitFor();
         await upload(page, editorBytes);
@@ -66,6 +68,7 @@ await withBrowser(async (page) => {
     }
 
     await page.goto(`${baseURL}/doc/e-signature`);
+    await waitForPageReveal(page);
     const signature = page.getByLabel("Signature drawing area");
     await signature.scrollIntoViewIfNeeded();
     const signatureRect = await signature.boundingBox();
@@ -82,6 +85,7 @@ await withBrowser(async (page) => {
     const gate = new Promise((resolve) => { releaseWorker = resolve; });
     await page.route("**/*pdf.worker*", async (route) => { await gate; await route.continue(); });
     await page.goto(`${baseURL}/doc/pdf-editor`);
+    await waitForPageReveal(page);
     await upload(page, editorBytes);
     const saveButton = page.getByRole("button", { name: "Save & Download", exact: true });
     await saveButton.waitFor();

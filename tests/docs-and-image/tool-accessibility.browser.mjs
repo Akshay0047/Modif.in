@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
-import { baseURL, withBrowser } from "../text-and-shell/browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "../text-and-shell/browserHarness.mjs";
 
 const pdf = await PDFDocument.create();
 pdf.addPage([300, 400]);
@@ -11,6 +11,7 @@ const signaturePng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAA
 await withBrowser(async (page) => {
     for (const slug of ["compress-image", "crop-resize", "convert-to-jpg-png"]) {
         await page.goto(`${baseURL}/image/${slug}`);
+        await waitForPageReveal(page);
         await page.locator("h1").waitFor();
         const layout = page.locator('.img-tool__layout, .cvt-jpg-png__layout');
         const panels = layout.locator(":scope > section");
@@ -32,12 +33,14 @@ await withBrowser(async (page) => {
     }
 
     await page.goto(`${baseURL}/image/placeholder-image-generator`);
+    await waitForPageReveal(page);
     const border = page.getByRole("slider", { name: "Border width", exact: true });
     await border.focus();
     await border.press("ArrowRight");
     await page.getByLabel("Border color", { exact: true }).waitFor({ state: "visible" });
 
     await page.goto(`${baseURL}/doc/e-signature`);
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').first().setInputFiles({ name: "fixture.pdf", mimeType: "application/pdf", buffer: pdfBytes });
     await page.getByAltText("Page 1", { exact: true }).waitFor();
     const picture = page.getByRole("button", { name: "Select picture from device", exact: true });

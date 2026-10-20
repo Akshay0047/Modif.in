@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
-import { baseURL, withBrowser } from "../text-and-shell/browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "../text-and-shell/browserHarness.mjs";
 
 const input = await PDFDocument.create();
 input.addPage([200, 300]);
@@ -20,6 +20,7 @@ await withBrowser(async (page) => {
     page.on("worker", (worker) => workers.push(worker.url()));
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${baseURL}/doc/pdf-merger`);
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles(files);
     assert.equal(workers.length, 0, "Opening the tool and selecting files does not start document workers");
     assert.deepEqual(processingRequests, [], "An empty merger does not load document processing engines");
@@ -45,6 +46,7 @@ await withBrowser(async (page) => {
     });
     await page.evaluate(() => sessionStorage.setItem("block-document-worker", "true"));
     await page.reload();
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles(files);
     const fallback = page.waitForEvent("download");
     await page.getByRole("button", { name: "Save & Download", exact: true }).click();
@@ -72,6 +74,7 @@ await withBrowser(async (page) => {
         };
     });
     await page.reload();
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles(files);
     const unwantedDownloads = [];
     page.on("download", (item) => unwantedDownloads.push(item.suggestedFilename()));
@@ -110,6 +113,7 @@ await withBrowser(async (page) => {
             await route.continue();
         });
         await page.goto(`${baseURL}/doc/pdf-merger`);
+        await waitForPageReveal(page);
         await page.locator('input[type="file"]').setInputFiles(orderedFiles);
         const stalled = page.waitForRequest(pattern);
         await page.getByRole("button", { name: "Save & Download", exact: true }).click();

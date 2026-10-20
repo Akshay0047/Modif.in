@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { parseExcel } from "../../src/modules/docs/_shared/csvUtils.js";
-import { baseURL, withBrowser } from "../text-and-shell/browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "../text-and-shell/browserHarness.mjs";
 
 const excelChunk = /\/[^/]*xlsx[^/]*\.m?js(?:\?|$)/i;
 const csvFile = (name, value) => ({
@@ -27,6 +27,7 @@ await withBrowser(async (page) => {
         await page.route(excelChunk, delayImport);
         try {
             await page.goto(`${baseURL}/doc/csv-converter`);
+            await waitForPageReveal(page);
             const picker = page.locator('.doc-tool-dropzone input[type="file"]');
             const convert = page.getByRole("button", { name: "Convert", exact: true });
             await picker.setInputFiles(csvFile("original.csv", "Original"));

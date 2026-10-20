@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { baseURL, withBrowser } from "../text-and-shell/browserHarness.mjs";
+import { baseURL, withBrowser, waitForPageReveal } from "../text-and-shell/browserHarness.mjs";
 
 await withBrowser(async (page) => {
     await page.goto(`${baseURL}/text`);
+    await waitForPageReveal(page);
     await page.locator(".app-silk-backdrop canvas").waitFor();
     // Isolate the persistent background from animated text/cursor overlays.
     const hideMain = await page.addStyleTag({ content: "main { visibility: hidden !important; }" });
@@ -45,6 +46,7 @@ await withBrowser(async (page) => {
     }
 
     await page.goto(`${baseURL}/image/favicon-generator`);
+    await waitForPageReveal(page);
     await page.getByRole("button", { name: "Back", exact: true }).click();
     await page.waitForURL(`${baseURL}/image`);
 });

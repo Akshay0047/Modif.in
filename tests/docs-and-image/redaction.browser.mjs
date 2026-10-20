@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { PDFDocument, PDFName, PDFRawStream, StandardFonts, decodePDFRawStream, degrees } from "pdf-lib";
-import { withBrowser, baseURL } from "../text-and-shell/browserHarness.mjs";
+import { withBrowser, baseURL, waitForPageReveal } from "../text-and-shell/browserHarness.mjs";
 
 const marker = "CONFIDENTIAL-12345";
 const source = await PDFDocument.create();
@@ -27,6 +27,7 @@ assert(streams(await PDFDocument.load(bytes)).some((stream) => stream.includes(m
 
 await withBrowser(async (page) => {
     await page.goto(`${baseURL}/doc/redaction-tool`);
+    await waitForPageReveal(page);
     await page.locator('input[type="file"]').setInputFiles({ name: "shared-secret.pdf", mimeType: "application/pdf", buffer: bytes });
     const canvas = page.locator(".doc-tool-canvas-wrap canvas");
     await page.waitForFunction(() => document.querySelector(".doc-tool-canvas-wrap canvas")?.width === 360);
