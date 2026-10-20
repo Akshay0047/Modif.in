@@ -102,6 +102,7 @@ async function inspectFooter(page) {
     const footer = page.locator("footer").last();
     if (!await footer.count()) return { present: false };
     await footer.scrollIntoViewIfNeeded();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     return footer.evaluate((element) => {
         const rect = element.getBoundingClientRect();
         const controls = [...element.querySelectorAll("a[href], button")].map((control) => {
@@ -112,6 +113,7 @@ async function inspectFooter(page) {
                 visible: box.width > 0 && box.height > 0 && box.left >= -1 && box.right <= innerWidth + 1
                     && box.top >= -1 && box.bottom <= innerHeight + 1,
                 unobscured: center === control || control.contains(center),
+                hitTarget: center?.outerHTML.slice(0, 240) ?? null,
             };
         });
         return { present: true, visible: rect.top < innerHeight && rect.bottom > 0, controls };
