@@ -39,6 +39,8 @@
   pointer-events: none;
 }
 
+.depth-text__layer::before { content: attr(data-text); }
+
 .depth-text__face {
   position: relative;
   z-index: 1;

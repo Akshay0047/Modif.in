@@ -242,15 +242,14 @@ const DepthText = ({
                 {depthLayers.map((layer) => (
                     <span
                         aria-hidden="true"
+                        data-text={text}
                         className="depth-text__layer"
                         key={layer.index}
                         style={{
                             color: layer.color,
                             transform: layer.transform,
                         }}
-                    >
-                        {text}
-                    </span>
+                    />
                 ))}
 
                 <span className="depth-text__face">{text}</span>
