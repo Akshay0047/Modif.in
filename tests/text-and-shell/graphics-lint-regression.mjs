@@ -26,6 +26,7 @@ await writeFile(join(temporary, "index.html"), '<html><head><meta name="viewport
 await writeFile(join(temporary, "harness.jsx"), `
 import React from ${JSON.stringify(`${project}/node_modules/react/index.js`)};
 import { createRoot } from ${JSON.stringify(`${project}/node_modules/react-dom/client.js`)};
+import { gsap } from ${JSON.stringify(`${project}/node_modules/gsap/index.js`)};
 ${imports}
 document.body.style.margin = "0";
 document.body.style.cursor = "crosshair";
@@ -38,6 +39,16 @@ window.renderGraphics = (patch = {}) => {
     root.render(<React.StrictMode>{Scene ? <Scene {...settings.props} /> : null}{Cursor ? <Cursor hideDefaultCursor /> : null}<button className="cursor-target" style={{position:"fixed", top:20,left:20}}>Hover target</button></React.StrictMode>);
 };
 window.unmountGraphics = () => root.render(null);
+window.cursorMotionState = () => {
+    const cursor = document.querySelector(".target-cursor-wrapper");
+    if (!cursor) return null;
+    const dot = cursor.querySelector(".target-cursor-dot");
+    return {
+        rotationWriters: gsap.getTweensOf(cursor, true).filter((tween) => tween.vars.rotation !== undefined).length,
+        movementWriters: gsap.getTweensOf([cursor, dot], true).filter((tween) => tween.vars.x !== undefined || tween.vars.y !== undefined).length,
+        x: gsap.getProperty(cursor, "x"), y: gsap.getProperty(cursor, "y"),
+    };
+};
 window.renderGraphics();
 `);
 await build({ configFile: false, root: temporary, publicDir: false, plugins: [react()],
@@ -197,6 +208,21 @@ try {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.waitForFunction(() => window.graphicsSnapshot("uTime").at(-1)?.width === 1440 && window.graphicsSnapshot("uTime").at(-1)?.height === 1000);
     await assertAnimated(page, "uTime");
+    await page.evaluate(() => window.renderGraphics({ scene: null, cursor: "main" }));
+    await page.waitForFunction(() => document.body.classList.contains("target-cursor-active"));
+    await page.evaluate(() => {
+        for (let i = 0; i < 150; i++) window.dispatchEvent(new MouseEvent("mousemove", { clientX: 300 + i, clientY: 300 + i }));
+    });
+    await page.waitForTimeout(30);
+    assert.ok((await page.evaluate(() => window.cursorMotionState())).movementWriters <= 4, "Pointer floods must reuse the four x/y tweens");
+    await page.waitForFunction(() => Math.abs(window.cursorMotionState().x - 449) < 1 && Math.abs(window.cursorMotionState().y - 449) < 1);
+    for (let cycle = 0; cycle < 3; cycle++) {
+        await page.getByRole("button", { name: "Hover target" }).hover();
+        await page.mouse.move(500, 400);
+        await page.waitForFunction(() => window.cursorMotionState().rotationWriters === 1);
+        await page.waitForTimeout(80);
+        assert.equal((await page.evaluate(() => window.cursorMotionState())).rotationWriters, 1, "One timeline must own cursor rotation after hover");
+    }
     for (const cursor of ["main", "skeleton"]) {
         for (let cycle = 0; cycle < 2; cycle += 1) {
             await page.evaluate((cursor) => window.renderGraphics({ scene: null, cursor }), cursor);

@@ -90,6 +90,9 @@ const TargetCursor = ({
         let currentLeaveHandler = null;
         let resumeTimeout = null;
         let clickFrame = 0;
+        let moveFrame = 0;
+        let scrollFrame = 0;
+        let targetLockTween = null;
         let lastPointer = {
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
@@ -110,6 +113,16 @@ const TargetCursor = ({
             y: window.innerHeight / 2 - initialOffset.y,
         });
 
+        // Reuse four tweens instead of creating overlapping x/y tweens for
+        // every high-frequency mouse event.
+        const motionOptions = { duration: 0.1, ease: "power3.out" };
+        const cursorXTo = gsap.quickTo(cursor, "x", motionOptions);
+        const cursorYTo = gsap.quickTo(cursor, "y", motionOptions);
+        const dotXTo = gsap.quickTo(dot, "x", motionOptions);
+        const dotYTo = gsap.quickTo(dot, "y", motionOptions);
+        const pauseCursorMove = () => { cursorXTo.tween.pause(); cursorYTo.tween.pause(); };
+        const pauseDotMove = () => { dotXTo.tween.pause(); dotYTo.tween.pause(); };
+
         const createSpinTimeline = () => {
             if (spinTl.current) {
                 spinTl.current.kill();
@@ -127,13 +140,13 @@ const TargetCursor = ({
 
         const syncCornerPositions = (
             target,
-            { animate = false, useTargetCenter = false } = {},
+            { animate = false, useTargetCenter = false, rect: targetRect, offset: targetOffset } = {},
         ) => {
             if (!target || !cursorRef.current || !cornersRef.current) return;
 
-            const rect = target.getBoundingClientRect();
+            const rect = targetRect ?? target.getBoundingClientRect();
             const { borderWidth, cornerSize } = constants;
-            const { x: offsetX, y: offsetY } = getOffset();
+            const { x: offsetX, y: offsetY } = targetOffset ?? getOffset();
             const cursorX = useTargetCenter
                 ? rect.left + rect.width / 2 - offsetX
                 : gsap.getProperty(cursorRef.current, "x");
@@ -181,13 +194,13 @@ const TargetCursor = ({
             });
         };
 
-        const lockCursorToTarget = (target, { animate = false } = {}) => {
+        const lockCursorToTarget = (target, { animate = false, rect: targetRect, offset: targetOffset } = {}) => {
             if (!target || !cursorRef.current) return;
 
-            const rect = target.getBoundingClientRect();
+            const rect = targetRect ?? target.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            const { x: offsetX, y: offsetY } = getOffset();
+            const { x: offsetX, y: offsetY } = targetOffset ?? getOffset();
             const lockProps = {
                 x: centerX - offsetX,
                 y: centerY - offsetY,
@@ -195,10 +208,12 @@ const TargetCursor = ({
                 height: rect.height,
             };
 
-            gsap.killTweensOf(cursorRef.current, "x,y,width,height");
+            pauseCursorMove();
+            targetLockTween?.kill();
+            targetLockTween = null;
 
             if (animate) {
-                gsap.to(cursorRef.current, {
+                targetLockTween = gsap.to(cursorRef.current, {
                     ...lockProps,
                     duration: hoverDuration,
                     ease: "power2.out",
@@ -218,22 +233,19 @@ const TargetCursor = ({
             };
 
             if (animate) {
-                gsap.to(cursorRef.current, {
-                    ...props,
-                    duration: 0.1,
-                    ease: "power3.out",
-                });
+                cursorXTo(props.x, gsap.getProperty(cursorRef.current, "x"));
+                cursorYTo(props.y, gsap.getProperty(cursorRef.current, "y"));
                 return;
             }
 
-            gsap.killTweensOf(cursorRef.current, "x,y");
+            pauseCursorMove();
             gsap.set(cursorRef.current, props);
         };
 
-        const moveDotTo = (x, y, { animate = true } = {}) => {
+        const moveDotTo = (x, y, { animate = true, offset } = {}) => {
             if (!dotRef.current || !cursorRef.current) return;
 
-            const { x: offsetX, y: offsetY } = getOffset();
+            const { x: offsetX, y: offsetY } = offset ?? getOffset();
             const cursorX = gsap.getProperty(cursorRef.current, "x");
             const cursorY = gsap.getProperty(cursorRef.current, "y");
             const props = {
@@ -242,21 +254,18 @@ const TargetCursor = ({
             };
 
             if (animate) {
-                gsap.to(dotRef.current, {
-                    ...props,
-                    duration: 0.1,
-                    ease: "power3.out",
-                });
+                dotXTo(props.x, gsap.getProperty(dotRef.current, "x"));
+                dotYTo(props.y, gsap.getProperty(dotRef.current, "y"));
                 return;
             }
 
-            gsap.killTweensOf(dotRef.current, "x,y");
+            pauseDotMove();
             gsap.set(dotRef.current, props);
         };
 
         const resetDotPosition = () => {
             if (!dotRef.current) return;
-            gsap.killTweensOf(dotRef.current, "x,y");
+            pauseDotMove();
             gsap.set(dotRef.current, { x: 0, y: 0 });
         };
 
@@ -267,7 +276,9 @@ const TargetCursor = ({
             isActiveRef.current = false;
             activeTarget = null;
 
-            gsap.killTweensOf(cursorRef.current, "x,y,width,height");
+            targetLockTween?.kill();
+            targetLockTween = null;
+            pauseCursorMove();
             gsap.set(cursorRef.current, { width: 0, height: 0 });
             resetDotPosition();
             moveCursorTo(lastPointer.x, lastPointer.y, { animate: false });
@@ -314,28 +325,8 @@ const TargetCursor = ({
 
             resumeTimeout = setTimeout(() => {
                 if (!activeTarget && cursorRef.current && spinTl.current) {
-                    const currentRotation = gsap.getProperty(
-                        cursorRef.current,
-                        "rotation",
-                    );
-                    const normalizedRotation = currentRotation % 360;
-                    spinTl.current.kill();
-                    spinTl.current = gsap
-                        .timeline({ repeat: -1 })
-                        .to(cursorRef.current, {
-                            rotation: "+=360",
-                            duration: spinDuration,
-                            ease: "none",
-                        });
-                    gsap.to(cursorRef.current, {
-                        rotation: normalizedRotation + 360,
-                        duration:
-                            spinDuration * (1 - normalizedRotation / 360),
-                        ease: "none",
-                        onComplete: () => {
-                            spinTl.current?.restart();
-                        },
-                    });
+                    // One timeline owns rotation throughout hover and resume.
+                    spinTl.current.restart();
                 }
                 resumeTimeout = null;
             }, 50);
@@ -344,25 +335,29 @@ const TargetCursor = ({
             currentLeaveHandler = null;
         };
 
-        const moveHandler = (e) => {
-            lastPointer.x = e.clientX;
-            lastPointer.y = e.clientY;
-
+        const updatePointer = () => {
+            moveFrame = 0;
             if (activeTarget) {
                 if (!document.body.contains(activeTarget)) {
                     resetActiveTarget();
                     return;
                 }
 
-                moveDotTo(e.clientX, e.clientY);
+                moveDotTo(lastPointer.x, lastPointer.y);
                 return;
             }
 
-            moveCursorTo(e.clientX, e.clientY);
+            moveCursorTo(lastPointer.x, lastPointer.y);
         };
-        window.addEventListener("mousemove", moveHandler);
+        const moveHandler = (event) => {
+            lastPointer.x = event.clientX;
+            lastPointer.y = event.clientY;
+            if (!moveFrame) moveFrame = requestAnimationFrame(updatePointer);
+        };
+        window.addEventListener("mousemove", moveHandler, { passive: true });
 
-        const scrollHandler = () => {
+        const updateScroll = () => {
+            scrollFrame = 0;
             if (!activeTarget || !cursorRef.current) return;
 
             if (!document.body.contains(activeTarget)) {
@@ -370,10 +365,9 @@ const TargetCursor = ({
                 return;
             }
 
-            lockCursorToTarget(activeTarget);
-            syncCornerPositions(activeTarget, { useTargetCenter: true });
-            moveDotTo(lastPointer.x, lastPointer.y, { animate: false });
-
+            // Read geometry and hit-test before writes can invalidate layout.
+            const rect = activeTarget.getBoundingClientRect();
+            const offset = getOffset();
             const elementUnderMouse = document.elementFromPoint(
                 lastPointer.x,
                 lastPointer.y,
@@ -384,7 +378,14 @@ const TargetCursor = ({
                     elementUnderMouse.closest(targetSelector) === activeTarget);
             if (!isStillOverTarget) {
                 resetActiveTarget();
+                return;
             }
+            lockCursorToTarget(activeTarget, { rect, offset });
+            syncCornerPositions(activeTarget, { useTargetCenter: true, rect, offset });
+            moveDotTo(lastPointer.x, lastPointer.y, { animate: false, offset });
+        };
+        const scrollHandler = () => {
+            if (!scrollFrame) scrollFrame = requestAnimationFrame(updateScroll);
         };
         window.addEventListener("scroll", scrollHandler, { passive: true });
 
@@ -424,16 +425,7 @@ const TargetCursor = ({
         window.addEventListener("mouseup", mouseUpHandler);
 
         const enterHandler = (e) => {
-            const directTarget = e.target;
-            const allTargets = [];
-            let current = directTarget;
-            while (current && current !== document.body) {
-                if (current.matches(targetSelector)) {
-                    allTargets.push(current);
-                }
-                current = current.parentElement;
-            }
-            const target = allTargets[0] || null;
+            const target = e.target.closest?.(targetSelector);
             if (!target || !cursorRef.current || !cornersRef.current) return;
             if (activeTarget === target) return;
             if (activeTarget) {
@@ -445,10 +437,11 @@ const TargetCursor = ({
             }
 
             activeTarget = target;
+            const rect = target.getBoundingClientRect();
+            const offset = getOffset();
             const corners = Array.from(cornersRef.current);
             corners.forEach((corner) => gsap.killTweensOf(corner, "x,y"));
 
-            gsap.killTweensOf(cursorRef.current, "rotation");
             spinTl.current?.pause();
             gsap.set(cursorRef.current, { rotation: 0 });
 
@@ -468,10 +461,12 @@ const TargetCursor = ({
             }
 
             isActiveRef.current = true;
-            lockCursorToTarget(target, { animate: true });
+            lockCursorToTarget(target, { animate: true, rect, offset });
             syncCornerPositions(target, {
                 animate: true,
                 useTargetCenter: true,
+                rect,
+                offset,
             });
             moveDotTo(lastPointer.x, lastPointer.y, { animate: false });
 
@@ -488,15 +483,19 @@ const TargetCursor = ({
         const resizeHandler = () => {
             containingBlockRef.current = getContainingBlock(cursor);
             if (activeTarget && document.body.contains(activeTarget)) {
-                lockCursorToTarget(activeTarget);
-                syncCornerPositions(activeTarget, { useTargetCenter: true });
-                moveDotTo(lastPointer.x, lastPointer.y, { animate: false });
+                const rect = activeTarget.getBoundingClientRect();
+                const offset = getOffset();
+                lockCursorToTarget(activeTarget, { rect, offset });
+                syncCornerPositions(activeTarget, { useTargetCenter: true, rect, offset });
+                moveDotTo(lastPointer.x, lastPointer.y, { animate: false, offset });
             }
         };
         window.addEventListener("resize", resizeHandler);
 
         return () => {
             cancelAnimationFrame(clickFrame);
+            cancelAnimationFrame(moveFrame);
+            cancelAnimationFrame(scrollFrame);
             mutationObserver.disconnect();
             window.removeEventListener("mousemove", moveHandler);
             window.removeEventListener("mouseover", enterHandler);
@@ -517,6 +516,8 @@ const TargetCursor = ({
 
             spinTl.current?.kill();
             spinTl.current = null;
+            targetLockTween?.kill();
+            [cursorXTo, cursorYTo, dotXTo, dotYTo].forEach((move) => move.tween.kill());
             gsap.killTweensOf([cursor, ...cornersRef.current, dot].filter(Boolean));
 
             if (hideDefaultCursor) {
