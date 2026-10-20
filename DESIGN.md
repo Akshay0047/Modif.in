@@ -63,6 +63,9 @@ spacing:
   lg: "1.5rem"
   xl: "2rem"
 components:
+  site-footer:
+    backgroundColor: "rgba(15, 20, 35, 0.8)"
+    textColor: "{colors.cool-gray}"
   tool-button:
     backgroundColor: "rgba(15, 20, 35, 0.4)"
     textColor: "{colors.slate-mist}"
@@ -128,8 +131,9 @@ Module accents (use only within their module routes):
 
 ### Neutral
 
-- **Void Black** (#000000): Page canvas, header, footer base.
+- **Void Black** (#000000): Page canvas and header base.
 - **Midnight Slate** (rgba(15, 20, 35, 0.4)): Primary glass panel fill across hubs and tools.
+- **Footer surface** (rgba(15, 20, 35, 0.8)): Dark translucent footer fill; the denser slate tint keeps navigation legible over the atmospheric background.
 - **Snow Peak** (#f8fafc): Primary readable text on panels and inputs.
 - **Slate Mist** (#94a3b8): Secondary descriptions, metadata, placeholders.
 - **Panel Border** (rgba(255, 255, 255, 0.08)): Default hairline separation on glass surfaces.
@@ -155,7 +159,7 @@ Fluid sizes are recorded in the hierarchy below rather than frontmatter `fontSiz
 - **Display** (700, clamp(2rem, 5vw, 3rem), 1.25): Tool page titles in Docs/Image shells.
 - **Title** (700, clamp(1.125rem, 2.2vw, 1.375rem), 1.25): PixelCard hub titles, modal headings.
 - **Body** (400, clamp(0.95rem, 2vw, 1.05rem), 1.6): Descriptions, form copy, legal markdown in modals (~65–75ch where constrained).
-- **Label** (600, 0.8125rem, 0.02em tracking): Field labels, segmented control text, footer links.
+- **Label** (600, 0.8125rem, 0.02em tracking): Field labels and segmented control text. Footer links use 400 at 0.875rem/1.5; the copyright and creator credits use 0.8125rem.
 
 **The One Voice Sans Rule.** IBM Plex Sans is the only sans used for UI. Georgia appears only as a display headline role, never for buttons, labels, or dense control rows.
 
@@ -165,11 +169,11 @@ Fluid sizes are recorded in the hierarchy below rather than frontmatter `fontSiz
 
 - **Canvas model:** Full-viewport black stage with fixed atmospheric background (`position: fixed`, behind content).
 - **Header:** Fixed black bar, 64px desktop / 56px mobile, compact DepthText home link, Text/Image/Docs navigation, and a motion toggle. Runtime height comes from `--app-header-height` in `src/index.css`.
-- **Footer:** In document flow on every viewport, at least 56px high, stacking on mobile. It must never cover tool actions or keyboard focus.
+- **Footer:** Shared by every route and kept in document flow. A centered `min(1280px, 100%)` container holds the brand and three navigation groups, followed by copyright, the support contact, and creator credits. The brand spans the grid below 900px; below 540px, tool hubs and common tasks form two columns and legal links wrap across the full width. It must never cover tool actions or keyboard focus.
 - **Hub content:** Centered column; hero cards cap at ~980px; tool grid uses full hub width inside ToolHub.
 - **Tool pages:** `min(960px, 100%)` centered column, `2rem 1.5rem 6rem` padding, reduced horizontal padding on mobile. Image workspaces put the upload panel first in both DOM and visual order; the `inputInPreview` variant identifies which panel owns upload.
 - **Spacing rhythm:** 0.75rem control gaps, 1rem panel padding baseline, 1.5–2rem section separation.
-- **Breakpoints:** 700px (footer/scroll behavior), 768px (hero card stack), component-level clamps for type.
+- **Breakpoints:** 700px (scroll behavior and legal-dialog spacing), 768px (hero card stack), 900px/540px (footer navigation reflow), component-level clamps for type.
 
 ## Elevation & Depth
 
@@ -222,7 +226,7 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 ### Navigation
 
 - **Header:** Fixed black bar with a readable DepthText brand, home link, current-hub state, and keyboard-accessible hub links.
-- **Footer:** Legal controls have 44px touch targets. Documents open in a body portal with a blurred scrim, background inertness, focus trapping/restoration, and Escape dismissal.
+- **Footer:** Dark translucent slate with `blur(12px)` and a hairline top border. The home link pairs the existing `/favicon.ico` logo at 48px with the MODIF.in name. Named navigation groups contain tool hubs, common tasks (word count, image compression, and PDF merging), and the existing legal documents. The support address `junuhammad2@gmail.com` is a visible `mailto:` link in the bottom row. Links and legal controls have at least 44px targets; external creator links show an arrow and announce that they open a new tab. Legal documents open in a body portal with a blurred scrim, background inertness, focus trapping/restoration, and Escape dismissal; Markdown remains sourced from `src/footer/`.
 - **Discovery:** Homepage cross-hub SearchBar, six common-task links, and three PixelCard navigation links. Hubs use SearchBar + categorized ToolButton grids and a native category disclosure above the Popular tools.
 - **Search suggestions:** Preserve AnimatedList's opacity animation and styling. Its Motion module loads on input focus. A shared `SuggestionList` renders the same immediately available options, active state, mouse behavior, and ARIA while animation loads or is unavailable; the combobox input remains the sole keyboard owner.
 
@@ -261,7 +265,7 @@ Background motion (Dither on landing, Silk on hubs/tools) supplies atmospheric d
 
 ## Runtime ownership and audit changes
 
-Runtime styles remain canonical; this document mirrors their accepted values. `src/index.css` owns header height, global focus and scrollbar tokens; `src/components/AppHeader.css` consumes the header tokens; module shared CSS owns module control recipes. `AnimationContext.jsx` owns the user's local motion preference and visibility/reduced-motion state. This project does not generate CSS from DESIGN.md.
+Runtime styles remain canonical; this document mirrors their accepted values. `src/index.css` owns header height, global focus and scrollbar tokens; `src/components/AppHeader.css` consumes the header tokens; module shared CSS owns module control recipes. `src/sections/Footer.css` owns the shared footer surface, typography, spacing, and responsive grid; the `site-footer` component tokens above mirror its accepted colors. `AnimationContext.jsx` owns the user's local motion preference and visibility/reduced-motion state. This project does not generate CSS from DESIGN.md.
 
 `Silk.jsx` renders the original Silk shader and uniform semantics through OGL; `Dither.jsx` retains React Three Fiber and postprocessing. Keep the effect appearance, module tint updates, responsive sizing, paused still frames, and context cleanup/restoration when changing either renderer. Avoid coupling these decorative renderers to workspace or search readiness.
 
