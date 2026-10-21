@@ -110,3 +110,5 @@ Local cold-cache `/text` profiles compare the original PR merged with main (`1fe
 Timing varied: original LCP samples were 2,592 / 4,236 / 4,352 ms; final samples were 3,732 / 2,516 / 2,352 ms. The first final observation overlapped a separate lint run; the subsequent two-build comparison ran serially after correctness browsers and lint had stopped. The repeated final LCP range was lower, but these small lab samples do not establish field Core Web Vitals or a guaranteed speed improvement. Payload reduction and removal of third-party application requests are the supported performance claims.
 
 Raw reports are retained locally in `.git/performance/pr128-before`, `pr128-after`, `pr128-before-repeat`, and `pr128-after-repeat`. Reproduce with `node scripts/profile-performance.mjs --base-url <isolated-preview-url> --routes /text --profiles mobile4g --runs 2 --output <evidence-directory>`.
+
+These comparisons predate integration of the newer navbar/loading-logo commits from `main` (`0f0f403`). The combined build's loading, route, idle-script budget, privacy, and accessibility checks passed separately; the measurements above remain tied to their stated snapshots.
