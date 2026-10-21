@@ -25,7 +25,14 @@ export function routeMetaPlugin() {
             const dist = resolve(server.config.root, server.config.build.outDir);
             server.middlewares.use(async (request, response, next) => {
                 if (!["GET", "HEAD"].includes(request.method)) return next();
-                const url = new URL(request.url, "http://localhost");
+                let url;
+                try {
+                    url = new URL(request.url, "http://localhost");
+                } catch {
+                    response.statusCode = 400;
+                    response.end();
+                    return;
+                }
                 const meta = getRouteMeta(url.pathname);
                 if (meta.canonical) {
                     request.url = `/${routeHtmlFile(meta.path)}${url.search}`;

@@ -31,7 +31,14 @@ export function ocrAssetsPlugin() {
         },
         configureServer(server) {
             server.middlewares.use(async (request, response, next) => {
-                const pathname = new URL(request.url, "http://localhost").pathname;
+                let pathname;
+                try {
+                    pathname = new URL(request.url, "http://localhost").pathname;
+                } catch {
+                    response.statusCode = 400;
+                    response.end();
+                    return;
+                }
                 if (!pathname.startsWith(`${OCR_ASSET_PATH}/`)) return next();
                 const path = assets.get(pathname.slice(OCR_ASSET_PATH.length + 1));
                 if (!path || !["GET", "HEAD"].includes(request.method)) {
