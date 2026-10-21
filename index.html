@@ -40,15 +40,6 @@
       @keyframes modif-loading-pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
       @media (prefers-reduced-motion: reduce) { .page-loader { transition: none; } .page-loader__logo { animation: none; } }
     </style>
-    <!-- Queue page views immediately; load the SDK after route content paints. -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-      gtag("config", "G-SFVEF88V33", { send_page_view: false });
-    </script>
   </head>
   <body>
     <div id="page-loader" class="page-loader" data-state="loading" role="status" aria-label="Loading page">
