@@ -29,7 +29,8 @@ function ToolHub({
     return (
         <>
             <section className="tool-hub__intro" aria-labelledby="tool-hub-heading">
-                <h1 className="tool-hub__heading-wrap" id="tool-hub-heading" aria-label={title}>
+                <h1 className="tool-hub__heading-wrap" id="tool-hub-heading">
+                    <span className="tool-hub__heading-text">{title}</span>
                     <span aria-hidden="true">
                         <WarpText
                             text={title}
