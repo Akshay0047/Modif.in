@@ -21,7 +21,7 @@ await withBrowser(async (page) => {
         assert.equal(await page.title(), title);
     }
     await page.goto(baseURL + "/missing");
-    await page.getByRole("link", { name: "Text tools", exact: true }).click();
+    await page.getByRole("navigation", { name: "Page recovery" }).getByRole("link", { name: "Text tools", exact: true }).click();
     await page.waitForFunction((title) => document.title === title, getRouteTitle("/text"));
     await page.goBack();
     await page.waitForFunction((title) => document.title === title, getRouteTitle("/missing"));

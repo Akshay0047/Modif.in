@@ -103,20 +103,27 @@ async function inspectFooter(page) {
     if (!await footer.count()) return { present: false };
     await footer.scrollIntoViewIfNeeded();
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    return footer.evaluate((element) => {
+    return footer.evaluate(async (element) => {
         const rect = element.getBoundingClientRect();
-        const controls = [...element.querySelectorAll("a[href], button")].map((control) => {
+        const visible = rect.top < innerHeight && rect.bottom > 0;
+        const controls = [];
+        for (const control of element.querySelectorAll("a[href], button")) {
+            const initialBox = control.getBoundingClientRect();
+            const horizontallyVisible = initialBox.left >= -1 && initialBox.right <= innerWidth + 1;
+            // Tall footers need ordinary page scrolling to reach each row.
+            control.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             const box = control.getBoundingClientRect();
             const center = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
-            return {
+            controls.push({
                 text: (control.textContent || control.getAttribute("aria-label") || "").trim(),
-                visible: box.width > 0 && box.height > 0 && box.left >= -1 && box.right <= innerWidth + 1
+                visible: horizontallyVisible && box.width > 0 && box.height > 0 && box.left >= -1 && box.right <= innerWidth + 1
                     && box.top >= -1 && box.bottom <= innerHeight + 1,
                 unobscured: center === control || control.contains(center),
                 hitTarget: center?.outerHTML.slice(0, 240) ?? null,
-            };
-        });
-        return { present: true, visible: rect.top < innerHeight && rect.bottom > 0, controls };
+            });
+        }
+        return { present: true, visible, controls };
     });
 }
 

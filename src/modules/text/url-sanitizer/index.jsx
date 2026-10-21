@@ -6,7 +6,7 @@ import { safeExecute, sanitizeUrl } from "../_shared/webSecurityUtils";
 
 function UrlSanitizer() {
     const [input, setInput] = useState(
-        "https://events.heapheaphurray.com/?hhh-events%5BrefinementList%5D%5BeventType%5D%5B0%5D=hackathon&utm_source=newsletter&id=42",
+        "https://www.linkedin.com/in/junaidahamed7777?utm_source=share_via&utm_content=profile&utm_medium=member_android",
     );
 
     const output = useMemo(
