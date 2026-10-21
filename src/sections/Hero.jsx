@@ -76,7 +76,7 @@ function Hero() {
                 Simple tools for your digital world.
             </p>
             <p className="hero-lead">
-                Use free online tools to edit images, format text, and work with PDF, DOCX and CSV files. Processing stays in your browser.
+                Free tools for text, images, and documents. Everything runs in your browser. Your files and text never leave your device.
             </p>
 
             <div className="hero-search">

@@ -56,7 +56,7 @@ function ToolHub({
                     />
                 </div>
 
-                <p className="tool-hub__badges">No account needed · Browser tools</p>
+                <p className="tool-hub__badges">No uploads · No tracking · No account</p>
             </section>
 
             <details className="tool-hub__category-jump">

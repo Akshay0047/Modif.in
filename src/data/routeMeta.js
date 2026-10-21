@@ -11,19 +11,19 @@ const NOT_FOUND_DESCRIPTION = "This address is not a Modif page. Browse the text
 const STATIC_PAGES = {
     "/": {
         title: "Modif – Free Online Image, Text & Document Tools",
-        description: "Use free online tools to edit images, format text, and work with PDF, DOCX and CSV files. Simple browser-based utilities with privacy-focused processing.",
+        description: "Free tools for text, images, PDF, DOCX and CSV files. Everything runs in your browser. Your files and text stay on your device, with no uploads or tracking.",
     },
     "/text": {
         title: "Text Tools – Free Online Text & Developer Utilities | Modif",
-        description: "Explore free online text tools for formatting, text analysis, encoding, conversion and developer tasks. Quickly process text in your browser with Modif.",
+        description: "Free text and developer tools for formatting, analysis, encoding and conversion. Your text stays in your browser, with no uploads, tracking or account.",
     },
     "/doc": {
         title: "PDF & Document Tools – Free Online File Utilities | Modif",
-        description: "Use free online PDF, DOCX and CSV tools to convert, organize, repair, redact and modify documents. Explore browser-based document utilities on Modif.",
+        description: "Convert, merge, compress, redact and edit PDF, DOCX and CSV files in your browser. Your documents stay on your device, with no uploads, tracking or account.",
     },
     "/image": {
         title: "Image Tools – Free Online Image Converter & Editor | Modif",
-        description: "Compress, convert, resize, crop and edit images with free online image tools. Explore useful image utilities on Modif.",
+        description: "Compress, convert, resize, crop and edit images in your browser. Your photos stay on your device, with no uploads, tracking or account. Free image tools.",
     },
 };
 
@@ -202,7 +202,7 @@ function buildPages() {
     for (const tool of tools) {
         pages.set(tool.path, {
             title: TITLE_OVERRIDES[tool.path] ?? `${tool.name} | Modif`,
-            description: DESCRIPTIONS[tool.path],
+            description: `${DESCRIPTIONS[tool.path]} No uploads; runs in your browser.`,
         });
     }
 
