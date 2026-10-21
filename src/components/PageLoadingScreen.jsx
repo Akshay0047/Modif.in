@@ -16,14 +16,22 @@ export default function PageLoadingScreen() {
     useLayoutEffect(() => {
         const loader = document.getElementById("page-loader");
         const root = document.getElementById("root");
-        if (!loader || !root) return undefined;
+        const content = document.getElementById("page-content");
+        if (!loader || !root || !content) return undefined;
         window.clearTimeout(window.__modifBootTimer);
         const html = document.documentElement;
         const events = new AbortController();
-        const boot = root.hasAttribute("data-loader-boot");
-        const previousBusy = boot ? null : root.getAttribute("aria-busy");
-        root.removeAttribute("data-loader-boot");
-        const releaseInert = acquireInert(root, { initiallyInert: boot ? false : root.inert });
+        const previousBusy = content.getAttribute("aria-busy");
+        const releaseInert = [content, root.querySelector(".skip-link")]
+            .filter(Boolean).map((element) => acquireInert(element));
+        if (root.hasAttribute("data-loader-boot")) {
+            // Adopt the initial HTML lock, then let the mounted header work
+            // while the page content keeps its own independent loading lock.
+            const releaseBoot = acquireInert(root, { initiallyInert: false });
+            root.removeAttribute("data-loader-boot");
+            root.removeAttribute("aria-busy");
+            releaseBoot();
+        }
         const decoded = new Map();
         const decoding = new Map();
         let disposed = false, revealing = false;
@@ -35,15 +43,15 @@ export default function PageLoadingScreen() {
         loader.setAttribute("aria-label", "Loading page");
         const bootRecovery = document.getElementById("boot-recovery");
         if (bootRecovery) bootRecovery.hidden = true;
-        root.setAttribute("aria-busy", "true");
+        content.setAttribute("aria-busy", "true");
         html.classList.add("modif-page-loading");
 
         const release = () => {
             if (!ownsLoadingLock) return;
             ownsLoadingLock = false;
-            releaseInert();
-            if (previousBusy === null) root.removeAttribute("aria-busy");
-            else root.setAttribute("aria-busy", previousBusy);
+            releaseInert.forEach((release) => release());
+            if (previousBusy === null) content.removeAttribute("aria-busy");
+            else content.setAttribute("aria-busy", previousBusy);
             html.classList.remove("modif-page-loading");
         };
         const finish = () => {
