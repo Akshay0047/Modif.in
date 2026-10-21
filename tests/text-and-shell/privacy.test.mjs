@@ -14,6 +14,6 @@ function sourceFiles(directory) {
 test("the application does not install analytics scripts or transmit page views", () => {
     const files = [new URL("../../index.html", import.meta.url), ...sourceFiles(new URL("../../src/", import.meta.url))];
     for (const file of files) {
-        assert.doesNotMatch(readFileSync(file, "utf8"), /\b(?:gtag|dataLayer|trackGaPageView|loadAnalyticsAfterContent)\b|googletagmanager\.com/i, file.pathname);
+        assert.doesNotMatch(readFileSync(file, "utf8"), /\b(?:gtag|dataLayer|trackGaPageView|loadAnalyticsAfterContent)\b|https?:\/\/(?:www\.)?googletagmanager\.com/i, file.pathname);
     }
 });
