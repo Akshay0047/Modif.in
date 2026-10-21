@@ -18,10 +18,42 @@ function hold(page, pattern) {
     let release;
     const gate = new Promise((resolve) => { release = resolve; });
     const requested = page.waitForRequest(pattern);
-    const installed = page.route(pattern, async (route) => {
-        await gate;
-        await route.continue();
-    });
+    // Playwright routing aborts /favicon.ico requests, including the real logo
+    // used by this page. Gate chunks through CDP without changing image loads.
+    requested.catch(() => {});
+    const installed = (async () => {
+        const session = await page.context().newCDPSession(page);
+        let holding = false;
+        let stopped = false;
+        const stop = async () => {
+            if (stopped) return;
+            stopped = true;
+            session.off("Fetch.requestPaused", onPaused);
+            page.off("close", onClose);
+            await session.send("Fetch.disable").catch(() => {});
+            await session.detach().catch(() => {});
+        };
+        const onClose = () => {
+            release();
+            void stop();
+        };
+        const onPaused = (event) => {
+            void (async () => {
+                const matches = pattern.test(event.request.url);
+                if (matches) {
+                    holding = true;
+                    await gate;
+                }
+                if (stopped) return;
+                await session.send("Fetch.continueRequest", { requestId: event.requestId });
+                if (matches) await stop();
+            })().catch(() => stop());
+        };
+        session.on("Fetch.requestPaused", onPaused);
+        page.once("close", onClose);
+        await session.send("Fetch.enable", { patterns: [{ urlPattern: "*", requestStage: "Request" }] });
+        void gate.then(() => { if (!holding) return stop(); });
+    })();
     return { installed, requested, release };
 }
 
@@ -56,14 +88,21 @@ async function covered(page) {
     } else {
         assert.equal(await page.locator("#root").evaluate((root) => root.inert), true, "The empty boot root remains isolated until the app starts");
     }
-    assert.equal((await page.locator(".page-loader__logo").textContent()).trim(), "MODIF.in");
+    const logo = page.locator("img.page-loader__logo");
+    await page.waitForFunction(() => {
+        const image = document.querySelector("img.page-loader__logo");
+        return image?.complete && image.naturalWidth > 0;
+    });
+    await logo.evaluate((image) => image.decode());
+    assert.equal(await logo.getAttribute("src"), "/favicon.ico", "The loader uses the same graphic logo as the footer");
+    assert.equal(await logo.getAttribute("alt"), "", "The loading status supplies the accessible name without repeating the logo");
     const geometry = await page.locator(".page-loader__logo").evaluate((logo) => {
         const rect = logo.getBoundingClientRect();
         const cover = logo.closest("#page-loader").getBoundingClientRect();
         return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, centerX: cover.x + cover.width / 2, centerY: cover.y + cover.height / 2 };
     });
-    assert.ok(Math.abs(geometry.x - geometry.centerX) <= 3, "The loading wordmark is centered horizontally");
-    assert.ok(Math.abs(geometry.y - geometry.centerY) <= 3, "The loading wordmark is centered vertically");
+    assert.ok(Math.abs(geometry.x - geometry.centerX) <= 3, "The loading logo is centered horizontally");
+    assert.ok(Math.abs(geometry.y - geometry.centerY) <= 3, "The loading logo is centered vertically");
 }
 
 async function revealed(page, { inert = false } = {}) {
