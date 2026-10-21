@@ -95,3 +95,18 @@ node scripts/profile-performance.mjs --verify-deploy --base-url https://modif.in
 ```
 
 This checks the entry path and SHA-256, triggers no deployment and schedules no follow-up work.
+
+## Route metadata and privacy — PR #128
+
+The original PR used an approximately 24 KB parser-blocking route map to replace homepage metadata after parsing. The final implementation emits 118 static HTML heads and a noindex 404 page, retains client navigation updates, and adds canonical structured data. Tool processing still happens in the browser. Google Analytics was removed, and OCR now downloads same-origin static worker/core/language assets only when processing starts.
+
+Local cold-cache `/text` profiles compare the original PR merged with main (`1fe93a4`) against the final application snapshot (`31bc55a`). Conditions were Edge, a 390×844 viewport, 4× CPU slowdown, 1.6 Mbps down/750 Kbps up, and 150 ms simulated latency. Each build was served from its own production preview; no application processing server was introduced.
+
+- Across three retained samples per build, encoded session transfer fell from 433,800–433,809 to 246,024 bytes, approximately **43.3% less data**. The observation includes a search interaction and its deferred enhancement.
+- Decoded HTML fell from 29,167 to 5,905 bytes, approximately **79.8% smaller**. Encoded document transfer fell from 8,924 to 2,489 bytes in the first samples.
+- The original samples included approximately 181 KB from Google Tag Manager and an analytics collect attempt. Every final application response came from the local first-party origin.
+- All six samples passed fresh-context/cache-disabled/service-worker bypass proofs and recorded no application or profiler errors. Idle OCR does not request its approximately 11 MB of optional processing assets.
+
+Timing varied: original LCP samples were 2,592 / 4,236 / 4,352 ms; final samples were 3,732 / 2,516 / 2,352 ms. The first final observation overlapped a separate lint run; the subsequent two-build comparison ran serially after correctness browsers and lint had stopped. The repeated final LCP range was lower, but these small lab samples do not establish field Core Web Vitals or a guaranteed speed improvement. Payload reduction and removal of third-party application requests are the supported performance claims.
+
+Raw reports are retained locally in `.git/performance/pr128-before`, `pr128-after`, `pr128-before-repeat`, and `pr128-after-repeat`. Reproduce with `node scripts/profile-performance.mjs --base-url <isolated-preview-url> --routes /text --profiles mobile4g --runs 2 --output <evidence-directory>`.
