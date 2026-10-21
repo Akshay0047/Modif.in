@@ -51,7 +51,7 @@ The profiler defaults to the deployed site, with desktop and mobile 4G cases. Ru
 - React 19, Vite 8, React Router 7; plain JSX application code.
 - `src/pages/`: homepage and three hubs. `App.jsx` discovers `src/modules/<module>/<slug>/index.jsx` automatically.
 - `src/data/*Tools.js`: tool metadata and the eight-tool curated list for each hub. Folder slugs and catalog IDs must match. The `docs` folder maps to `/doc`.
-- `AppShell` owns theme/background, motion settings, global header, titles, and page-view tracking. `ModuleToolLayout` owns module workspace chrome and footer.
+- `AppShell` owns theme/background, motion settings, global header, titles, page-view tracking, and the page-loading cover. `ModuleToolLayout` owns module workspace chrome and footer.
 - Shared tool owners: `TextToolShell`, `DocToolShell`, and `ImageToolWorkspace`, with module styles/utilities in each `_shared/` directory.
 - Tool routes are code split. Search suggestion animation loads on focus, with immediate accessible results while its module loads or is unavailable. The original AnimatedList motion remains in use.
 - Document workers start on the first processing operation. Excel import/export loads XLSX inside the asynchronous `parseExcel`/`csvToExcel` helpers; callers must await both. PDF Merger loads its main-thread fallback only when the worker path fails, and preview byte handling stays in the lightweight `pdfBytes.js` helper.
@@ -69,7 +69,7 @@ IBM Plex Sans is self-hosted as unmodified variable WOFF2 files from the existin
 
 Silk uses its original shader and uniform behavior with a lightweight OGL renderer. Dither retains React Three Fiber and its postprocessing pipeline. These rendering changes preserve the effects, module colors, still frames, and motion controls.
 
-Initial loads and page navigation use a fading MODIF.in wordmark on an opaque cover while page content, fonts, visible images, and the background's first frame settle. The cover respects motion preferences, preserves accessible error recovery, and adds no fixed minimum wait. Its initial markup/styles live in `index.html`; `PageLoadingScreen` owns readiness and reveal.
+Initial loads and page navigation use the existing site logo (`/favicon.ico`) gently pulsing on an opaque cover below the navbar while page content, fonts, visible images, and the background's first frame settle. The mounted header stays visible and usable; covered content and its skip link wait until the page is ready. The cover respects motion preferences, preserves accessible error recovery, and adds no fixed minimum wait. Its initial markup/styles and the shared header-height token live in `index.html`; `PageLoadingScreen` owns readiness and reveal.
 
 The frontend targets WCAG 2.2 AA. Automated route/accessibility tests and targeted workflows support that goal; they do not certify every browser, assistive technology, file format, or device.
 
