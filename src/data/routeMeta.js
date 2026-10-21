@@ -1,6 +1,7 @@
 import { textToolsData } from "./textTools.js";
 import { imageToolsData } from "./imageTools.js";
 import { docToolsData } from "./docTools.js";
+import { getRouteStructuredData } from "./routeStructuredData.js";
 
 export const SITE_ORIGIN = "https://modif.in";
 
@@ -284,6 +285,7 @@ export function applyDocumentMeta(meta) {
     document.title = meta.title;
     upsertMeta("name", "description", meta.description);
     upsertMeta("property", "og:type", "website");
+    upsertMeta("property", "og:site_name", "MODIF.in");
     upsertMeta("property", "og:title", meta.title);
     upsertMeta("property", "og:description", meta.description);
     upsertMeta("property", "og:url", meta.canonical);
@@ -291,6 +293,17 @@ export function applyDocumentMeta(meta) {
     upsertMeta("name", "twitter:title", meta.title);
     upsertMeta("name", "twitter:description", meta.description);
     upsertMeta("name", "robots", meta.canonical ? "index,follow" : "noindex");
+
+    const structuredData = getRouteStructuredData(meta);
+    const existingData = document.getElementById("route-structured-data");
+    if (structuredData) {
+        const script = existingData ?? document.head.appendChild(document.createElement("script"));
+        script.id = "route-structured-data";
+        script.type = "application/ld+json";
+        script.textContent = JSON.stringify(structuredData).replace(/</g, "\\u003c");
+    } else {
+        existingData?.remove();
+    }
 
     const links = [...document.head.querySelectorAll('link[rel="canonical"]')];
     if (!meta.canonical) {
