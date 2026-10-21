@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import LocalMarkdown from "../../../components/LocalMarkdown";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../_shared/CopyButton";
 import TextToolShell from "../_shared/TextToolShell";
 import { formatMarkdown } from "../_shared/developerUtils";
-
-const PREVIEW_HEADINGS = { h1: "h2", h2: "h3", h3: "h4", h4: "h5", h5: "h6", h6: "h6" };
 
 function MarkdownTools() {
     const [input, setInput] = useState(
@@ -62,7 +60,7 @@ function MarkdownTools() {
                 <div className="text-tool-panel">
                     <h2 className="text-tool-section-title">Preview</h2>
                     <div className="text-tool-preview-box">
-                        <ReactMarkdown components={PREVIEW_HEADINGS}>{input}</ReactMarkdown>
+                        <LocalMarkdown>{input}</LocalMarkdown>
                     </div>
                 </div>
             ) : null}

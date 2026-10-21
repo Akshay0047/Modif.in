@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
+import LocalMarkdown from "../../../components/LocalMarkdown";
 import BackButton from "../../../components/BackButton";
 import CopyButton from "../../text/_shared/CopyButton";
 import DocToolShell from "../_shared/DocToolShell";
@@ -134,7 +134,7 @@ function Ocr() {
                     </div>
                     {view === "markdown" ? (
                         <div className="doc-tool-markdown">
-                            <ReactMarkdown>{markdown}</ReactMarkdown>
+                            <LocalMarkdown>{markdown}</LocalMarkdown>
                         </div>
                     ) : (
                         <textarea aria-label="Recognized text" className="doc-tool-textarea" value={text} readOnly />

@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
-import { baseURL, withBrowser } from "./browserHarness.mjs";
+import { baseURL, waitForPageReveal, withBrowser } from "./browserHarness.mjs";
 
 await withBrowser(async (page) => {
     await page.goto(baseURL);
+    await waitForPageReveal(page);
     await page.getByRole("heading", { level: 1, name: "MODIF.in", exact: true }).waitFor();
     assert.equal(await page.getByRole("navigation", { name: "Common tasks" }).getByRole("link").count(), 6);
     assert.equal(await page.locator("a.pixel-card[href]").count(), 3);
     const search = page.getByRole("combobox", { name: "Search tools" });
     await search.fill("base64");
+    await page.getByRole("option").nth(1).waitFor();
     assert.equal(await page.getByRole("option").count(), 2, "global search retains identical slugs in different hubs");
     await page.getByRole("button", { name: "Clear search" }).click();
     assert.equal(await search.inputValue(), "");
@@ -19,10 +21,12 @@ await withBrowser(async (page) => {
     await search.press("ArrowDown");
     await search.press("Enter");
     await page.waitForURL(`${baseURL}/doc/pdf-merger`);
+    await waitForPageReveal(page);
     await page.getByRole("heading", { level: 1 }).waitFor();
     assert.equal(await page.locator('.app-header__nav a[aria-current="page"]').textContent(), "Docs");
     await page.getByRole("navigation", { name: "Tool hubs" }).getByRole("link", { name: "Text", exact: true }).click();
     await page.waitForURL(`${baseURL}/text`);
+    await waitForPageReveal(page);
     await page.locator(".tool-category__title").first().waitFor();
     assert.equal(await page.locator(".tool-button__title-track").count(), 0, "all tool names wrap without marquee");
     await page.locator(".tool-hub__category-jump summary").click();

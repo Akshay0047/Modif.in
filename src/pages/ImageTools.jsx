@@ -4,8 +4,8 @@ import { imagePopularToolOrder, imageToolsData } from "../data/imageTools";
 function ImageTools() {
     return (
         <ToolHub
-            title="IMAGE TOOLS"
-            subheading="A dedicated suite for image manipulation and processing"
+            title="Image Tools"
+            subheading="Free online tools to compress, convert, resize, crop, and edit images."
             toolsData={imageToolsData}
             popularToolOrder={imagePopularToolOrder}
         />

@@ -1,4 +1,5 @@
 import BackButton from "../../../components/BackButton";
+import PageLead from "../../../components/PageLead";
 import ImageToolShell from "./ImageToolShell";
 import usePreventWindowDragDrop from "./usePreventWindowDragDrop";
 import "./imageToolCommon.css";
@@ -56,6 +57,7 @@ export function ImageToolWorkspace({
             <BackButton />
             <div className="img-tool">
                 <h1 className="img-tool__title">{title}</h1>
+                <PageLead className="img-tool__lead" />
                 <p className="img-tool__privacy" role="note">
                     {privacy}
                 </p>

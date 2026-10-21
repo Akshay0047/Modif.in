@@ -4,8 +4,8 @@ import { textPopularToolOrder, textToolsData } from "../data/textTools";
 function TextTools() {
     return (
         <ToolHub
-            title="TEXT TOOLS"
-            subheading="Comprehensive utilities for text analysis, formatting, encoding, and developer tools"
+            title="Text Tools"
+            subheading="Free online tools to format, analyze, convert, and encode text."
             toolsData={textToolsData}
             popularToolOrder={textPopularToolOrder}
         />

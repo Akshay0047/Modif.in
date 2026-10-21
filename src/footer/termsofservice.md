@@ -1,10 +1,8 @@
 # Terms of Service
 
-**Last updated: September 14, 2026**
+**Last updated: October 21, 2026**
 
-## REDO after subdomains are made
-
-Welcome to Modif.in ("Modif", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of Modif.in and its related services and subdomains, including `image.modif.in`, `text.modif.in`, and `docs.modif.in` (collectively, the "Services").
+Welcome to MODIF.in ("Modif", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of the `modif.in` website and its text, image, and document tools (collectively, the "Services").
 
 By accessing or using the Services, you agree to these Terms. If you do not agree with these Terms, please do not use the Services.
 
@@ -43,27 +41,27 @@ We reserve the right to restrict or terminate access where we reasonably believe
 
 ## 4. Your Content
 
-You retain ownership of content that you upload, submit, or process through the Services, except for rights that you separately grant to us under these Terms or that are necessary for us to provide the Services.
+You retain ownership of content that you select, enter, or process through the Services, except for rights that you separately grant to us under these Terms or that are necessary for us to provide the Services.
 
 You are solely responsible for ensuring that you have the necessary rights, permissions, and authority to use and process any content submitted to the Services.
 
-By submitting content, you grant us the limited rights necessary to receive, process, transmit, store temporarily where required, and otherwise handle that content solely to provide the requested functionality and operate the relevant Service.
+By selecting or entering content, you permit the browser-based tools to process that content locally solely to provide the requested functionality. Tool processing does not upload that content to our servers or third-party processing services.
 
-We do not claim ownership of your uploaded content merely because you use our tools.
+We do not claim ownership of your content merely because you use our tools.
 
 ## 5. File and Content Processing
 
-Certain Services may allow you to upload images, text, PDFs, DOCX files, CSV files, or other materials.
+The Services allow you to select or enter images, text, PDFs, DOCX files, CSV files, or other materials for local processing.
 
-Processing may occur locally in your browser, on our infrastructure, or through third-party service providers, depending on the particular feature.
+All current tool processing happens locally in your browser. Requests to the website load public static assets, including processing engines and OCR language data; these requests do not contain tool files or entered text.
 
 You acknowledge that:
 
 * Not every file format or feature will be supported.
 * Processing results may vary depending on the input.
-* Files may be temporarily stored when necessary to provide a feature.
+* Files may be held temporarily in browser memory while a tool operates.
 * We may impose technical or usage limitations to maintain service availability and security.
-* We cannot guarantee that every uploaded file will be processed successfully.
+* We cannot guarantee that every selected file will be processed successfully.
 
 You should maintain your own copies of important files and original content.
 
@@ -77,7 +75,7 @@ Your use of the Services does not transfer ownership of Modif's intellectual pro
 
 ## 7. Third-Party Services
 
-The Services may use or link to third-party services, software, APIs, hosting providers, analytics systems, advertising platforms, or other external services.
+The Services use third-party software libraries and hosting infrastructure and may link to external websites. Hosting receives ordinary requests for public static assets. Tool content is not sent to third-party processing services.
 
 Third-party services may have separate terms and privacy policies. We are not responsible for services that are operated independently by third parties.
 
@@ -85,11 +83,7 @@ Your use of a third-party service may therefore be subject to that provider's ow
 
 ## 8. Advertising
 
-The Services may display advertisements provided by third-party advertising networks, including Google AdSense.
-
-We do not control the content of third-party advertisements, and the appearance of an advertisement does not constitute an endorsement, recommendation, or guarantee by Modif.
-
-Interactions with advertisers, including purchases, communications, promotions, and other transactions, are solely between you and the relevant advertiser.
+The current Services do not integrate advertisements, analytics systems, or tracking services.
 
 ## 9. Availability and Changes
 

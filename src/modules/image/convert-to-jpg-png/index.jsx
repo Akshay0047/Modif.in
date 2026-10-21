@@ -1,6 +1,7 @@
 import { handleFilePickerKeyDown } from "../_shared/imageToolUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import BackButton from "../../../components/BackButton";
+import PageLead from "../../../components/PageLead";
 import ImageToolShell from "../_shared/ImageToolShell";
 import ImageToolRange from "../_shared/ImageToolRange";
 import useDebouncedValue from "../_shared/useDebouncedValue";
@@ -277,6 +278,7 @@ function ConvertToJpgPng() {
 
             <div className="cvt-jpg-png">
                 <h1 className="cvt-jpg-png__title">Convert to JPG / PNG</h1>
+                <PageLead className="cvt-jpg-png__lead" />
 
                 <p className="cvt-jpg-png__privacy" role="note">
                     100% Client-Side: Your images are processed directly in your

@@ -26,7 +26,7 @@ const EDITOR_CARDS = [
         id: "text",
         title: "Text Tools",
         description:
-            "Comprehensive utilities for text analysis, formatting, encoding, and developer tools",
+            "Format, analyze, encode, and convert text in the browser.",
         icon: "/logos/text.webp",
         pixelColor: "red",
         path: "/text",
@@ -34,7 +34,7 @@ const EDITOR_CARDS = [
     {
         id: "image",
         title: "Image Tools",
-        description: "A dedicated suite for image manipulation and processing",
+        description: "Compress, convert, resize, crop, and edit images.",
         icon: "/logos/image.webp",
         pixelColor: "green",
         path: "/image",
@@ -43,7 +43,7 @@ const EDITOR_CARDS = [
         id: "pdf",
         title: "Document Tools",
         description:
-            "Powerful utilities for modifying PDF, DOCX, and CSV documents.",
+            "Convert, organize, repair, and redact PDF, DOCX, and CSV files.",
         icon: "/logos/doc.webp",
         pixelColor: "yellow",
         path: "/doc",
@@ -74,6 +74,9 @@ function Hero() {
 
             <p className="hero-subtitle">
                 Simple tools for your digital world.
+            </p>
+            <p className="hero-lead">
+                Free tools for text, images, and documents. Everything runs in your browser. Your files and text never leave your device.
             </p>
 
             <div className="hero-search">

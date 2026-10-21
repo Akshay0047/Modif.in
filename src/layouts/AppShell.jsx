@@ -3,7 +3,6 @@ import AppSilkBackdrop from "../components/AppSilkBackdrop";
 import { getModuleFromPathname, getModuleLayoutKey } from "../utils/moduleTheme";
 import { MODULE_TOOL_CONFIG } from "./moduleToolConfig";
 import { useModuleScrollbarTheme } from "../hooks/useModuleScrollbarTheme";
-import { useGaPageViews } from "../hooks/useGaPageViews";
 import { useRouteTitle } from "../hooks/useRouteTitle";
 import { AnimationProvider } from "../contexts/AnimationContext";
 import AppHeader from "../components/AppHeader";
@@ -13,7 +12,6 @@ function AppShell({ children }) {
     const { pathname } = useLocation();
     useModuleScrollbarTheme();
     useRouteTitle();
-    useGaPageViews();
 
     const onModuleRoute = Boolean(getModuleFromPathname(pathname));
     const moduleKey =

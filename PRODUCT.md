@@ -20,15 +20,14 @@ Success means a visitor can find the right tool quickly, complete their task rel
 
 ## Positioning
 
-A neighboring product could not truthfully copy this combination: a single no-account hub spanning text, image, and document utilities with a privacy-first default of client-side processing whenever the tool supports it — free to use, with processing kept local rather than uploaded to servers.
+A single no-account hub spanning free text, image, and document utilities. Every current tool processes files and text locally in the browser; tool content is never uploaded to a processing server.
 
 ## Operating Context
 
 - The product runs as a client-side web app at `modif.in` on a single domain for now.
-- Legal copy references planned subdomains (`text.modif.in`, `image.modif.in`, `docs.modif.in`); those are not confirmed as live yet.
 - Tools are organized into three hub pages (`/text`, `/image`, `/doc`) with individual tool routes auto-registered from `src/modules/<module>/<slug>/`.
 - Local development: `npm install`, `npm run dev`, `npm run build`, `npm run lint`.
-- Monetization may include advertising (Google AdSense referenced in legal copy); exact ad placement and rollout are not fully confirmed in product code.
+- The site has no analytics, advertising, or tracking integration. Network requests load public static website and tool assets; hosting providers necessarily receive ordinary request information.
 
 ## Capabilities and Constraints
 
@@ -37,30 +36,30 @@ A neighboring product could not truthfully copy this combination: a single no-ac
 - Three tool hubs with 114 implemented tool routes: Text (62), Image (25), Docs (27).
 - Homepage search across all three hubs, six common-task shortcuts, and persistent hub navigation.
 - Each hub begins with eight curated Popular tools and offers search and category jump links.
-- Browser-based processing is the default architecture; many docs tools surface a client-side privacy disclaimer.
+- Every current tool processes files and text in the browser; shared tool shells surface the local-processing privacy promise.
 - No account required for current tool usage.
 - Supported input types vary by tool (text, images, PDF, DOCX, CSV, and related formats).
 - Tool catalog metadata lives in `src/data/*Tools.js`; tool pages live under `src/modules/`.
 
 **Confirmed constraints**
 
-- Processing should stay in the browser whenever possible; not every tool may be fully client-side yet — privacy policy acknowledges mixed processing models per tool.
+- Tool inputs and outputs must stay on the device. Processing must not upload files, text, passwords, or document contents to MODIF.in or third-party services.
+- Tool engines, workers, and OCR language data load as public static assets from the same site. Downloading these assets must not send tool content.
+- Support messages are separate, explicit communications: users choose what to send through their email or other communication provider.
 - Tool outputs are general-purpose and must be independently verified for high-stakes use (per disclaimer).
 - Plain JSX app code (no TypeScript in application source).
 - React 19, Vite 8, React Router 7.
 
 **Open / undecided**
 
-- Subdomain launch timing and routing split.
 - Usage rankings: Popular tools are an editorial selection, not measured MODIF.in traffic. See `docs/popular-tools.md`.
-- Final advertising integration scope and placement.
 
 ## Brand Commitments
 
 - Product name: **MODIF.in**
 - Tagline in current UI: **"Simple tools for your digital world."**
 - Creators credited in footer: **Junaid** and **Akshay** (personal-site links in `src/sections/Footer.jsx`).
-- Legal documents exist at `src/footer/privacypolicy.md`, `src/footer/termsofservice.md`, and `src/footer/disclaimer.md` (last updated September 14, 2026).
+- Legal documents exist at `src/footer/privacypolicy.md`, `src/footer/termsofservice.md`, and `src/footer/disclaimer.md` (last updated October 21, 2026).
 - Typography in app: IBM Plex Sans.
 
 ## Evidence on Hand
@@ -72,7 +71,7 @@ A neighboring product could not truthfully copy this combination: a single no-ac
 
 ## Product Principles
 
-1. **Local first** — Prefer in-browser processing; treat server uploads as the exception and communicate clearly per tool.
+1. **Browser-only processing** — Keep all tool files, text, and outputs on the user's device. Public asset delivery and explicit support communications are separate from tool processing.
 2. **No friction** — Free access without accounts for utility tasks.
 3. **Hub clarity** — Text, Image, and Docs remain distinct entry points; tools must be discoverable from the right hub.
 4. **Honest outputs** — Present results as aids, not guarantees; users verify before consequential use.

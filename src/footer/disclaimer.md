@@ -1,10 +1,10 @@
 # Disclaimer
 
-**Last updated: September 14, 2026**
+**Last updated: October 21, 2026**
 
 Modif.in ("Modif", "we", "our", or "us") offers a collection of online tools for working with images, text, documents, typing, and other digital content. These services are provided for general-purpose use and convenience.
 
-By accessing or using Modif.in, including services available through `image.modif.in`, `text.modif.in`, and `docs.modif.in`, you agree to the terms of this Disclaimer.
+By accessing or using MODIF.in and its text, image, and document tools at `modif.in`, you agree to the terms of this Disclaimer.
 
 ## 1. About Tool Results
 
@@ -34,11 +34,7 @@ A link, integration, or reference appearing on Modif.in does not necessarily mea
 
 ## 4. Advertising
 
-Modif.in may display advertisements through **Google AdSense** and may use other advertising or monetization partners in the future.
-
-Advertising providers may use cookies and related technologies to deliver, personalize, analyze, or measure advertisements, subject to their own policies and applicable legal requirements.
-
-The advertisements displayed on Modif.in are provided by third parties. We do not control the products, services, statements, or claims presented in those advertisements, and the appearance of an advertisement does not constitute our endorsement or recommendation.
+The current Services do not integrate advertisements, analytics systems, or tracking services.
 
 ## 5. Intellectual Property and Submitted Content
 
@@ -48,11 +44,11 @@ These materials may not be reproduced, republished, modified, distributed, or co
 
 ### Content You Provide
 
-When you enter text or upload files, images, documents, or other material to a Modif.in tool, you remain responsible for that material and for having the necessary rights or permissions to use it.
+When you enter text or select files, images, documents, or other material in a Modif.in tool, you remain responsible for that material and for having the necessary rights or permissions to use it.
 
 Using a Modif.in tool does not transfer ownership of your submitted content to us.
 
-Depending on how a particular tool operates, submitted material may be processed within your browser, through our systems, or by third-party technology providers. The handling of such content can differ between Services and is addressed further in our Privacy Policy where applicable.
+All current tool processing happens locally in your browser. Tool files and text are not uploaded to MODIF.in servers or third-party processing services. Requests load public static website and tool assets; hosting providers receive ordinary request information. Any support message you explicitly send is a separate communication. Our Privacy Policy explains these distinctions.
 
 ## 6. Service Availability and Limitations
 

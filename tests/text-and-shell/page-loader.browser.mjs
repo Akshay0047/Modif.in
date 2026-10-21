@@ -7,7 +7,7 @@ import { installObservers } from "../../scripts/profile-performance.mjs";
 const modulePath = process.env.PLAYWRIGHT_MODULE;
 const { chromium } = await import(modulePath ? modulePath.startsWith("file:") ? modulePath : pathToFileURL(modulePath).href : "playwright");
 const baseURL = process.env.MODIF_BASE_URL || "http://127.0.0.1:4186";
-const output = resolve(".git/frontend-audit/loading-screen");
+const output = resolve(process.env.MODIF_QA_OUTPUT || ".git/frontend-audit/loading-screen");
 const entryChunk = /\/(?:assets\/index-[^/]+\.js|src\/main\.jsx)(?:\?.*)?$/;
 const sceneChunk = (name) => new RegExp(`/((assets/${name}-[^/]+\\.js)|(src/components/${name}\\.jsx))(\\?.*)?$`);
 const toolChunk = (name) => new RegExp(`/((assets/${name}-[^/]+\\.js)|(src/modules/text/${name}/index\\.jsx))(\\?.*)?$`);
