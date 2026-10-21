@@ -1,5 +1,6 @@
 import { PDFDocument } from "pdf-lib";
 import * as pdfjs from "pdfjs-dist";
+import { getOcrWorkerOptions } from "../ocrConfig";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -98,8 +99,12 @@ self.addEventListener("message", async (event) => {
         }
 
         if (task === "ocr") {
+            if (payload.lang && payload.lang !== "eng") {
+                throw new Error("Only English OCR is available locally.");
+            }
             const { createWorker } = await import("tesseract.js");
-            const worker = await createWorker(payload.lang ?? "eng", 1, {
+            const worker = await createWorker("eng", 1, {
+                ...getOcrWorkerOptions(self.location.origin),
                 logger: (message) => {
                     if (message.status === "recognizing text") {
                         reply(requestId, {
@@ -109,13 +114,16 @@ self.addEventListener("message", async (event) => {
                     }
                 },
             });
-            await worker.setParameters({
-                tessedit_pageseg_mode: "1",
-                preserve_interword_spaces: "1",
-            });
-            const result = await worker.recognize(payload.imageData);
-            await worker.terminate();
-            reply(requestId, { type: "done", result: result.data });
+            try {
+                await worker.setParameters({
+                    tessedit_pageseg_mode: "1",
+                    preserve_interword_spaces: "1",
+                });
+                const result = await worker.recognize(payload.imageData);
+                reply(requestId, { type: "done", result: result.data });
+            } finally {
+                await worker.terminate();
+            }
             return;
         }
 
