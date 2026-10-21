@@ -4,8 +4,8 @@ import { docPopularToolOrder, docToolsData } from "../data/docTools";
 function DocTools() {
     return (
         <ToolHub
-            title="DOC TOOLS"
-            subheading="Powerful utilities for modifying PDF, DOCX, and CSV documents."
+            title="PDF & Document Tools"
+            subheading="Free online tools to convert, organize, redact, and edit PDF, DOCX, and CSV files."
             toolsData={docToolsData}
             popularToolOrder={docPopularToolOrder}
         />

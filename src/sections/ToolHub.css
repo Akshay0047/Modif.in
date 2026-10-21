@@ -3,7 +3,7 @@
   z-index: 10;
   width: min(920px, 100%);
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 2.5rem;
+  padding: 1rem 1.5rem 1.25rem;
   box-sizing: border-box;
   text-align: center;
 }
@@ -18,7 +18,7 @@
 .tool-hub__heading-wrap {
   width: 100%;
   min-height: 120px;
-  margin: 0 0 1.25rem;
+  margin: 0 0 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -35,11 +35,11 @@
 
 .tool-hub__subheading {
   max-width: 640px;
-  margin: 0 auto 1.75rem;
+  margin: 0 auto 0.75rem;
   color: rgba(248, 250, 252, 0.68);
   font-family: "IBM Plex Sans", sans-serif;
   font-size: clamp(0.95rem, 2vw, 1.05rem);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .tool-hub__badges {
@@ -48,7 +48,7 @@
   justify-content: center;
   gap: 1rem;
   width: min(100%, 520px);
-  margin: 1.5rem auto 0;
+  margin: 0.75rem auto 0;
   color: rgba(248, 250, 252, 0.55);
   font-family: "IBM Plex Sans", sans-serif;
   font-size: 0.8125rem;

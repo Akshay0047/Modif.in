@@ -5,14 +5,22 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Free browser tools for text, images, and documents. Find converters, editors, generators, and PDF utilities without an account." />
+    <meta name="description" content="Use free online tools to edit images, format text, and work with PDF, DOCX and CSV files. Simple browser-based utilities with privacy-focused processing." />
     <link rel="preload" href="/src/assets/fonts/ibm-plex-sans-v23-latin.woff2" as="font" type="font/woff2" crossorigin />
     <meta
       name="google-site-verification"
       content="u8_JVsFvIy3JDIlUvKJjOyLDNwW2yGB0_Dqs0aZwI7w"
     />
-    <title>MODIF.in | Text, image and document tools</title>
+    <title>Modif – Free Online Image, Text &amp; Document Tools</title>
     <link rel="canonical" href="https://modif.in/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Modif – Free Online Image, Text &amp; Document Tools" />
+    <meta property="og:description" content="Use free online tools to edit images, format text, and work with PDF, DOCX and CSV files. Simple browser-based utilities with privacy-focused processing." />
+    <meta property="og:url" content="https://modif.in/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Modif – Free Online Image, Text &amp; Document Tools" />
+    <meta name="twitter:description" content="Use free online tools to edit images, format text, and work with PDF, DOCX and CSV files. Simple browser-based utilities with privacy-focused processing." />
+    <!-- modif:route-meta -->
     <style>
       :root { --z-page-loader: 1100; }
       html.modif-page-loading, html.modif-page-loading body, html.modif-page-loading #root { overflow: hidden !important; }
@@ -32,18 +40,6 @@
       @keyframes modif-loading-pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
       @media (prefers-reduced-motion: reduce) { .page-loader { transition: none; } .page-loader__logo { animation: none; } }
     </style>
-    <script>
-      (function () {
-        var link = document.querySelector('link[rel="canonical"]');
-        if (!link) return;
-        var path = location.pathname || "/";
-        try {
-          path = decodeURI(path);
-        } catch (e) {}
-        path = path.replace(/\/+$/, "").toLowerCase() || "/";
-        link.setAttribute("href", path === "/" ? "https://modif.in/" : "https://modif.in" + path);
-      })();
-    </script>
     <!-- Queue page views immediately; load the SDK after route content paints. -->
     <script>
       window.dataLayer = window.dataLayer || [];

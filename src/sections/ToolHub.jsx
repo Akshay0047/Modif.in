@@ -30,9 +30,20 @@ function ToolHub({
         <>
             <section className="tool-hub__intro" aria-labelledby="tool-hub-heading">
                 <h1 className="tool-hub__heading-wrap" id="tool-hub-heading" aria-label={title}>
-                    <span aria-hidden="true"><WarpText text={title} color="#f8fafc" fontFamily="Georgia, serif"
-                        fontSize="clamp(2.25rem, 7vw, 4.5rem)" fontWeight={700} warpScale={2.8}
-                        pointerStrength={0.8} speed={0.9} letterSpacing="-0.03em" lineHeight={0.95} /></span>
+                    <span aria-hidden="true">
+                        <WarpText
+                            text={title}
+                            color="#f8fafc"
+                            fontFamily="Georgia, serif"
+                            fontSize="clamp(2.25rem, 7vw, 4.5rem)"
+                            fontWeight={700}
+                            warpScale={2.8}
+                            pointerStrength={0.8}
+                            speed={0.9}
+                            letterSpacing="-0.03em"
+                            lineHeight={0.95}
+                        />
+                    </span>
                 </h1>
 
                 <p className="tool-hub__subheading">{subheading}</p>
