@@ -1,56 +1,50 @@
-import { getIndexableRoutes } from "../src/data/routeMeta.js";
+import { getIndexableRoutes, getRouteMeta } from "../src/data/routeMeta.js";
+import { getRouteStructuredData } from "../src/data/routeStructuredData.js";
 
-const NOT_FOUND_TITLE = "Page not found | Modif";
-const NOT_FOUND_DESCRIPTION = "This address is not a Modif page. Browse the text, image, and document tools from the homepage.";
+const META_BLOCK = /<!-- modif:route-meta:start -->[\s\S]*?<!-- modif:route-meta:end -->/;
 
-export function buildRouteMetaBootScript() {
-    const routes = Object.fromEntries(
-        getIndexableRoutes().map((route) => [
-            route.path,
-            { t: route.title, d: route.description, c: route.canonical },
-        ]),
-    );
-    const payload = JSON.stringify(routes).replace(/</g, "\\u003c");
+export function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[character]);
+}
 
-    return `<script>
-      (function () {
-        var routes = ${payload};
-        var path = location.pathname || "/";
-        try { path = decodeURI(path); } catch (e) {}
-        path = path.replace(/\\/+$/, "").toLowerCase() || "/";
-        if (path.charAt(0) !== "/") path = "/" + path;
-        var route = routes[path];
-        var title = route ? route.t : ${JSON.stringify(NOT_FOUND_TITLE)};
-        var description = route ? route.d : ${JSON.stringify(NOT_FOUND_DESCRIPTION)};
-        var canonical = route ? route.c : "";
-        document.title = title;
-        function meta(attr, key, content) {
-          var selector = "meta[" + attr + "=\\"" + key + "\\"]";
-          var element = document.head.querySelector(selector);
-          if (!content) { if (element) element.remove(); return; }
-          if (!element) {
-            element = document.createElement("meta");
-            element.setAttribute(attr, key);
-            document.head.appendChild(element);
-          }
-          element.setAttribute("content", content);
-        }
-        meta("name", "description", description);
-        meta("property", "og:type", "website");
-        meta("property", "og:title", title);
-        meta("property", "og:description", description);
-        meta("property", "og:url", canonical);
-        meta("name", "twitter:card", "summary");
-        meta("name", "twitter:title", title);
-        meta("name", "twitter:description", description);
-        meta("name", "robots", canonical ? "index,follow" : "noindex");
-        var links = document.head.querySelectorAll('link[rel="canonical"]');
-        for (var i = links.length - 1; i >= 0; i -= 1) links[i].remove();
-        if (!canonical) return;
-        var link = document.createElement("link");
-        link.setAttribute("rel", "canonical");
-        link.setAttribute("href", canonical);
-        document.head.appendChild(link);
-      })();
-    </script>`;
+export function renderRouteHead(meta) {
+    const title = escapeHtml(meta.title);
+    const description = escapeHtml(meta.description);
+    const canonical = meta.canonical && escapeHtml(meta.canonical);
+    const structuredData = getRouteStructuredData(meta);
+    return `<!-- modif:route-meta:start -->
+    <title>${title}</title>
+    <meta name="description" content="${description}" />
+    <meta name="robots" content="${canonical ? "index,follow" : "noindex"}" />
+    ${canonical ? `<link rel="canonical" href="${canonical}" />` : ""}
+    <meta property="og:site_name" content="MODIF.in" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    ${canonical ? `<meta property="og:url" content="${canonical}" />` : ""}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    ${structuredData ? `<script id="route-structured-data" type="application/ld+json">${JSON.stringify(structuredData).replace(/</g, "\\u003c")}</script>` : ""}
+    <!-- modif:route-meta:end -->`;
+}
+
+export function renderRouteHtml(template, meta) {
+    if (!META_BLOCK.test(template)) throw new Error("Missing route metadata block in index.html");
+    return template.replace(META_BLOCK, () => renderRouteHead(meta));
+}
+
+export function routeHtmlFile(path) {
+    return path === "/" ? "index.html" : `${path.slice(1)}.html`;
+}
+
+// Only static public metadata is generated. User files and tool input are never
+// involved in the build; all tool execution remains in the browser.
+export function buildRoutePages(template) {
+    return [
+        ...getIndexableRoutes().map((meta) => [routeHtmlFile(meta.path), renderRouteHtml(template, meta)]),
+        ["404.html", renderRouteHtml(template, getRouteMeta("/404.html"))],
+    ];
 }
