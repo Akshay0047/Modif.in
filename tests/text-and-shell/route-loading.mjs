@@ -77,7 +77,11 @@ try {
     await delayed.route(/\/assets\/text-counter-[^/]+\.js$/, async (route) => { await gate; await route.continue(); });
     await delayed.goto(baseURL + "/text/text-counter", { waitUntil: "domcontentloaded" });
     await delayed.locator('#page-loader[data-state="loading"]').waitFor();
-    assert.equal(await delayed.locator("#root").evaluate((root) => root.inert), true);
+    assert.equal(await delayed.locator("#root").evaluate((root) => root.inert), false, "The navbar remains interactive during tool loading");
+    assert.equal(await delayed.locator("#page-content").evaluate((content) => content.inert), true, "The unfinished workspace remains isolated");
+    assert.equal(await delayed.locator(".skip-link").evaluate((link) => link.inert), true, "The skip link waits for the workspace");
+    await delayed.getByRole("navigation", { name: "Tool hubs" }).getByRole("link", { name: "Text", exact: true }).focus();
+    assert.equal(await delayed.locator(".app-header").evaluate((header) => header.contains(document.activeElement)), true);
     assert.equal(await delayed.locator('.route-feedback nav[aria-label="Loading recovery"] a').count(), 4);
     assert.ok(await delayed.locator("footer").evaluate((footer) => footer.getBoundingClientRect().top >= innerHeight - 1), "Loading reserves the viewport so the footer cannot shift from above the fold");
     releaseChunk();

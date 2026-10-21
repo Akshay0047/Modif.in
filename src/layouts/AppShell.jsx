@@ -23,12 +23,14 @@ function AppShell({ children }) {
             <PageLoadingScreen />
             <a className="skip-link" href="#main-content">Skip to main content</a>
             <AppHeader />
-            <AppSilkBackdrop
-                visible={onModuleRoute}
-                color1={config.color1}
-                color2={config.color2}
-            />
-            {children}
+            <div id="page-content">
+                <AppSilkBackdrop
+                    visible={onModuleRoute}
+                    color1={config.color1}
+                    color2={config.color2}
+                />
+                {children}
+            </div>
         </AnimationProvider>
     );
 }

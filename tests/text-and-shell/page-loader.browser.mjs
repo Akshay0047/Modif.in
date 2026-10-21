@@ -18,10 +18,42 @@ function hold(page, pattern) {
     let release;
     const gate = new Promise((resolve) => { release = resolve; });
     const requested = page.waitForRequest(pattern);
-    const installed = page.route(pattern, async (route) => {
-        await gate;
-        await route.continue();
-    });
+    // Playwright routing aborts /favicon.ico requests, including the real logo
+    // used by this page. Gate chunks through CDP without changing image loads.
+    requested.catch(() => {});
+    const installed = (async () => {
+        const session = await page.context().newCDPSession(page);
+        let holding = false;
+        let stopped = false;
+        const stop = async () => {
+            if (stopped) return;
+            stopped = true;
+            session.off("Fetch.requestPaused", onPaused);
+            page.off("close", onClose);
+            await session.send("Fetch.disable").catch(() => {});
+            await session.detach().catch(() => {});
+        };
+        const onClose = () => {
+            release();
+            void stop();
+        };
+        const onPaused = (event) => {
+            void (async () => {
+                const matches = pattern.test(event.request.url);
+                if (matches) {
+                    holding = true;
+                    await gate;
+                }
+                if (stopped) return;
+                await session.send("Fetch.continueRequest", { requestId: event.requestId });
+                if (matches) await stop();
+            })().catch(() => stop());
+        };
+        session.on("Fetch.requestPaused", onPaused);
+        page.once("close", onClose);
+        await session.send("Fetch.enable", { patterns: [{ urlPattern: "*", requestStage: "Request" }] });
+        void gate.then(() => { if (!holding) return stop(); });
+    })();
     return { installed, requested, release };
 }
 
@@ -32,21 +64,53 @@ async function covered(page) {
         const style = getComputedStyle(loader);
         return { opacity: style.opacity, background: style.backgroundColor };
     }), { opacity: "1", background: "rgb(0, 0, 0)" }, "Only the logo pulses; the opaque cover must hide mounting content");
-    assert.equal(await page.locator("#root").evaluate((root) => root.inert), true, "Partial page controls cannot receive focus while covered");
-    assert.equal((await page.locator(".page-loader__logo").textContent()).trim(), "MODIF.in");
+    if (await page.locator("#page-content").count()) {
+        assert.equal(await page.locator("#page-content").evaluate((content) => content.inert), true, "Partial page controls cannot receive focus while covered");
+        assert.equal(await page.locator(".skip-link").evaluate((link) => link.inert), true, "The skip link cannot target covered content");
+        assert.equal(await page.locator("#root").evaluate((root) => root.inert), false, "Loading leaves the header interactive");
+        const headerGeometry = await page.locator(".app-header").evaluate((header) => {
+            const rect = header.getBoundingClientRect();
+            const cover = document.getElementById("page-loader").getBoundingClientRect();
+            const controls = [...header.querySelectorAll("a, button")];
+            return {
+                top: rect.top,
+                bottom: rect.bottom,
+                coverTop: cover.top,
+                controlsExposed: controls.every((control) => {
+                    const bounds = control.getBoundingClientRect();
+                    return control.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
+                }),
+            };
+        });
+        assert.equal(headerGeometry.top, 0, "The navbar remains pinned to the top");
+        assert.ok(headerGeometry.coverTop >= headerGeometry.bottom - 1, "The loading cover starts below the navbar");
+        assert.equal(headerGeometry.controlsExposed, true, "The loading cover cannot intercept header controls");
+    } else {
+        assert.equal(await page.locator("#root").evaluate((root) => root.inert), true, "The empty boot root remains isolated until the app starts");
+    }
+    const logo = page.locator("img.page-loader__logo");
+    await page.waitForFunction(() => {
+        const image = document.querySelector("img.page-loader__logo");
+        return image?.complete && image.naturalWidth > 0;
+    });
+    await logo.evaluate((image) => image.decode());
+    assert.equal(await logo.getAttribute("src"), "/favicon.ico", "The loader uses the same graphic logo as the footer");
+    assert.equal(await logo.getAttribute("alt"), "", "The loading status supplies the accessible name without repeating the logo");
     const geometry = await page.locator(".page-loader__logo").evaluate((logo) => {
         const rect = logo.getBoundingClientRect();
         const cover = logo.closest("#page-loader").getBoundingClientRect();
         return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, centerX: cover.x + cover.width / 2, centerY: cover.y + cover.height / 2 };
     });
-    assert.ok(Math.abs(geometry.x - geometry.centerX) <= 3, "The loading wordmark is centered horizontally");
-    assert.ok(Math.abs(geometry.y - geometry.centerY) <= 3, "The loading wordmark is centered vertically");
+    assert.ok(Math.abs(geometry.x - geometry.centerX) <= 3, "The loading logo is centered horizontally");
+    assert.ok(Math.abs(geometry.y - geometry.centerY) <= 3, "The loading logo is centered vertically");
 }
 
 async function revealed(page, { inert = false } = {}) {
     await page.locator('#page-loader[data-state="hidden"]').waitFor({ state: "attached", timeout: 18000 });
     assert.equal(await page.locator("#page-loader").isVisible(), false);
     assert.equal(await page.locator("#root").evaluate((root) => root.inert), inert, "Revealing releases its own keyboard isolation without overriding another modal");
+    assert.equal(await page.locator("#page-content").evaluate((content) => content.inert), false, "Revealing releases the content lock");
+    assert.equal(await page.locator(".skip-link").evaluate((link) => link.inert), false, "The skip link returns when its destination is ready");
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "The loader creates no horizontal page overflow");
 }
 
@@ -103,7 +167,9 @@ try {
                     assert.equal(await page.evaluate(() => window.__performanceProfile.readyMs), null, "A covered control is not reported as usable by the profiler");
                     assert.equal(await page.locator("canvas[data-scene-ready='true']").count(), 0);
                     await page.keyboard.press("Tab");
-                    assert.equal(await page.evaluate(() => document.getElementById("root").contains(document.activeElement)), false, "Tab cannot enter a partially mounted page");
+                    assert.equal(await page.locator(".app-header").evaluate((header) => header.contains(document.activeElement)), true, "Tab reaches the navbar while the page is covered");
+                    assert.equal(await page.locator("#page-content").evaluate((content) => content.contains(document.activeElement)), false, "Tab cannot enter partially mounted page content");
+                    await page.screenshot({ path: resolve(output, `${viewport.width}-${scene.toLowerCase()}-navbar-loader.png`) });
                     background.release();
                     await revealed(page);
                     await page.waitForFunction(() => window.__performanceProfile.readyAfterPaintMs !== null);
@@ -123,9 +189,23 @@ try {
             await delayed.installed;
             try {
                 await page.locator('a.tool-button[href="/text/text-counter"]').first().click();
-                await delayed.requested;
+                const pendingTool = await delayed.requested;
                 await covered(page);
+                const navigation = page.getByRole("navigation", { name: "Tool hubs" });
+                await navigation.getByRole("link", { name: "Image", exact: true }).focus();
+                assert.equal(await navigation.getByRole("link", { name: "Image", exact: true }).evaluate((link) => document.activeElement === link), true, "Header links remain keyboard accessible while loading");
+                await navigation.getByRole("link", { name: "Image", exact: true }).click();
+                await page.waitForURL(`${baseURL}/image`);
+                await revealed(page);
                 delayed.release();
+                const lateResponse = await pendingTool.response();
+                await lateResponse?.finished();
+                await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+                await revealed(page);
+                assert.equal(new URL(page.url()).pathname, "/image", "A late tool import cannot restore an abandoned route or loading cover");
+                await navigation.getByRole("link", { name: "Text", exact: true }).click();
+                await revealed(page);
+                await page.locator('a.tool-button[href="/text/text-counter"]').first().click();
                 await revealed(page);
                 await page.locator("#text-counter-input").fill("The complete workspace is ready.");
                 await page.getByRole("link", { name: "Text", exact: true }).click();
@@ -204,7 +284,8 @@ try {
             await page.locator('#page-loader[data-state="revealing"]').waitFor({ state: "attached" });
             await dialog.getByRole("button", { name: "Close document", exact: true }).click();
             await dialog.waitFor({ state: "detached" });
-            assert.equal(await page.locator("#root").evaluate((root) => root.inert), true, "Closing a legal modal cannot release a loader that is still covering the page");
+            assert.equal(await page.locator("#root").evaluate((root) => root.inert), false, "Closing a legal modal releases the navbar");
+            assert.equal(await page.locator("#page-content").evaluate((content) => content.inert), true, "Closing a legal modal cannot release a loader that is still covering the content");
             await revealed(page);
             await page.getByRole("combobox", { name: "Search tools" }).fill("text counter");
         });

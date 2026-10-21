@@ -30,7 +30,6 @@ body {
 
 :root {
   --focus-ring: #a5b4fc;
-  --app-header-height: 64px;
 }
 
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
@@ -87,12 +86,6 @@ select, option {
 
 #main-content:focus {
   outline: none;
-}
-
-@media (max-width: 700px) {
-  :root {
-    --app-header-height: 56px;
-  }
 }
 
 @media (max-width: 700px) {
