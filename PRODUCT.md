@@ -59,7 +59,7 @@ A single no-account hub spanning free text, image, and document utilities. Every
 - Product name: **MODIF.in**
 - Tagline in current UI: **"Simple tools for your digital world."**
 - Creators credited in footer: **Junaid** and **Akshay** (personal-site links in `src/sections/Footer.jsx`).
-- Legal documents exist at `src/footer/privacypolicy.md` (last updated October 21, 2026), `src/footer/termsofservice.md`, and `src/footer/disclaimer.md` (last updated September 14, 2026).
+- Legal documents exist at `src/footer/privacypolicy.md`, `src/footer/termsofservice.md`, and `src/footer/disclaimer.md` (last updated October 21, 2026).
 - Typography in app: IBM Plex Sans.
 
 ## Evidence on Hand
